@@ -1,7 +1,7 @@
 # All Modules
 
 <br>
-Reusable code that can be imported into .Net Framework/Core projects via Nuget (https://www.nuget.org/packages/inovation.incode/)
+Reusable code that can be imported into .Net Framework/Core projects via <a href="https://www.nuget.org/packages/inovationware.code/#versions-body-tab" target="_blank">Nuget</a>
 
 <p>Works for .Net Framework 4.6 and greater.</p>
 
