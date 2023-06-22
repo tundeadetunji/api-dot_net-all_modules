@@ -88,6 +88,7 @@
     <Compile Include="Bootstrap.vb" />
     <Compile Include="CameraAndMic.vb" />
     <Compile Include="Charts.vb" />
+    <Compile Include="CheckedDifference.vb" />
     <Compile Include="Desktop.vb" />
     <Compile Include="Encryption.vb" />
     <Compile Include="Feedback.vb" />

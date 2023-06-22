@@ -4,7 +4,8 @@ Imports iNovation.Code.Machine
 Imports Microsoft.Win32
 Imports iNovation.Code.Media
 Imports System.Text.RegularExpressions
-
+Imports iNovation.Code ''.CheckedDifference
+Imports System.Collections.ObjectModel
 
 Public Class Form1
 
@@ -32,31 +33,18 @@ Public Class Form1
 
     End Sub
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
-        'PieCount
-        '' field_to_count = quater: first(2), second(2), third(3)
+        Dim f As String = "abc" & vbCrLf & "def"
+        Dim s As String = "abc" & vbCrLf & "ghi"
+        Dim check As CheckedDifference = CheckedDifference.getInstance(f, s)
+        Dim l As ReadOnlyCollection(Of Integer) = check.andFoundTheseLinesInCommon
+        t.Text = ListToString(l)
 
-        Dim query = BuildCountString_GROUPED(table, field_to_count, field_to_group, keys_)
-        t.Text = query
-        Clipboard.SetText(query)
     End Sub
 
     Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
-        'PieCountAcrossInterval
-        '' field_to_count = quater, field_for_interval = id, interval_from = 2, interval_to = 6 : first(1), second(2), third(2)
-
-        Dim query = BuildCountString_GROUPED_BETWEEN(table, field_to_group, field_to_count, {field_for_interval})
-
-        t.Text = query
-        Clipboard.SetText(query)
     End Sub
 
     Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click
-        'PieSum
-        '' field_to_group = quater, field_to_sum = drink: first(75), second(155), third(95)
-        Dim query = BuildSumString_GROUPED(table, field_to_group, field_to_sum, keys_)
-
-        t.Text = query
-        Clipboard.SetText(query)
 
     End Sub
 
@@ -64,38 +52,14 @@ Public Class Form1
     End Sub
 
     Private Sub Button4_Click(sender As Object, e As EventArgs) Handles Button4.Click
-        'PieSumAcrossInterval
-        '' field_to_sum = drink, field_to_group = quater, field_for_interval = id, interval_from = 2, interval_to = 6 : first(25), second(155), third(65)
-        Dim query As String = BuildSumString_GROUPED_BETWEEN(table, field_to_group, field_to_sum, {field_for_interval})
-        t.Text = query
-        Clipboard.SetText(query)
-
     End Sub
 
     Private Sub Button5_Click(sender As Object, e As EventArgs) Handles Button5.Click
-        'PieAverage
-        '' field_to_group = quater, field_to_average = drink: first(37), second(77), third(31)
-        Dim query = BuildAVGString_GROUPED(table, field_to_group, field_to_average, keys_)
-        t.Text = query
-        Clipboard.SetText(query)
-
     End Sub
 
     Private Sub Button6_Click(sender As Object, e As EventArgs) Handles Button6.Click
-        'PieAverageAcrossInterval
-        '' field_to_average = drink, field_to_group = quater, field_for_interval = id, interval_from = 2, interval_to = 6 : first(25), second(77), third(32)
-        Dim query As String = BuildAVGString_GROUPED_BETWEEN(table, field_to_group, field_to_average, {field_for_interval})
-        t.Text = query
-        Clipboard.SetText(query)
-
     End Sub
 
     Private Sub Button7_Click(sender As Object, e As EventArgs) Handles Button7.Click
-        'Line
-        '' x_label_field: quater, y_value_field: drink, x_label_field_caption: what should be denoted as the 'topic/subject' in the title, e.g. the column name of y_value_field (in this case, "drink")
-        Dim query As String = BuildSelectString(table, {x_label_field, y_value_field}, keys_)
-        t.Text = query
-        Clipboard.SetText(query)
-
     End Sub
 End Class

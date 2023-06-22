@@ -4637,23 +4637,38 @@ Public Class General
         End If
     End Function
 
-    Public Shared Function ListToString(list_or_array_or_collection As Object, Optional delimiter As String = vbCrLf, Optional format_output As Boolean = False) As String
+    ''' <summary>
+    ''' Joins list items to form a string. 
+    ''' </summary>
+    ''' <param name="list">List or ReadOnlyCollection</param>
+    ''' <param name="delimiter"></param>
+    ''' <param name="format_output"></param>
+    ''' <returns></returns>
+
+    Public Shared Function ListToString(list As Object, Optional delimiter As String = vbCrLf, Optional format_output As Boolean = False) As String
         Dim delimeter As String = delimiter
         Dim l 'As List(Of String)
-        If TypeOf list_or_array_or_collection Is Array Then
-            Return ArrayToString(list_or_array_or_collection)
-        ElseIf TypeOf list_or_array_or_collection Is List(Of Object) Then
-            l = CType(list_or_array_or_collection, List(Of Object))
-        ElseIf TypeOf list_or_array_or_collection Is ReadOnlyCollection(Of String) Then
-            l = CType(list_or_array_or_collection, ReadOnlyCollection(Of String))
+        If TypeOf list Is ReadOnlyCollection(Of String) Then
+            l = CType(list, ReadOnlyCollection(Of String))
+        ElseIf TypeOf list Is ReadOnlyCollection(Of Integer) Then
+            l = CType(list, ReadOnlyCollection(Of Integer))
+        ElseIf TypeOf list Is ReadOnlyCollection(Of Decimal) Then
+            l = CType(list, ReadOnlyCollection(Of Decimal))
+        ElseIf TypeOf list Is ReadOnlyCollection(Of Double) Then
+            l = CType(list, ReadOnlyCollection(Of Double))
+        ElseIf TypeOf list Is ReadOnlyCollection(Of Short) Then
+            l = CType(list, ReadOnlyCollection(Of Short))
+        ElseIf TypeOf list Is ReadOnlyCollection(Of Byte) Then
+            l = CType(list, ReadOnlyCollection(Of Byte))
+        ElseIf TypeOf list Is ReadOnlyCollection(Of Long) Then
+            l = CType(list, ReadOnlyCollection(Of Long))
         Else
-            l = CType(list_or_array_or_collection, List(Of String))
-
+            l = CType(list, List(Of String))
         End If
         Dim r As String = ""
         With l
             For i As Integer = 0 To .Count - 1
-                r &= l(i) & delimeter
+                r &= l(i).ToString & delimeter
             Next
         End With
         If format_output Then
@@ -4663,20 +4678,20 @@ Public Class General
         End If
     End Function
 
-    Public Shared Function ArrayToString(array As Array, Optional delimeter As String = vbCrLf, Optional format_output As Boolean = False) As String
-        Dim r As String = ""
-        With array
-            For i As Integer = 0 To .Length - 1
-                r &= array(i) & delimeter
-            Next
-        End With
-        If format_output Then
-            Return PrepareForIO(r)
-        Else
-            Return r
-        End If
+    'Public Shared Function ArrayToString(array As Array, Optional delimeter As String = vbCrLf, Optional format_output As Boolean = False) As String
+    '    Dim r As String = ""
+    '    With array
+    '        For i As Integer = 0 To .Length - 1
+    '            r &= array(i) & delimeter
+    '        Next
+    '    End With
+    '    If format_output Then
+    '        Return PrepareForIO(r)
+    '    Else
+    '        Return r
+    '    End If
 
-    End Function
+    'End Function
 
 
     Public Shared Function ArrayToList(array_ As Array, list_is As ListIsOf) As Object
