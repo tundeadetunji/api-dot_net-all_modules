@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package >
+  <metadata>
+    <id>inovationware.co</id>
+    <version>1.0.0</version>
+    <title>inovationware.co</title>
+    <authors>inovationware</authors>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">MIT</license>
+    <!-- <icon>icon.png</icon> -->
+    <projectUrl>https://github.com/tundeadetunji/all-modules</projectUrl>
+    <description>Private</description>
+    <releaseNotes>Initial release of the package.</releaseNotes>
+    <copyright>©2022 inovationware (inovationware.com)</copyright>
+    <tags>code inovationware</tags>
+  </metadata>
+</package>
