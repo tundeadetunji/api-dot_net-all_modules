@@ -30,7 +30,14 @@ Public Class Form1
 
     Private s As String
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        Dim l As New List(Of String)
+        l.Add("a")
+        l.Add("b")
+        l.Add("c")
+        Dim r As ReadOnlyCollection(Of String) = l.AsReadOnly
 
+        BindProperty(ScratchDropDown, r, False)
+        BindProperty(ScratchListBox, r)
     End Sub
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
         Dim f As String = "abc" & vbCrLf & "def"

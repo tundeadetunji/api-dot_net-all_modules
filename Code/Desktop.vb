@@ -1925,13 +1925,13 @@ Public Class Desktop
     End Function
 
     ''' <summary>
-    ''' Attaches List(Of String) or Array as DataSource to ComboBox or ListBox
+    ''' Attaches List as DataSource to ComboBox or ListBox
     ''' </summary>
     ''' <param name="control_"></param>
     ''' <param name="list_"></param>
     ''' <returns></returns>
 
-    Public Shared Function BindProperty(control_ As Control, list_ As Object, Optional First_Item_Is As String = Nothing, Optional bindAsDatasourceNotList As Boolean = False) As Control
+    Public Shared Function BindProperty(control_ As Control, list_ As Object, Optional TextIsFirstItem As Boolean = True, Optional FirstItemIs As String = Nothing, Optional bindAsDatasourceNotList As Boolean = False) As Control
         If bindAsDatasourceNotList Then
             Try
                 CType(control_, ComboBox).DataSource = list_
@@ -1944,58 +1944,47 @@ Public Class Desktop
             Catch ex As Exception
 
             End Try
-            Return control_
         Else
 
-            Dim l As New List(Of String)
-            'If First_Item_Is_Empty Then l.Add("")
-            If First_Item_Is IsNot Nothing Then
-                If CType(First_Item_Is, String).Trim.Length > 0 Then
-                    l.Add(First_Item_Is)
-                End If
-            End If
-            If TypeOf (list_) Is Array Then
-                For i = 0 To CType(list_, Array).Length - 1
-                    l.Add(list_(i))
-                Next
-            ElseIf TypeOf (list_) Is List(Of String) Then
-                For i = 0 To CType(list_, List(Of String)).Count - 1
-                    l.Add(list_(i))
-                Next
-            ElseIf TypeOf (list_) Is ReadOnlyCollection(Of String) Then
-                For i = 0 To CType(list_, ReadOnlyCollection(Of String)).Count - 1
-                    l.Add(list_(i))
-                Next
-            End If
             Try
+
                 CType(control_, ComboBox).Items.Clear()
                 CType(control_, ComboBox).DataSource = Nothing
-            Catch ex As Exception
+                If FirstItemIs IsNot Nothing Then
+                    If CType(FirstItemIs, String).Trim.Length > 0 Then
+                        CType(control_, ComboBox).Items.Add(FirstItemIs)
+                    End If
+                End If
 
+                Dim text As String
+
+                For i = 0 To list_.Count - 1
+                    If text Is Nothing Then text = list_(i).ToString.Trim
+                    CType(control_, ComboBox).Items.Add(list_(i).ToString.Trim)
+                Next
+
+                CType(control_, ComboBox).Text = If(TextIsFirstItem, text, "")
+
+            Catch ex As Exception
             End Try
             Try
                 CType(control_, ListBox).Items.Clear()
                 CType(control_, ListBox).DataSource = Nothing
+                If FirstItemIs IsNot Nothing Then
+                    If CType(FirstItemIs, String).Trim.Length > 0 Then
+                        CType(control_, ListBox).Items.Add(FirstItemIs)
+                    End If
+                End If
+
+                For i = 0 To list_.Count - 1
+                    CType(control_, ListBox).Items.Add(list_(i).ToString.Trim)
+                Next
+
             Catch ex As Exception
             End Try
-            With l
-                Try
-                    For i = 0 To .Count - 1
-                        CType(control_, ComboBox).Items.Add(l(i))
-                    Next
-                Catch ex As Exception
 
-                End Try
-                Try
-                    For i = 0 To .Count - 1
-                        CType(control_, ListBox).Items.Add(l(i))
-                    Next
-                Catch ex As Exception
-
-                End Try
-            End With
-            Return control_
         End If
+        Return control_
 
     End Function
 

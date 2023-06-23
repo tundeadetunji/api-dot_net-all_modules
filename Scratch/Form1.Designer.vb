@@ -39,6 +39,8 @@ Partial Class Form1
         Me.Button7 = New System.Windows.Forms.Button()
         Me.Button8 = New System.Windows.Forms.Button()
         Me.Button9 = New System.Windows.Forms.Button()
+        Me.ScratchDropDown = New System.Windows.Forms.ComboBox()
+        Me.ScratchListBox = New System.Windows.Forms.ListBox()
         CType(Me.p, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.q, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
@@ -89,7 +91,7 @@ Partial Class Form1
         Me.t.Multiline = True
         Me.t.Name = "t"
         Me.t.ScrollBars = System.Windows.Forms.ScrollBars.Both
-        Me.t.Size = New System.Drawing.Size(714, 244)
+        Me.t.Size = New System.Drawing.Size(534, 244)
         Me.t.TabIndex = 5
         Me.t.Text = "abc"
         '
@@ -178,11 +180,30 @@ Partial Class Form1
         Me.Button9.Text = "Button9"
         Me.Button9.UseVisualStyleBackColor = True
         '
+        'ScratchDropDown
+        '
+        Me.ScratchDropDown.FormattingEnabled = True
+        Me.ScratchDropDown.Location = New System.Drawing.Point(589, 322)
+        Me.ScratchDropDown.Name = "ScratchDropDown"
+        Me.ScratchDropDown.Size = New System.Drawing.Size(197, 24)
+        Me.ScratchDropDown.TabIndex = 15
+        '
+        'ScratchListBox
+        '
+        Me.ScratchListBox.FormattingEnabled = True
+        Me.ScratchListBox.ItemHeight = 16
+        Me.ScratchListBox.Location = New System.Drawing.Point(589, 352)
+        Me.ScratchListBox.Name = "ScratchListBox"
+        Me.ScratchListBox.Size = New System.Drawing.Size(197, 132)
+        Me.ScratchListBox.TabIndex = 16
+        '
         'Form1
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(8.0!, 16.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(1169, 541)
+        Me.Controls.Add(Me.ScratchListBox)
+        Me.Controls.Add(Me.ScratchDropDown)
         Me.Controls.Add(Me.Button9)
         Me.Controls.Add(Me.Button8)
         Me.Controls.Add(Me.Button7)
@@ -225,4 +246,6 @@ Partial Class Form1
     Friend WithEvents Button7 As Button
     Friend WithEvents Button8 As Button
     Friend WithEvents Button9 As Button
+    Friend WithEvents ScratchDropDown As ComboBox
+    Friend WithEvents ScratchListBox As ListBox
 End Class
