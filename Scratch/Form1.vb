@@ -13,7 +13,8 @@ Public Class Form1
     Dim ftp_server = "ftp.radianthope.org.ng"
     Dim username = "lbtwieye"
     Dim password = "h568]ImZFq7;zG"
-    Dim remoteFolderPathEscapedString = "dev.radianthope.org.ng\wwwroot\images\"
+    Dim remoteFolderPathEscapedString = "dev.radianthope.org.ng\wwwroot"
+    Dim remote_file As String = "info.txt"
     Dim dest_folder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) & "\iNovation Digital Works"
 
     Dim table As String = "pie"
@@ -31,10 +32,23 @@ Public Class Form1
 
     Private s As String
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+
     End Sub
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
-        Text = ListsIsEmpty(ScratchListBox)
+        Button1.Enabled = False
 
+        Dim credentials As New Stamp
+        credentials.ftp_server = ftp_server
+        credentials.password = password
+        credentials.username = username
+        credentials.remoteFolderPathEscapedString = remoteFolderPathEscapedString
+        credentials.target_filename_with_extension = remote_file
+        Dim mailer As New Poster(credentials)
+        ''mailer.SendPackage(New Envelope() With {.info = "new", .source_machine_name = Environment.MachineName})
+        t.Text = mailer.Peek("https://dev.radianthope.org.ng/info.txt")
+
+
+        Button1.Enabled = True
     End Sub
 
     Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click

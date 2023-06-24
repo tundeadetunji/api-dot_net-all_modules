@@ -63,14 +63,14 @@ Public Class SearchEngineQueryString
     Public Shared Function constructParameterString(parameters As List(Of String)) As String
         Dim result As String = If(parameters.Count > 1, "(", "")
         For i = 0 To parameters.Count - 1
-            result &= parameters(i) & If(i <> parameters.Count - 1, " OR ", "")
+            result &= If(IsPhraseOrSentence(parameters(i)), "(" & parameters(i) & ")", parameters(i)) & If(i <> parameters.Count - 1, " OR ", "")
         Next
         Return If(parameters.Count > 1, result & ")", result).Trim
     End Function
     Public Shared Function constructParameterString(parameters As List(Of String), boolean_operator As SearchStringOperator) As String
         Dim result As String = If(parameters.Count > 1, "(", "")
         For i = 0 To parameters.Count - 1
-            result &= parameters(i) & If(i <> parameters.Count - 1, " " & boolean_operator.ToString.Replace("_", "") & " ", "")
+            result &= If(IsPhraseOrSentence(parameters(i)), "(" & parameters(i) & ")", parameters(i)) & If(i <> parameters.Count - 1, " " & boolean_operator.ToString.Replace("_", "") & " ", "")
         Next
         Return If(parameters.Count > 1, result & ")", result).Trim
     End Function
@@ -90,7 +90,7 @@ Public Class SearchEngineQueryString
     End Function
 
     Public Shared Function constructQueryString(sites As List(Of String), terms As List(Of TermWithVariations))
-        Dim parameters_string As String = " "
+        Dim parameters_string As String = ""
 
         Dim parameters As List(Of String)
         For i = 0 To terms.Count - 1
@@ -102,7 +102,7 @@ Public Class SearchEngineQueryString
             parameters_string &= constructParameterString(parameters, terms(i).BooleanOperatorIs) & If(i < terms.Count - 1, " AND ", "")
         Next
 
-        Return constructSiteString(sites) & parameters_string
+        Return constructSiteString(sites) & " " & parameters_string ''& ")"
     End Function
 
 
