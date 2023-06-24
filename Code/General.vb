@@ -48,9 +48,9 @@ Public Class General
 #Region "Enums"
 
     Public Enum SearchStringOperator
-        AND_
-        OR_
-        NOT_
+        OR_ = 0
+        AND_ = 1
+        NOT_ = 2
     End Enum
 
     Public Enum WhatToMonitor
