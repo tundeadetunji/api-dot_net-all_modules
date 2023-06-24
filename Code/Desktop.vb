@@ -3162,6 +3162,41 @@ Public Class Desktop
 
     End Sub
 
+
+    Public Shared Function ListsItemsToList(TheListBox As ListBox) As List(Of String)
+        Dim result As New List(Of String)
+        If TheListBox.Items.Count < 1 Then
+            Return result
+        Else
+            With TheListBox.Items
+                For i = 0 To .Count - 1
+                    Dim current As String = .Item(i).ToString.Trim
+                    If current.Length > 0 Then
+                        result.Add(current)
+                    End If
+                Next
+            End With
+        End If
+        Return result
+    End Function
+    Public Shared Function ListsItemsToList(TheComboBox As ComboBox) As List(Of String)
+        Dim result As New List(Of String)
+        If TheComboBox.Items.Count < 1 Then
+            Return result
+        Else
+            With TheComboBox.Items
+                For i = 0 To .Count - 1
+                    Dim current As String = .Item(i).ToString.Trim
+                    If current.Length > 0 Then
+                        result.Add(current)
+                    End If
+                Next
+            End With
+        End If
+        Return result
+    End Function
+
+
 #End Region
 
 #Region "Lists - ComboBox"

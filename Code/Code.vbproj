@@ -114,6 +114,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
     <Compile Include="Poster.vb" />
+    <Compile Include="SearchEngineQueryString.vb" />
     <Compile Include="Sequel.vb" />
     <Compile Include="Uploader.vb" />
     <Compile Include="Web.vb" />

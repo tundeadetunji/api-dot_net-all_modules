@@ -47,6 +47,11 @@ Public Class General
 
 #Region "Enums"
 
+    Public Enum SearchStringOperator
+        AND_
+        OR_
+        NOT_
+    End Enum
 
     Public Enum WhatToMonitor
         Video = 0

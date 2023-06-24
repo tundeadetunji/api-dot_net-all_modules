@@ -5,6 +5,7 @@ Imports Microsoft.Win32
 Imports iNovation.Code.Media
 Imports System.Text.RegularExpressions
 Imports iNovation.Code ''.CheckedDifference
+Imports iNovation.Code.SearchEngineQueryString
 Imports System.Collections.ObjectModel
 
 Public Class Form1
@@ -30,21 +31,21 @@ Public Class Form1
 
     Private s As String
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        Dim l As New List(Of String)
-        l.Add("a")
-        l.Add("b")
-        l.Add("c")
-        Dim r As ReadOnlyCollection(Of String) = l.AsReadOnly
-
-        BindProperty(ScratchDropDown, r, False)
-        BindProperty(ScratchListBox, r)
     End Sub
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
-        Dim f As String = "abc" & vbCrLf & "def"
-        Dim s As String = "abc" & vbCrLf & "ghi"
-        Dim check As CheckedDifference = CheckedDifference.getInstance(f, s)
-        Dim l As ReadOnlyCollection(Of Integer) = check.andFoundTheseLinesInCommon
-        t.Text = ListToString(l)
+        Dim java As New SearchEngineQueryString.TermWithVariations("java")
+        java.AddVariation("jar")
+        java.AddVariation("war")
+        Dim python As New SearchEngineQueryString.TermWithVariations("python", SearchStringOperator.AND_)
+        python.AddVariation("perl")
+        python.AddVariation("ruby")
+        Dim terms As New List(Of TermWithVariations)
+        terms.Add(java)
+        terms.Add(python)
+        Dim sites As New List(Of String)
+        sites.Add("https://site.com")
+        sites.Add("https://new.com")
+        t.Text = constructQueryString(sites, terms)
 
     End Sub
 
