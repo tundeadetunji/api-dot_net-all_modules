@@ -3196,7 +3196,6 @@ Public Class Desktop
         Return result
     End Function
 
-
 #End Region
 
 #Region "Lists - ComboBox"
@@ -3495,20 +3494,25 @@ Public Class Desktop
         Return return_
     End Function
 
-    Public Shared Function ListsIsEmpty(list_ As ComboBox) As Boolean
-        Return list_.Items.Count < 1
+    Public Shared Function ListsIsEmpty(source As Control) As Boolean
+        If TypeOf source Is ComboBox Then
+            Return CType(source, ComboBox).Items.Count < 1
+        ElseIf TypeOf source Is ListBox Then
+            Return CType(source, ListBox).Items.Count < 1
+        End If
+        ''        Return combobox_or_listbox.Items.Count < 1
     End Function
-    Public Shared Function ListsIsEmpty(drops_ As Array, Optional controls_to_check As ControlsToCheck = ControlsToCheck.Any) As Boolean
+    Public Shared Function ListsIsEmpty(sources As Array, Optional controls_to_check As ControlsToCheck = ControlsToCheck.Any) As Boolean
         Dim counter_ As Integer = 0
-        With drops_
+        With sources
             For i As Integer = 0 To .Length - 1
-                If ListsIsEmpty(drops_(i)) Then
+                If ListsIsEmpty(sources(i)) Then
                     counter_ += 1
                 End If
             Next
         End With
         If controls_to_check = ControlsToCheck.All Then
-            Return Val(counter_) = drops_.Length
+            Return Val(counter_) = sources.Length
         Else
             Return Val(counter_) > 0
         End If
