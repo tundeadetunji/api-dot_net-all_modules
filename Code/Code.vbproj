@@ -44,18 +44,6 @@
     <OptionInfer>On</OptionInfer>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="AForge, Version=2.2.5.0, Culture=neutral, PublicKeyToken=c1db6ff4eaa06aeb, processorArchitecture=MSIL">
-      <HintPath>..\packages\AForge.2.2.5\lib\AForge.dll</HintPath>
-    </Reference>
-    <Reference Include="AForge.Video, Version=2.2.5.0, Culture=neutral, PublicKeyToken=cbfb6e07d173c401, processorArchitecture=MSIL">
-      <HintPath>..\packages\AForge.Video.2.2.5\lib\AForge.Video.dll</HintPath>
-    </Reference>
-    <Reference Include="AForge.Video.DirectShow, Version=2.2.5.0, Culture=neutral, PublicKeyToken=61ea4348d43881b7, processorArchitecture=MSIL">
-      <HintPath>..\packages\AForge.Video.DirectShow.2.2.5\lib\AForge.Video.DirectShow.dll</HintPath>
-    </Reference>
-    <Reference Include="FluentFTP, Version=46.0.2.0, Culture=neutral, PublicKeyToken=f4af092b1d8df44f, processorArchitecture=MSIL">
-      <HintPath>..\packages\FluentFTP.46.0.2\lib\netstandard2.0\FluentFTP.dll</HintPath>
-    </Reference>
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
@@ -85,16 +73,11 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Bootstrap.vb" />
-    <Compile Include="CameraAndMic.vb" />
-    <Compile Include="Charts.vb" />
     <Compile Include="CheckedDifference.vb" />
     <Compile Include="Desktop.vb" />
     <Compile Include="Encryption.vb" />
     <Compile Include="Feedback.vb" />
     <Compile Include="General.vb" />
-    <Compile Include="JSON.vb" />
-    <Compile Include="Language.vb" />
     <Compile Include="Machine.vb" />
     <Compile Include="Media.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
@@ -113,10 +96,8 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="Poster.vb" />
     <Compile Include="SearchEngineQueryString.vb" />
     <Compile Include="Sequel.vb" />
-    <Compile Include="Uploader.vb" />
     <Compile Include="Web.vb" />
   </ItemGroup>
   <ItemGroup>

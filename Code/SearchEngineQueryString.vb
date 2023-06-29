@@ -74,6 +74,9 @@ Public Class SearchEngineQueryString
         Next
         Return If(parameters.Count > 1, result & ")", result).Trim
     End Function
+    Public Shared Function constructParameterString(parameter As String) As String
+        Return "(" & parameter & ")"
+    End Function
     Public Shared Function constructSiteString(TheSite As String) As String
         Return "site:" & TheSite
     End Function
@@ -105,5 +108,8 @@ Public Class SearchEngineQueryString
         Return constructSiteString(sites) & " " & parameters_string ''& ")"
     End Function
 
+    Public Shared Function constructSiteString(site As String, parameter As String) As String
+        Return constructSiteString(site) & " " & constructParameterString(parameter)
+    End Function
 
 End Class

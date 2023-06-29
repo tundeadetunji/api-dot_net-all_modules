@@ -35,20 +35,10 @@ Public Class Form1
 
     End Sub
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
-        Button1.Enabled = False
 
-        Dim credentials As New Stamp
-        credentials.ftp_server = ftp_server
-        credentials.password = password
-        credentials.username = username
-        credentials.remoteFolderPathEscapedString = remoteFolderPathEscapedString
-        credentials.target_filename_with_extension = remote_file
-        Dim mailer As New Poster(credentials)
-        ''mailer.SendPackage(New Envelope() With {.info = "new", .source_machine_name = Environment.MachineName})
-        t.Text = mailer.Peek("https://dev.radianthope.org.ng/info.txt")
+        Dim info As New ProcessStartInfo With {.UseShellExecute = True, .FileName = "C:\Program Files (x86)\Mozilla Firefox\firefox.exe", .Arguments = """site:https://stackoverflow.com (arrays in java)"""}
+        StartFileWithArgument("C:\Program Files (x86)\Mozilla Firefox\firefox.exe", """site:https://stackoverflow.com (arrays in java)""")
 
-
-        Button1.Enabled = True
     End Sub
 
     Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
