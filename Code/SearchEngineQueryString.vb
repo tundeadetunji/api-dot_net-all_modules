@@ -108,7 +108,7 @@ Public Class SearchEngineQueryString
         Return constructSiteString(sites) & " " & parameters_string ''& ")"
     End Function
 
-    Public Shared Function constructSiteString(site As String, parameter As String) As String
+    Public Shared Function constructQueryString(site As String, parameter As String) As String
         Return constructSiteString(site) & " " & constructParameterString(parameter)
     End Function
 
