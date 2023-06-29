@@ -10,12 +10,9 @@ Reusable code that can be imported into .Net Framework/Core projects via <a href
 <pre>using static iNovation.Code.General;
 using static iNovation.Code.Desktop;
 using static iNovation.Code.Encryption;
-using static iNovation.Code.Bootstrap;
-using static iNovation.Code.JSON;
 using static iNovation.Code.Media;
 using static iNovation.Code.PC;
 using static iNovation.Code.Sequel;
-using static iNovation.Code.Charts;
 using static iNovation.Code.Web;</pre>
 
 <p>Then, to check if the user has typed anything in TextBox, for example:</p>
@@ -39,19 +36,15 @@ String encrypted = Encrypt(string);</pre>
 
 <pre>
 iNovation.Code.Feedback feedback = new iNovation.Code.Feedback();
-iNovation.Code.CameraAndMic capture = new iNovation.Code.CameraAndMic(DeviceCapture.SingleImage, folder_to_store_captured_files, some_System_Windows_Forms_PictureBox, number_of_seconds_to_capture_if_intended_to_be_automatic, ".jpg");
 </pre>
 
 <p>Then to utilize Text To Speech, you can use, for example</p>
 
 <pre>feedback.say("what to say out loud");</pre>
 
-<p>To snap a single image with webcam:</p>
 
-<pre>capture.StartCapture();</pre>
-
-
+<!--
 <br>
 <h3>Dependency:</h3>
 
-For Feedback to work, you may need to include System.Speech version 4.0.0.0 in the same directory as the exe of the app.
+For Feedback to work, you may need to include System.Speech version 4.0.0.0 in the same directory as the exe of the app.-->
