@@ -32,20 +32,17 @@ Public Class Form1
 
     Private s As String
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-
     End Sub
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
-
-        Dim info As New ProcessStartInfo With {.UseShellExecute = True, .FileName = "C:\Program Files (x86)\Mozilla Firefox\firefox.exe", .Arguments = """site:https://stackoverflow.com (arrays in java)"""}
-        StartFileWithArgument("C:\Program Files (x86)\Mozilla Firefox\firefox.exe", """site:https://stackoverflow.com (arrays in java)""")
-
+        Mute(Me)
     End Sub
 
     Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
+        VolumeDown(Me)
     End Sub
 
     Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click
-
+        VolumeUp(Me)
     End Sub
 
     Private Sub Timer1_Tick(sender As Object, e As EventArgs) Handles Timer1.Tick
