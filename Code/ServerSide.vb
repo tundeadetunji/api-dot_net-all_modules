@@ -4,7 +4,7 @@ Imports System.Text
 Imports System.Net
 
 Public Class ServerSide
-    Private Function Receive(URL As String)
+    Public Function Receive(URL As String)
         Dim response
         Using wb = New WebClient()
             response = wb.DownloadString(URL)
@@ -20,7 +20,7 @@ Public Class ServerSide
 
     End Function
 
-    Private Function Send(URL As String, FormValues As Dictionary(Of String, String))
+    Public Function Send(URL As String, FormValues As Dictionary(Of String, String))
         Dim data, response, responseInString
         Using wb = New WebClient()
             data = DictionaryToNameValueCollection(FormValues)
