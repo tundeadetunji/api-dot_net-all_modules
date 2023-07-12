@@ -4609,7 +4609,47 @@ Public Class General
         Return result
     End Function
 
-    Public Shared Function DictionaryToString(dict As Dictionary(Of String, Object), Optional side_to_return As SideToReturn = SideToReturn.Right) As IEnumerable(Of Object)
+    Public Shared Function DictionaryToList(dict As Dictionary(Of String, Object), Optional side_to_return As SideToReturn = SideToReturn.Right) As IEnumerable(Of Object)
+
+        Dim result = Nothing
+        Select Case side_to_return
+            Case SideToReturn.Values
+                result = dict.Values.ToList()
+            Case SideToReturn.Right
+                result = dict.Values.ToList()
+            Case SideToReturn.Keys
+                result = dict.Keys.ToList()
+            Case SideToReturn.Left
+                result = dict.Keys.ToList()
+
+
+        End Select
+        Return result
+
+
+        'Dim d As Dictionary(Of String, Object) = dict
+        'Dim l As New List(Of String)
+        'Dim r As New List(Of Object)
+        'With d
+        '    For i = 0 To .Count - 1
+        '        If side_to_return = SideToReturn.AsArray Or side_to_return = SideToReturn.Left Then
+        '            l.Add(d.Keys(i))
+        '        End If
+        '        If side_to_return = SideToReturn.AsArray Or side_to_return = SideToReturn.Right Then
+        '            r.Add(d.Values(i))
+        '        End If
+        '    Next
+        'End With
+        'If side_to_return = SideToReturn.Left Then
+        '    Return ListToString(l)
+        'ElseIf side_to_return = SideToReturn.Right Then
+        '    Return ListToString(r)
+        'Else 'side_to_return = SideToReturn.AsArray
+        '    Return {l, r}
+        'End If
+    End Function
+
+    Public Shared Function DictionaryToList(dict As Dictionary(Of String, String), Optional side_to_return As SideToReturn = SideToReturn.Right) As IEnumerable(Of String)
 
         Dim result = Nothing
         Select Case side_to_return
