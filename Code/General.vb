@@ -255,6 +255,8 @@ Public Class General
         AsCustomApplicationInfoProcessName = 7
         AsCustomApplicationInfoFilename = 8
         AsCustomApplicationInfoInstallLocation = 9
+        Keys = 10
+        Values = 11
     End Enum
 
     Public Shadows Enum FileType
@@ -4618,28 +4620,54 @@ Public Class General
         Return dict.Item(key)
     End Function
 
+    Public Shared Function StringToDictionary(ByVal text As String, ByVal delimiter As String, ByVal equator As String) As Dictionary(Of String, String)
+        Dim result As New Dictionary(Of String, String)()
+        Dim temp As List(Of String) = StringToList(text, delimiter)
+        For i As Integer = 0 To temp.Count - 1
+            Dim tokens() As String = temp(i).Split(equator)
+            result.Add(tokens(0).Trim(), tokens(1).Trim())
+        Next i
+        Return result
+    End Function
 
-    Public Shared Function DictionaryToString(dict As Dictionary(Of String, Object), Optional side_to_return As SideToReturn = SideToReturn.Right)
-        Dim d As Dictionary(Of String, Object) = dict
-        Dim l As New List(Of String)
-        Dim r As New List(Of Object)
-        With d
-            For i = 0 To .Count - 1
-                If side_to_return = SideToReturn.AsArray Or side_to_return = SideToReturn.Left Then
-                    l.Add(d.Keys(i))
-                End If
-                If side_to_return = SideToReturn.AsArray Or side_to_return = SideToReturn.Right Then
-                    r.Add(d.Values(i))
-                End If
-            Next
-        End With
-        If side_to_return = SideToReturn.Left Then
-            Return ListToString(l)
-        ElseIf side_to_return = SideToReturn.Right Then
-            Return ListToString(r)
-        Else 'side_to_return = SideToReturn.AsArray
-            Return {l, r}
-        End If
+    Public Shared Function DictionaryToString(dict As Dictionary(Of String, Object), Optional side_to_return As SideToReturn = SideToReturn.Right) As IEnumerable(Of Object)
+
+        Dim result = Nothing
+        Select Case side_to_return
+            Case SideToReturn.Values
+                result = dict.Values.ToList()
+            Case SideToReturn.Right
+                result = dict.Values.ToList()
+            Case SideToReturn.Keys
+                result = dict.Keys.ToList()
+            Case SideToReturn.Left
+                result = dict.Keys.ToList()
+
+
+        End Select
+        Return result
+
+
+        'Dim d As Dictionary(Of String, Object) = dict
+        'Dim l As New List(Of String)
+        'Dim r As New List(Of Object)
+        'With d
+        '    For i = 0 To .Count - 1
+        '        If side_to_return = SideToReturn.AsArray Or side_to_return = SideToReturn.Left Then
+        '            l.Add(d.Keys(i))
+        '        End If
+        '        If side_to_return = SideToReturn.AsArray Or side_to_return = SideToReturn.Right Then
+        '            r.Add(d.Values(i))
+        '        End If
+        '    Next
+        'End With
+        'If side_to_return = SideToReturn.Left Then
+        '    Return ListToString(l)
+        'ElseIf side_to_return = SideToReturn.Right Then
+        '    Return ListToString(r)
+        'Else 'side_to_return = SideToReturn.AsArray
+        '    Return {l, r}
+        'End If
     End Function
 
     ''' <summary>
