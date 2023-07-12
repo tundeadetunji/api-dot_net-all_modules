@@ -13,27 +13,6 @@ Imports System.Collections.ObjectModel
 Public Class General
 
 #Region "Structures"
-    ''' <summary>
-    ''' Carries info. Filename when to download defaults to "info.txt".
-    ''' When downloading, each line corresponds to each field in the Envelope structure in this oeder.
-    ''' </summary>
-    Public Structure LargeEnvelope
-        Public source_machine_name As String
-        Public target_machine_name As String
-        Public isBroadcast As Boolean
-        Public info As Object
-    End Structure
-    Public Structure Envelope
-        Public source_machine_name As String
-        Public info As Object
-    End Structure
-    Public Structure Stamp
-        Public ftp_server As String
-        Public username As String
-        Public password As String
-        Public remoteFolderPathEscapedString As String
-        Public target_filename_with_extension As String
-    End Structure
 
     Public Structure CustomApplicationInfo
         Public NickName As String
