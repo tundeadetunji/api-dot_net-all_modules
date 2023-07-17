@@ -303,6 +303,7 @@ Public Class General
         exe
         msi
         nuspec
+        rar
     End Enum
 
     Enum FormatFor
