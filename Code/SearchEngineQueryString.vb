@@ -77,22 +77,22 @@ Public Class SearchEngineQueryString
     Public Shared Function constructParameterString(parameter As String) As String
         Return "(" & parameter & ")"
     End Function
-    Public Shared Function constructSiteString(TheSite As String) As String
-        Return "site:" & TheSite
+    Public Shared Function constructSiteString(TheSite As String, Optional Prepend As Boolean = False) As String
+        Return If(Prepend, "site:" & TheSite, TheSite)
     End Function
-    Public Shared Function constructSiteString(sites As List(Of String)) As String
+    Public Shared Function constructSiteString(sites As List(Of String), Optional Prepend As Boolean = False) As String
         Dim result As String = If(sites.Count > 1, "(", "")
         For i = 0 To sites.Count - 1
-            result &= constructSiteString(sites(i)) & If(i <> sites.Count - 1, " OR ", "")
+            result &= constructSiteString(sites(i), Prepend) & If(i <> sites.Count - 1, " OR ", "")
         Next
         Return If(sites.Count > 1, result & ")", result).Trim
     End Function
 
-    Public Shared Function constructQueryString(sites As List(Of String), parameters As List(Of String))
-        Return constructSiteString(sites) & " " & constructParameterString(parameters)
+    Public Shared Function constructQueryString(sites As List(Of String), parameters As List(Of String), Optional Prepend As Boolean = False)
+        Return constructSiteString(sites, Prepend) & " " & constructParameterString(parameters)
     End Function
 
-    Public Shared Function constructQueryString(sites As List(Of String), terms As List(Of TermWithVariations))
+    Public Shared Function constructQueryString(sites As List(Of String), terms As List(Of TermWithVariations), Optional Prepend As Boolean = False)
         Dim parameters_string As String = ""
 
         Dim parameters As List(Of String)
@@ -105,11 +105,11 @@ Public Class SearchEngineQueryString
             parameters_string &= constructParameterString(parameters, terms(i).BooleanOperatorIs) & If(i < terms.Count - 1, " AND ", "")
         Next
 
-        Return constructSiteString(sites) & " " & parameters_string ''& ")"
+        Return constructSiteString(sites, Prepend) & " " & parameters_string ''& ")"
     End Function
 
-    Public Shared Function constructQueryString(site As String, parameter As String) As String
-        Return constructSiteString(site) & " " & constructParameterString(parameter)
+    Public Shared Function constructQueryString(site As String, parameter As String, Optional Prepend As Boolean = False) As String
+        Return constructSiteString(site, Prepend) & " " & constructParameterString(parameter)
     End Function
 
 End Class
