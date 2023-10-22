@@ -26,6 +26,13 @@ Public Class General
 
 #Region "Enum"
 
+#Region "Playback"
+    Public Enum PlaybackRepeatMode
+        Continuously = 0
+        Once = 1
+    End Enum
+#End Region
+
 #Region "FileKind"
 
 #Region "Map"
