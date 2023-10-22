@@ -31,18 +31,22 @@ Public Class Form1
     Dim keys_ As Array = where_keys
 
     Private s As String
+    Private f As New Feedback
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
     End Sub
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
-        Mute(Me)
+        Dim details As String() = GetFileAndExtension(FileKind.VideoFileKind)
+        t.Text = details(1)
+        u.Text = details(2)
     End Sub
 
     Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
-        VolumeDown(Me)
+        Dim details As String() = GetFileAndExtension({FileKind.VideoFileKind, FileKind.AnyFileKind})
+        t.Text = details(1)
+        u.Text = details(2)
     End Sub
 
     Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click
-        VolumeUp(Me)
     End Sub
 
     Private Sub Timer1_Tick(sender As Object, e As EventArgs) Handles Timer1.Tick

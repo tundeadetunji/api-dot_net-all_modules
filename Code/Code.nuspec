@@ -2,16 +2,16 @@
 <package >
   <metadata>
     <id>inovationware.code</id>
-    <version>3.1.1</version>
+    <version>3.1.6</version>
     <title>inovationware.code</title>
     <authors>inovationware</authors>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <license type="expression">MIT</license>
     <!-- <icon>icon.png</icon> -->
-    <projectUrl>https://github.com/tundeadetunji/all-modules</projectUrl>
+    <projectUrl>https://github.com/tundeadetunji/api-dot_net-all_modules</projectUrl>
     <description>Private</description>
     <releaseNotes>None for now.</releaseNotes>
-    <copyright>©2022 inovationware (inovationware.com)</copyright>
+    <copyright>©2022 inovationware (tundeadetunji2017@gmail.com)</copyright>
     <tags>code inovationware</tags>
   </metadata>
 </package>

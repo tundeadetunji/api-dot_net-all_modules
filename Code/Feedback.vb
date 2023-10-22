@@ -61,6 +61,7 @@ Public Class Feedback
         Else
             s.Speak(message)
         End If
+
     End Sub
 
     Public Sub pause()
@@ -74,6 +75,7 @@ Public Class Feedback
             s.Resume()
         End If
     End Sub
+
     Public Sub stress(message As String, Optional howManyTimes As Byte = 3, Optional async As Boolean = True)
         For i = 1 To howManyTimes
             If async = True Then

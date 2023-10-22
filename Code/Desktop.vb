@@ -1,5 +1,6 @@
 ﻿'from iNovation
 Imports iNovation.Code.General
+Imports iNovation.Code.Values
 
 
 'from Assemblies
@@ -2448,27 +2449,10 @@ Public Class Desktop
         Return GetDirectories(directory_, search_depth)
     End Function
 
-    Public Shadows Enum FileKind
-        Image
-        Word
-        Web
-        Audio
-        Video
-        Text
-        PDF
-        Excel
-        PowerPoint
-        Picture
-        Exec
-        All
-        Combined
-        Batch
-        Icon
-        Installer
-        Markdown
-        JSON
-    End Enum
 
+    ''' <summary>
+    ''' No longer supported. Retained only for legacy purposes. Prefer FileKind.
+    ''' </summary>
     Public Enum FileDialogExpectedFormat
         audio
         video
@@ -2483,38 +2467,47 @@ Public Class Desktop
         supported
     End Enum
 
-    Private Shared ReadOnly Property Filters(FileDialogExpectedFormat_ As FileKind) As String
-        Get
-            Select Case FileDialogExpectedFormat_
-                Case FileKind.All
-                    Return "Any File|*.*"
-                Case FileKind.Audio
-                Case FileKind.Combined
-                Case FileKind.Excel
-                Case FileKind.Exec
-                    Return "App Launcher Files|*.exe"
-                Case FileKind.Installer
-                    Return "Installers|*.exe;*.msi"
-                Case FileKind.Image
-                    Return "Images|*.jpg;*.gif;*.jpeg;*.tif;*.bmp;*.png;*.ico"
-                Case FileKind.PDF
-                Case FileKind.Picture
-                    Return "Images|*.jpg;*.gif;*.jpeg;*.tif;*.bmp;*.png;*.ico"
-                Case FileKind.PowerPoint
-                Case FileKind.Text
-                Case FileKind.Video
-                Case FileKind.Web
-                Case FileKind.Word
-                Case FileKind.Markdown
-                    Return "Mardown Files|*.md"
-                Case FileKind.JSON
-                    Return "JSON Files|*.json"
-            End Select
-        End Get
-    End Property
+
+    Public Shared Function GetFile(FileDialogExpectedFormat_ As FileKind, Optional title_text As String = "Select File") As String
+        Dim f_ As New OpenFileDialog
+        f_.Multiselect = False
+        f_.Filter = FilterStringFromFileKind(FileDialogExpectedFormat_)
+        f_.ShowDialog()
+        If f_.FileName.Length > 0 Then
+            Return f_.FileName
+        Else
+            Return ""
+        End If
+    End Function
+
+    Public Shared Function GetFile(FileDialogExpectedFormats_ As IEnumerable(Of FileKind), Optional title_text As String = "Select File") As String
+        Dim f_ As New OpenFileDialog
+        f_.Multiselect = False
+        f_.Filter = FilterStringFromFileKind(FileDialogExpectedFormats_)
+        f_.ShowDialog()
+        If f_.FileName.Length > 0 Then
+            Return f_.FileName
+        Else
+            Return ""
+        End If
+    End Function
+
+    Public Shared Function GetFile(FilterString As String, Optional title_text As String = "Select File") As String
+        Dim f_ As New OpenFileDialog
+        f_.Multiselect = False
+        f_.Filter = FilterString
+        f_.ShowDialog()
+        If f_.FileName.Length > 0 Then
+            Return f_.FileName
+        Else
+            Return ""
+        End If
+    End Function
+
+
 
     ''' <summary>
-    ''' Gets file name from OpenFileDialog. Use this if language is involved.
+    ''' No longer supported. For legacy purposes only. Prefer GetFile(FileDialogExpectedFormat_ As FileKind, Optional title_text As String = "Select File") and/or variants.  
     ''' </summary>
     ''' <param name="FileDialogExpectedFormat_"></param>
     ''' <returns></returns>
@@ -2563,6 +2556,10 @@ Public Class Desktop
         End If
     End Function
 
+
+    ''' <summary>
+    ''' No longer supported. For legacy purposes only.
+    ''' </summary>
     Public Shared Function GetFile(textBox As Control, FileDialogExpectedFormat_ As FileDialogExpectedFormat, Optional title_text As String = "Select File") As String
         Dim s As String = GetFile(FileDialogExpectedFormat_, title_text)
         If s.Length > 0 Then
@@ -2575,61 +2572,17 @@ Public Class Desktop
         End If
     End Function
 
-    'Private Shared Function GetFile(FileDialogExpectedFormat_ As FileDialogExpectedFormat, control As Object, Optional title_text As String = "Select File") As String
-    '    Dim r = GetFile(FileDialogExpectedFormat_, title_text)
-    '    If r.Length > 0 Then
-    '        If control IsNot Nothing Then
-    '            Try
-    '                If TypeOf control Is TextBox Then
-    '                    CType(control, TextBox).Text = r
-    '                ElseIf TypeOf control Is ComboBox Then
-    '                    CType(control, ComboBox).Text = r
-    '                Else
-    '                    Try
-    '                        control.text = r
-    '                    Catch ex As Exception
-
-    '                    End Try
-    '                End If
-    '            Catch ex As Exception
-
-    '            End Try
-    '        End If
-    '        Return r
-    '    End If
-    'End Function
-
     ''' <summary>
-    ''' Gets file name and extension from OpenFileDialog. Use this if no language is involved.
+    ''' Gets file name and extension from OpenFileDialog. 
     ''' </summary>
     ''' <param name="audio_video_picture_exec_all_combined">What it is expected to find.</param>
     ''' <returns>String Array {0:True if no error or False if otherwise (convert to bool), 1:File Path, 2:File Extension</returns>
-    Public Shared Function GetFileAndExtension(Optional audio_video_picture_exec_all_combined As FileKind = FileKind.All, Optional title_text As String = "Select File") As Array
+    Public Shared Function GetFileAndExtension(Optional audio_video_picture_exec_all_combined As FileKind = FileKind.AnyFileKind, Optional title_text As String = "Select File") As Array
         '		If audio_video_picture_exec_all_combined.Length < 1 Then audio_video_picture_exec_all_combined = "all"
         Dim f_ As New OpenFileDialog
         Dim return_() As String
-        Select Case audio_video_picture_exec_all_combined.ToString
-            Case FileKind.Audio.ToString
-            Case FileKind.Video.ToString
-            Case FileKind.Picture.ToString
-                f_.Filter = "Images|*.gif;*.jpg;*.jpeg;*.tif;*.bmp;*.png;*.ico"
-                f_.Title = title_text
-            Case FileKind.Exec.ToString
-                f_.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)
-                f_.Filter = "App Launcher Files|*.exe"
-                f_.Title = title_text
-            Case FileKind.Icon
-                f_.Filter = "Icons|*.ico;*.exe"
-                f_.Title = title_text
-            Case FileKind.All.ToString
-                f_.Filter = "Any File|*.*"
-                f_.Title = title_text
-            Case FileKind.Batch.ToString
-                f_.Filter = "Batch File|*.bat"
-                f_.Title = title_text
-            Case FileKind.Combined.ToString
-        End Select
         With f_
+            .Filter = FilterStringFromFileKind(audio_video_picture_exec_all_combined)
             f_.Multiselect = False
             f_.ShowDialog()
             If .FileName.Trim <> "" Then
@@ -2640,37 +2593,36 @@ Public Class Desktop
         End With
         Return return_
 
-
-
-
-        '		Dim value_ As Array = g.GetFileAndExtension("picture")
-        '		or, if Shared
-        '		Dim value_ As Array = GetFileAndExtension("picture")
-        '		'File
-        '		If value_(0) = True And value_(1).ToString.Length > 0 Then
-        '			Dim file_ As String = value_(1)
-        '			'SysPic.CheckState = CheckState.Unchecked	
-        '		End If
-        '		'File And Extension
-        '		If value_(0) = True And value_(1).ToString.Length > 0 And value_(2).ToString.Length > 0 Then
-        '			Dim file_ As String = value_(1)
-        '			Dim extension_ As String = value_(2)
-        '			'SysPic.CheckState = CheckState.Unchecked	
-        '		End If
-
-
-
     End Function
 
     ''' <summary>
-    ''' Gets file name and extension from OpenFileDialog. Use this if no language is involved.
+    ''' Gets file name and extension from OpenFileDialog. 
     ''' </summary>
-    ''' <param name="fileType">What it is expected to find.</param>
+    ''' <param name="fileKinds">What it is expected to find.</param>
     ''' <returns>String Array {0:True if no error or False if otherwise (convert to bool), 1:File Path, 2:File Extension</returns>
+    Public Shared Function GetFileAndExtension(fileKinds As IEnumerable(Of FileKind), Optional title_text As String = "Select File") As Array
+        '		If audio_video_picture_exec_all_combined.Length < 1 Then audio_video_picture_exec_all_combined = "all"
+        Dim f_ As New OpenFileDialog
+        Dim return_() As String
+        With f_
+            .Filter = FilterStringFromFileKind(fileKinds)
+            f_.Multiselect = False
+            f_.ShowDialog()
+            If .FileName.Trim <> "" Then
+                return_ = {True, .FileName, Path.GetExtension(.FileName)}
+            ElseIf .FileName.Trim = "" Then
+                return_ = {False, "", ""}
+            End If
+        End With
+        Return return_
 
-    'Public Shared Function GetFileAndExtension(fileType As FileKind, Optional title_text As String = "Select File") As Array
-    '	Return GetFileAndExtension(fileType.ToString.ToLower, title_text)
-    'End Function
+    End Function
+
+
+
+
+
+
 
     ''' <summary>
     ''' Gets Folder Path from FolderBrowserDialog. Use if no language is involved.
@@ -4270,7 +4222,7 @@ Public Class Desktop
         Dim s As New SaveFileDialog
         With s
             If filename.Length > 0 Then .FileName = filename
-            .Filter = Filters(filter)
+            .Filter = FilterStringFromFileKind(filter)
             .OverwritePrompt = True
             .Title = title
             .ShowDialog()
@@ -4432,73 +4384,6 @@ Public Class Desktop
         Exists = My.Computer.FileSystem.FileExists(file_) Or My.Computer.FileSystem.DirectoryExists(file_)
     End Function
 
-#Region "File"
-
-    Private Shared Function FileIsValid(file_ As String) As Boolean
-        Dim return_ As Boolean = False
-
-        If FileIsValid(file_, FileKind.Image) Or
-            FileIsValid(file_, FileKind.Word) Or
-            FileIsValid(file_, FileKind.Web) Or
-            FileIsValid(file_, FileKind.Audio) Or
-            FileIsValid(file_, FileKind.Video) Or
-            FileIsValid(file_, FileKind.Text) Or
-            FileIsValid(file_, FileKind.PDF) Or
-            FileIsValid(file_, FileKind.Excel) Or
-            FileIsValid(file_, FileKind.PowerPoint) Or
-            return_ = True Then
-        End If
-        Return return_
-    End Function
-    Private Shared Function FileIsValid(file_ As String, type_ As FileKind) As Boolean
-        Dim return_ As Boolean = False
-
-        Dim ext_ As String = Path.GetExtension(file_).Replace(".", "").ToLower
-        Select Case type_
-            Case FileKind.Image
-                If ext_ = "gif" Or ext_ = "jpg" Or ext_ = "jpeg" Or ext_ = "tif" Or ext_ = "bmp" Or ext_ = "png" Or ext_ = "ico" Then
-                    return_ = True
-                End If
-            Case FileKind.Word
-                If ext_ = "doc" Or ext_ = "docx" Then
-                    return_ = True
-                End If
-            Case FileKind.Web
-                If ext_ = "htm" Or ext_ = "html" Or ext_ = "xhtml" Or ext_ = "mht" Then
-                    return_ = True
-                End If
-            Case FileKind.Audio
-                If ext_ = "aac" Or ext_ = "aa3" Or ext_ = "adt" Or ext_ = "adts" Or ext_ = "mp3" Or ext_ = "wav" Or ext_ = "mid" Or ext_ = "midi" Or ext_ = "wma" Then
-                    return_ = True
-                End If
-            Case FileKind.Video
-                If ext_ = "3gp" Or ext_ = "3gpp" Or ext_ = "3gp2" Or ext_ = "m4v" Or ext_ = "mp4" Or ext_ = "mov" Or ext_ = "mkv" Or ext_ = "flv" Or ext_ = "wmv" Or ext_ = "avi" Or ext_ = "mpg" Or ext_ = "mpeg" Or ext_ = "vob" Or ext_ = "dat" Or ext_ = "amv" Or ext_ = "webm" Then
-                    return_ = True
-                End If
-            Case FileKind.Text
-                If ext_ = "txt" Then
-                    return_ = True
-                End If
-            Case FileKind.PDF
-                If ext_ = "pdf" Then
-                    return_ = True
-                End If
-            Case FileKind.Excel
-                If ext_ = "xls" Or ext_ = "xlsx" Then
-                    return_ = True
-                End If
-            Case FileKind.PowerPoint
-                If ext_ = "ppt" Or ext_ = "pptx" Or ext_ = "ppsx" Or ext_ = "pps" Then
-                    return_ = True
-                End If
-
-        End Select
-
-
-        Return return_
-    End Function
-
-#End Region
 #Region "Sound"
     Public Enum MakeTheFile
         Hidden

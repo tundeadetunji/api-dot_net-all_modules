@@ -1,6 +1,7 @@
 ﻿'from iNovation
 Imports iNovation.Code.General
 Imports System.Data.OleDb
+Imports iNovation.Code.Values
 
 'from Assemblies
 Imports System.Data.SqlClient
