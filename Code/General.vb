@@ -229,11 +229,16 @@ Public Class General
     Public Shared Function ExtensionsFromFileKind(fileKinds As IEnumerable(Of FileKind)) As List(Of String)
         Dim result As New List(Of String)
         Dim temp As List(Of String)
+        Dim cache As New List(Of FileKind)
         For i = 0 To fileKinds.Count - 1
-            temp = ExtensionsFromFileKind(fileKinds(i))
-            For j = 0 To temp.Count - 1
-                result.Add(temp(j))
-            Next
+            If Not cache.Contains(fileKinds(i)) Then
+                temp = ExtensionsFromFileKind(fileKinds(i))
+                For j = 0 To temp.Count - 1
+                    result.Add(temp(j))
+                Next
+                cache.Add(fileKinds(i))
+            End If
+
         Next
         Return result
 
@@ -254,10 +259,15 @@ Public Class General
     End Function
 
     Public Shared Function FilterStringFromFileKind(fileKinds As IEnumerable(Of FileKind)) As String
-        If fileKinds.Count < 1 Then Throw New Exception("Empty IEnumerable was passed")
+        If fileKinds.Count < 1 Then Return ""
         Dim result As String = ""
+        Dim temp As New List(Of FileKind)
         For i = 0 To fileKinds.Count - 1
-            result &= FilterStringFromFileKind(fileKinds(i)) & If(i < fileKinds.Count - 1, "|", "")
+            If Not temp.Contains(fileKinds(i)) Then
+                result &= FilterStringFromFileKind(fileKinds(i))
+                result &= If(i < fileKinds.Count - 1, "|", "")
+                temp.Add(fileKinds(i))
+            End If
         Next
         Return result
     End Function

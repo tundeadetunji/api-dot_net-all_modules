@@ -35,15 +35,11 @@ Public Class Form1
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
     End Sub
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
-        Dim details As String() = GetFileAndExtension(FileKind.VideoFileKind)
-        t.Text = details(1)
-        u.Text = details(2)
+        t.Text = GetFile({FileKind.VideoFileKind, FileKind.AnyFileKind})
+        't.Text = FilterStringFromFileKind({FileKind.VideoFileKind, FileKind.AnyFileKind, FileKind.AnyFileKind})
     End Sub
 
     Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
-        Dim details As String() = GetFileAndExtension({FileKind.VideoFileKind, FileKind.AnyFileKind})
-        t.Text = details(1)
-        u.Text = details(2)
     End Sub
 
     Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click
