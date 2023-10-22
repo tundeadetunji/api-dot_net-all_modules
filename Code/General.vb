@@ -4359,6 +4359,22 @@ Public Class General
     Public Shared Function EnumToText(str As String, replacement As String) As String
         Return EnumToDrop(str, replacement)
     End Function
+
+    ''' <summary>
+    ''' Same as EnumFromString
+    ''' </summary>
+    ''' <param name="EnumInstance"></param>
+    ''' <param name="Key"></param>
+    ''' <returns></returns>
+    Public Shared Function StringToEnum(EnumInstance As Object, Key As String)
+        Return EnumFromString(EnumInstance, Key)
+    End Function
+    ''' <summary>
+    ''' Same as StringToEnum
+    ''' </summary>
+    ''' <param name="EnumInstance"></param>
+    ''' <param name="Key"></param>
+    ''' <returns></returns>
     Public Shared Function EnumFromString(EnumInstance As Object, Key As String)
         Dim dict As New Dictionary(Of String, Integer)
         Dim keys As List(Of String) = GetEnum(EnumInstance)
