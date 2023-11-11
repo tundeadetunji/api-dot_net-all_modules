@@ -787,7 +787,7 @@ Public Class Desktop
     ''' <param name="casing_"></param>
     ''' <param name="timeValue">Which part of the value to pick if control is DateTimePicker (e.g. Day, Hour, Minute etc)</param>
     ''' <returns></returns>
-    Public Shared Function Content(control_ As Object, Optional casing_ As TextCase = TextCase.None, Optional timeValue As TimeValue = TimeValue.ShortDate) As Object
+    Public Shared Function Content(control_ As Object, Optional casing_ As TextCase = TextCase.None, Optional timeValue As TimeValue = TimeValue.ShortDate) As String
         Dim casing As TextCase = casing__
         If casing_ <> Nothing Then casing = casing_
 
