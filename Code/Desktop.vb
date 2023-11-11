@@ -181,7 +181,7 @@ Public Class Desktop
     ''' <param name="return_control_not_list">Should return the original ListBox/ComboBox or the list generated from the enum</param>
     ''' <param name="return_sorted">Should the list generated from the enum be sorted before bound to the control?</param>
     ''' <returns></returns>
-    Public Shared Function EnumDrop(drop As Control, enum__ As Object, Optional return_control_not_list As Boolean = True, Optional return_sorted As Boolean = True) As Object
+    Public Shared Function EnumDrop(drop As Control, enum__ As Object, Optional return_control_not_list As Boolean = True, Optional return_sorted As Boolean = True, Optional InitialSelectedIndexIsNegativeOne As Boolean = True) As Object
         Dim e = GetEnum(enum__)
         Dim l As New List(Of String)
         With e
@@ -192,7 +192,7 @@ Public Class Desktop
 
         If return_sorted Then l.Sort()
 
-        Return If(return_control_not_list, BindProperty(drop, l), l)
+        Return If(return_control_not_list, BindProperty(drop, l, InitialSelectedIndexIsNegativeOne), l)
     End Function
     Public Shared Function ListsToKeyValueAray(listK As ListBox, listV As ListBox) As List(Of String)
         Dim s As String = ""
@@ -1952,11 +1952,11 @@ Public Class Desktop
     ''' Attaches List as DataSource to ComboBox or ListBox.
     ''' </summary>
     ''' <param name="TheControl">ComboBox or ListBox</param>
-    ''' <param name="TheList">List(Of String)</param>
+    ''' <param name="TheList">List, Array or Collection</param>
     ''' <param name="InitialSelectedIndexIsNegativeOne">Should the SelectedIndex be set to -1? Only applies to ComboBox</param>
     ''' <param name="ReplaceUnderscoresWithSpace">If using enum with values having more than one word separted by underscore, this replaces the underscores with space</param>
     ''' <returns></returns>
-    Public Shared Function BindProperty(TheControl As Control, TheList As List(Of String), Optional InitialSelectedIndexIsNegativeOne As Boolean = True, Optional ReplaceUnderscoresWithSpace As Boolean = False) As Control
+    Public Shared Function BindProperty(TheControl As Control, TheList As Object, Optional InitialSelectedIndexIsNegativeOne As Boolean = True, Optional ReplaceUnderscoresWithSpace As Boolean = False) As Control
         If TheList.Count < 1 Or TheControl Is Nothing Then Return Nothing
         If TypeOf TheControl Is ComboBox Then
             Dim c As ComboBox = CType(TheControl, ComboBox)
@@ -1985,7 +1985,7 @@ Public Class Desktop
     ''' <param name="control_"></param>
     ''' <param name="list_"></param>
     ''' <returns></returns>
-    Private Shared Function BindProperty(control_ As Control, list_ As Object, Optional TextIsFirstItem As Boolean = True, Optional FirstItemIs As String = Nothing, Optional bindAsDatasourceNotList As Boolean = False) As Control
+    Private Shared Function BindPropertyEx(control_ As Control, list_ As Object, Optional TextIsFirstItem As Boolean = True, Optional FirstItemIs As String = Nothing, Optional bindAsDatasourceNotList As Boolean = False) As Control
         If bindAsDatasourceNotList Then
             Try
                 CType(control_, ComboBox).DataSource = list_
