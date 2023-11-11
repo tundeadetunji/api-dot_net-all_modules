@@ -173,7 +173,15 @@ Public Class Desktop
 
     End Sub
 
-    Public Shared Function EnumDrop(drop As ComboBox, enum__ As Object, Optional as_drop_not_list As Boolean = True) As Object
+    ''' <summary>
+    ''' Binds the values of Enum to listbox or combobox, while replacing any underscores in the values with the space character.
+    ''' </summary>
+    ''' <param name="drop">ListBox or ComboBox</param>
+    ''' <param name="enum__">New instance of desired Enum</param>
+    ''' <param name="return_control_not_list">Should return the original ListBox/ComboBox or the list generated from the enum</param>
+    ''' <param name="return_sorted">Should the list generated from the enum be sorted before bound to the control?</param>
+    ''' <returns></returns>
+    Public Shared Function EnumDrop(drop As Control, enum__ As Object, Optional return_control_not_list As Boolean = True, Optional return_sorted As Boolean = True) As Object
         Dim e = GetEnum(enum__)
         Dim l As New List(Of String)
         With e
@@ -182,21 +190,9 @@ Public Class Desktop
             Next
         End With
 
-        l.Sort()
+        If return_sorted Then l.Sort()
 
-        With drop
-            .DataSource = Nothing
-            .Items.Clear()
-            For i = 0 To l.Count - 1
-                .Items.Add(l(i))
-            Next
-        End With
-
-        If as_drop_not_list Then
-            Return drop
-        Else
-            Return l
-        End If
+        Return If(return_control_not_list, BindProperty(drop, l), l)
     End Function
     Public Shared Function ListsToKeyValueAray(listK As ListBox, listV As ListBox) As List(Of String)
         Dim s As String = ""
@@ -383,7 +379,7 @@ Public Class Desktop
     End Sub
 
     ''' <summary>
-    ''' Allows positive and negative numbers and period only. Called from _KeyPress. Good for money.
+    ''' Allows numbers(48-57), backspace(8), enter(13), full stop(46), delete(127) and minus(45) only. Called from control_KeyPress.
     ''' </summary>
     ''' <param name="e"></param>
     Public Shared Sub AllowNumberOnly(ByRef e As System.Windows.Forms.KeyPressEventArgs)
@@ -500,7 +496,15 @@ Public Class Desktop
     End Sub
 
 #End Region
-
+    ''' <summary>
+    ''' Displays a message box, accompanied by voice feedback.
+    ''' </summary>
+    ''' <param name="message_box_message"></param>
+    ''' <param name="voice_feedback_message"></param>
+    ''' <param name="MessageBoxStyle"></param>
+    ''' <param name="title"></param>
+    ''' <param name="voice_feedback_is_async"></param>
+    ''' <returns></returns>
     Public Shared Function mFeedback(message_box_message As String, Optional voice_feedback_message As String = "", Optional MessageBoxStyle As MsgBoxStyle = MsgBoxStyle.Information + MsgBoxStyle.OkOnly, Optional title As String = "", Optional voice_feedback_is_async As Boolean = True) As MsgBoxResult
         If voice_feedback_message.Trim.Length > 0 Then
             Dim feedback As New iNovation.Code.Feedback
@@ -508,7 +512,18 @@ Public Class Desktop
         End If
         Return MsgBox(message_box_message, MessageBoxStyle, title)
     End Function
-
+    ''' <summary>
+    ''' Same as mFeedback(String, String, MsgBoxStyle, String, Boolean)
+    ''' </summary>
+    ''' <param name="message_box_message"></param>
+    ''' <param name="voice_feedback_message"></param>
+    ''' <param name="MessageBoxStyle"></param>
+    ''' <param name="title"></param>
+    ''' <param name="voice_feedback_is_async"></param>
+    ''' <returns></returns>
+    Public Shared Function messageFeedback(message_box_message As String, Optional voice_feedback_message As String = "", Optional MessageBoxStyle As MsgBoxStyle = MsgBoxStyle.Information + MsgBoxStyle.OkOnly, Optional title As String = "", Optional voice_feedback_is_async As Boolean = True) As MsgBoxResult
+        Return mFeedback(message_box_message, voice_feedback_message, MessageBoxStyle, title, voice_feedback_is_async)
+    End Function
 
     Public Shared Sub StatusDrop(d_ As ComboBox, Optional IsUpdate As Boolean = False, Optional FirstIsEmpty As Boolean = False, Optional sort_ As Boolean = True)
         If d_.Items.Count > 0 Then Exit Sub
@@ -602,11 +617,7 @@ Public Class Desktop
                 End If
             Next
         End With
-        If controls_to_check = ControlsToCheck.All Then
-            Return Val(counter_) = controls_.Length
-        Else
-            Return Val(counter_) > 0
-        End If
+        Return If(controls_to_check = ControlsToCheck.All, Val(counter_) = controls_.Length, Val(counter_) > 0)
     End Function
 
     ''' <summary>
@@ -732,23 +743,27 @@ Public Class Desktop
         Return return_val
     End Function
 
-    Public Shared Sub TitleDrop(c_ As ComboBox, Optional first_item_is_empty As Boolean = False)
-        If c_.Items.Count > 0 Then Exit Sub
+    ''' <summary>
+    ''' Attaches the Titles enum to ComboBox or ListBox.
+    ''' </summary>
+    ''' <param name="c_">ComboBox or ListBox</param>
+    ''' <param name="InitialSelectedIndexIsNegativeOne">Should the SelectedIndex be set to -1? Only applies to ComboBox</param>
+    ''' <param name="ReplaceUnderscoresWithSpace">If using enum with values having more than one word separted by underscore, this replaces the underscores with space</param>
+    ''' <returns></returns>
+    Public Shared Function TitleDrop(c_ As Control, Optional InitialSelectedIndexIsNegativeOne As Boolean = True, Optional ReplaceUnderscoresWithSpace As Boolean = True) As Control
+        Return BindProperty(c_, GetEnum(New Title), InitialSelectedIndexIsNegativeOne, ReplaceUnderscoresWithSpace)
+    End Function
 
-        Clear(c_)
-        With c_
-            With .Items
-                If first_item_is_empty Then .Add("")
-                .Add("Mr.")
-                .Add("Mrs.")
-                .Add("Ms.")
-            End With
-            .Sorted = True
-            .SelectedIndex = -1
-            .Text = ""
-        End With
-
-    End Sub
+    ''' <summary>
+    ''' Attaches the Genders enum to ComboBox or ListBox.
+    ''' </summary>
+    ''' <param name="c_">ComboBox or ListBox</param>
+    ''' <param name="InitialSelectedIndexIsNegativeOne">Should the SelectedIndex be set to -1? Only applies to ComboBox</param>
+    ''' <param name="ReplaceUnderscoresWithSpace">If using enum with values having more than one word separted by underscore, this replaces the underscores with space</param>
+    ''' <returns></returns>
+    Public Shared Function GenderDrop(c_ As Control, Optional InitialSelectedIndexIsNegativeOne As Boolean = True, Optional ReplaceUnderscoresWithSpace As Boolean = True) As Control
+        Return BindProperty(c_, GetEnum(New Gender), InitialSelectedIndexIsNegativeOne, ReplaceUnderscoresWithSpace)
+    End Function
 
     Public Shared Function Content(control_ As PictureBox, Optional use_image As Boolean = False) As Object
         Try
@@ -764,6 +779,14 @@ Public Class Desktop
     End Function
 
     Public Shared Property casing__ As TextCase = TextCase.Capitalize
+
+    ''' <summary>
+    ''' Gets the content of the control or file.
+    ''' </summary>
+    ''' <param name="control_">NumericUpDown or TrackBar or CheckBox or DateTimePicker or ListBox or ComboBox or string representing path to file</param>
+    ''' <param name="casing_"></param>
+    ''' <param name="timeValue">Which part of the value to pick if control is DateTimePicker (e.g. Day, Hour, Minute etc)</param>
+    ''' <returns></returns>
     Public Shared Function Content(control_ As Object, Optional casing_ As TextCase = TextCase.None, Optional timeValue As TimeValue = TimeValue.ShortDate) As Object
         Dim casing As TextCase = casing__
         If casing_ <> Nothing Then casing = casing_
@@ -929,19 +952,19 @@ Public Class Desktop
         End If
     End Sub
 
-    Public Shared Sub GenderDrop(d_ As ComboBox, Optional FirstIsEmpty As Boolean = False)
+    'Public Shared Sub GenderDrop(d_ As ComboBox, Optional FirstIsEmpty As Boolean = False)
 
-        If d_.Items.Count > 0 Then Exit Sub
+    '    If d_.Items.Count > 0 Then Exit Sub
 
-        Clear(d_)
+    '    Clear(d_)
 
-        If FirstIsEmpty Then d_.Items.Add("")
+    '    If FirstIsEmpty Then d_.Items.Add("")
 
-        Dim l As List(Of String) = GenderList()
-        For i As Integer = 0 To l.Count - 1
-            d_.Items.Add(l(i).ToString)
-        Next
-    End Sub
+    '    Dim l As List(Of String) = GenderList()
+    '    For i As Integer = 0 To l.Count - 1
+    '        d_.Items.Add(l(i).ToString)
+    '    Next
+    'End Sub
 
 
     ''' <summary>
@@ -1926,13 +1949,43 @@ Public Class Desktop
     End Function
 
     ''' <summary>
-    ''' Attaches List as DataSource to ComboBox or ListBox
+    ''' Attaches List as DataSource to ComboBox or ListBox.
+    ''' </summary>
+    ''' <param name="TheControl">ComboBox or ListBox</param>
+    ''' <param name="TheList">List(Of String)</param>
+    ''' <param name="InitialSelectedIndexIsNegativeOne">Should the SelectedIndex be set to -1? Only applies to ComboBox</param>
+    ''' <param name="ReplaceUnderscoresWithSpace">If using enum with values having more than one word separted by underscore, this replaces the underscores with space</param>
+    ''' <returns></returns>
+    Public Shared Function BindProperty(TheControl As Control, TheList As List(Of String), Optional InitialSelectedIndexIsNegativeOne As Boolean = True, Optional ReplaceUnderscoresWithSpace As Boolean = False) As Control
+        If TheList.Count < 1 Or TheControl Is Nothing Then Return Nothing
+        If TypeOf TheControl Is ComboBox Then
+            Dim c As ComboBox = CType(TheControl, ComboBox)
+            c.DataSource = Nothing
+            c.Items.Clear()
+            For i = 0 To TheList.Count - 1
+                c.Items.Add(If(ReplaceUnderscoresWithSpace, TheList(i).Replace("_", " "), TheList(i)))
+            Next
+
+            c.SelectedIndex = If(InitialSelectedIndexIsNegativeOne, -1, 0)
+
+        ElseIf TypeOf TheControl Is ListBox Then
+            Dim c As ListBox = CType(TheControl, ListBox)
+            c.DataSource = Nothing
+            c.Items.Clear()
+            For i = 0 To TheList.Count - 1
+                c.Items.Add(If(ReplaceUnderscoresWithSpace, TheList(i).Replace("_", " "), TheList(i)))
+            Next
+        End If
+        Return TheControl
+    End Function
+
+    ''' <summary>
+    ''' Attaches List as DataSource to ComboBox or ListBox. Discontinued. Use BindProperty(Control, Object, Boolean).
     ''' </summary>
     ''' <param name="control_"></param>
     ''' <param name="list_"></param>
     ''' <returns></returns>
-
-    Public Shared Function BindProperty(control_ As Control, list_ As Object, Optional TextIsFirstItem As Boolean = True, Optional FirstItemIs As String = Nothing, Optional bindAsDatasourceNotList As Boolean = False) As Control
+    Private Shared Function BindProperty(control_ As Control, list_ As Object, Optional TextIsFirstItem As Boolean = True, Optional FirstItemIs As String = Nothing, Optional bindAsDatasourceNotList As Boolean = False) As Control
         If bindAsDatasourceNotList Then
             Try
                 CType(control_, ComboBox).DataSource = list_
@@ -2955,6 +3008,11 @@ Public Class Desktop
 
     End Function
 
+    ''' <summary>
+    ''' Moves an item up the ListBox.
+    ''' </summary>
+    ''' <param name="list_"></param>
+
     Public Shared Sub ListsMoveItemUp(list_ As ListBox)
         Try
             Dim LeftList As ListBox = list_
@@ -3048,7 +3106,10 @@ Public Class Desktop
 
 
     End Function
-
+    ''' <summary>
+    ''' Removes an item from the ListBox.
+    ''' </summary>
+    ''' <param name="list_"></param>
     Public Shared Sub ListsRemoveItem(list_ As ListBox)
         Try
             Dim selected_ As Integer = list_.SelectedIndex
@@ -3087,7 +3148,11 @@ Public Class Desktop
 
         Return return_
     End Function
-
+    ''' <summary>
+    ''' Removes all items of ListBox.
+    ''' </summary>
+    ''' <param name="list_"></param>
+    ''' <returns></returns>
     Public Shared Function ListsClearList(list_ As ListBox)
         Try
             list_.DataSource = Nothing
@@ -3312,6 +3377,10 @@ Public Class Desktop
         '		TheTextBox.Text = RetrieveItem(TheComboBoxBox)
 
     End Function
+    ''' <summary>
+    ''' Moves an item up the ComboBox.
+    ''' </summary>
+    ''' <param name="list_"></param>
 
     Public Shared Sub ListsMoveItemUp(list_ As ComboBox)
         Try
@@ -3406,6 +3475,10 @@ Public Class Desktop
 
 
     End Function
+    ''' <summary>
+    ''' Removes an item from the ComboBox.
+    ''' </summary>
+    ''' <param name="list_"></param>
 
     Public Shared Sub ListsRemoveItem(list_ As ComboBox)
         Try
@@ -3469,7 +3542,11 @@ Public Class Desktop
             Return Val(counter_) > 0
         End If
     End Function
-
+    ''' <summary>
+    ''' Removes all items of ComboBox.
+    ''' </summary>
+    ''' <param name="list_"></param>
+    ''' <returns></returns>
     Public Shared Function ListsClearList(list_ As ComboBox)
         Try
             list_.DataSource = Nothing
@@ -4162,6 +4239,22 @@ Public Class Desktop
         End Try
     End Function
 
+    Public Shared Sub StartFileThenExit(fileToStart As String, fileToStop As String, Optional startFirst As Boolean = True)
+        If fileToStart.Trim.Length < 1 Then Return
+        If startFirst Then
+            StartFile(fileToStart)
+            If fileToStop.Trim.Length > 0 Then ExitApp(fileToStop)
+        Else
+            If fileToStop.Trim.Length > 0 Then ExitApp(fileToStop)
+            StartFile(fileToStart)
+        End If
+    End Sub
+    Public Shared Sub StartFileThenExit(fileToStart As String)
+        If fileToStart.Trim.Length < 1 Then Return
+        StartFile(fileToStart)
+        ExitApp()
+    End Sub
+
     Public Shared Function StartFileWithArgument(file_ As String, Optional arg_ As String = Nothing, Optional checkFirst As Boolean = False) As Boolean
         If checkFirst = True Then
             Try
@@ -4318,15 +4411,15 @@ Public Class Desktop
         LockWorkStation()
     End Sub
 
-    Public Shared Sub ExitApp(Optional process_name_without_extension As String = "")
+    Public Shared Sub ExitApp(Optional process_name As String = "")
         'taskkill /f /im "explorer.exe"
 
         Try
-            Select Case process_name_without_extension.Length
+            Select Case process_name.Length
                 Case < 1
                     Environment.Exit(0)
                 Case Else
-                    If AppIsOn(process_name_without_extension) Then KillProcess(process_name_without_extension)
+                    If AppIsOn(process_name) Then KillProcess(process_name)
             End Select
         Catch
         End Try

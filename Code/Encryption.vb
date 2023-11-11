@@ -8,8 +8,13 @@ Imports System.Text
 
 
 Public Class Encryption
-
-	Public Shared Function Encrypt(ByVal key As String, ByVal data As String) As String
+    ''' <summary>
+    ''' Encrypts string with specified key.
+    ''' </summary>
+    ''' <param name="key"></param>
+    ''' <param name="data"></param>
+    ''' <returns>Encrypted string</returns>
+    Public Shared Function Encrypt(ByVal key As String, ByVal data As String) As String
 		Try
 			If key.Length < 1 Or data.Length < 1 Then Exit Function
 
@@ -28,25 +33,31 @@ Public Class Encryption
 		End Try
 	End Function
 
-	Public Shared Function Decrypt(ByVal key As String, ByVal data As String) As String
-		Try
+    ''' <summary>
+    ''' Decrypts string with specified key.
+    ''' </summary>
+    ''' <param name="key"></param>
+    ''' <param name="data"></param>
+    ''' <returns>Decrypted string</returns>
+    Public Shared Function Decrypt(ByVal key As String, ByVal data As String) As String
+        Try
 
-			Dim decData As String = Nothing
-			Dim keys As Byte()() = GetHashKeys(key)
+            Dim decData As String = Nothing
+            Dim keys As Byte()() = GetHashKeys(key)
 
-			Try
-				decData = DecryptStringFromBytes_Aes(data, keys(0), keys(1))
-			Catch __unusedCryptographicException1__ As CryptographicException
-			Catch __unusedArgumentNullException2__ As ArgumentNullException
-			End Try
+            Try
+                decData = DecryptStringFromBytes_Aes(data, keys(0), keys(1))
+            Catch __unusedCryptographicException1__ As CryptographicException
+            Catch __unusedArgumentNullException2__ As ArgumentNullException
+            End Try
 
-			Return decData
+            Return decData
 
-		Catch ex As Exception
-		End Try
-	End Function
+        Catch ex As Exception
+        End Try
+    End Function
 
-	Private Shared Function GetHashKeys(ByVal key As String) As Byte()()
+    Private Shared Function GetHashKeys(ByVal key As String) As Byte()()
 		Dim result As Byte()() = New Byte(1)() {}
 		Dim enc As Encoding = Encoding.UTF8
 		Dim sha2 As SHA256 = New SHA256CryptoServiceProvider()

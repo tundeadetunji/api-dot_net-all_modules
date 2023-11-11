@@ -33,10 +33,10 @@ Public Class Form1
     Private s As String
     Private f As New Feedback
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        Form2.Show()
+        Close()
     End Sub
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
-        t.Text = GetFile({FileKind.VideoFileKind, FileKind.AnyFileKind})
-        't.Text = FilterStringFromFileKind({FileKind.VideoFileKind, FileKind.AnyFileKind, FileKind.AnyFileKind})
     End Sub
 
     Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click

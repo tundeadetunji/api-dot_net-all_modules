@@ -75,7 +75,18 @@ Public Class General
 #End Region
 
 #Region "proper"
-
+    Public Enum Title
+        Mr
+        Mrs
+        Ms
+    End Enum
+    Public Enum Gender
+        Male
+        Female
+        Trans
+        Other
+        Prefer_Not_To_Say
+    End Enum
     Public Enum FileKind
         ActiveServerPageFileKind = 0
         AudioFileKind = 1
@@ -226,7 +237,8 @@ Public Class General
 #End Region
 
 #Region "support"
-    Public Shared Function ExtensionsFromFileKind(fileKinds As IEnumerable(Of FileKind)) As List(Of String)
+    ''clear
+    Public Shared Function ExtensionsFromFileKind(fileKinds As List(Of FileKind)) As List(Of String)
         Dim result As New List(Of String)
         Dim temp As List(Of String)
         Dim cache As New List(Of FileKind)
@@ -243,6 +255,7 @@ Public Class General
         Return result
 
     End Function
+    ''clear
     Public Shared Function ExtensionsFromFileKind(fileKind As FileKind) As List(Of String)
         Dim result As New List(Of String)
         If fileKind = FileKind.AnyFileKind Then
@@ -257,7 +270,23 @@ Public Class General
         End If
         Return result
     End Function
+    ''clear
+    Public Shared Function ExtensionsFromFileKind(fileKind_ToString As String) As List(Of String)
+        Dim result As New List(Of String)
+        If fileKind_ToString.Equals(FileKind.AnyFileKind.ToString) Then
+            result.Add("*.*")
+            Return result
+        End If
+        Dim types As List(Of String) = FileKindExtensionsMap.Item(StringToEnum(New FileKind, fileKind_ToString))
+        If types.Count > 0 Then
+            For i = 0 To types.Count - 1
+                result.Add("*." & types(i).Replace("_", "").Trim)
+            Next
+        End If
+        Return result
+    End Function
 
+    ''clear
     Public Shared Function FilterStringFromFileKind(fileKinds As IEnumerable(Of FileKind)) As String
         If fileKinds.Count < 1 Then Return ""
         Dim result As String = ""
@@ -271,6 +300,18 @@ Public Class General
         Next
         Return result
     End Function
+    ''clear
+    Public Shared Function FilterStringFromFileKind(fileKind As String) As String
+
+        Dim result As String = displayNameFromFileKind(fileKind)
+        Dim extensions As List(Of String) = ExtensionsFromFileKind(fileKind)
+        result &= "|"
+        For i = 0 To extensions.Count - 1
+            result &= If(i < extensions.Count - 1, extensions(i) & ";", extensions(i))
+        Next
+        Return result
+    End Function
+    ''clear
     Public Shared Function FilterStringFromFileKind(fileKind As FileKind) As String
 
         Dim result As String = displayNameFromFileKind(fileKind)
@@ -282,6 +323,9 @@ Public Class General
         Return result
     End Function
 
+    Private Shared Function displayNameFromFileKind(FileKind_ToString As String) As String
+        Return If(FileKind_ToString.Equals(FileKind.AnyFileKind.ToString), "Any file", FileKind_ToString.ToString.Replace("FileKind", "").Replace("filekind", "").Replace("Filekind", "").Replace("fileKind", "") & " files")
+    End Function
     Private Shared Function displayNameFromFileKind(fileKind As FileKind) As String
         Return If(fileKind = FileKind.AnyFileKind, "Any file", fileKind.ToString.Replace("FileKind", "").Replace("filekind", "").Replace("Filekind", "").Replace("fileKind", "") & " files")
     End Function
@@ -373,6 +417,9 @@ Public Class General
         Audio = 6
     End Enum
 
+    ''' <summary>
+    ''' Discontinued.
+    ''' </summary>
     Public Enum SingularWord
         Message
         Mark
@@ -4319,20 +4366,36 @@ Public Class General
         Return Val(str) <> 0
     End Function
 
-    Public Shared Function GetEnum(instance_of_enum As Object, Optional values_instead As Boolean = False) As List(Of String)
+    ''' <summary>
+    ''' Gets the names or values of enum.
+    ''' </summary>
+    ''' <param name="instance_of_enum">New instance of the enum</param>
+    ''' <param name="integer_values_instead">Should it return the integer values or the string values?</param>
+    ''' <returns></returns>
+    Public Shared Function GetEnum(instance_of_enum As Object, Optional integer_values_instead As Boolean = False) As List(Of String)
         Dim l As New List(Of String)
 
-        If values_instead Then
-            For Each i As Integer In [Enum].GetValues(instance_of_enum.GetType)
-                l.Add(i)
-            Next
-            Return l
-        End If
-
-        For Each i In instance_of_enum.GetType().GetEnumNames()
+        For Each i In If(integer_values_instead, [Enum].GetValues(instance_of_enum.GetType), instance_of_enum.GetType().GetEnumNames())
             l.Add(i)
         Next
+
         Return l
+
+
+        'revert
+        'Dim l As New List(Of String)
+
+        'If integer_values_instead Then
+        '    For Each i As Integer In [Enum].GetValues(instance_of_enum.GetType)
+        '        l.Add(i)
+        '    Next
+        '    Return l
+        'End If
+
+        'For Each i In instance_of_enum.GetType().GetEnumNames()
+        '    l.Add(i)
+        'Next
+        'Return l
 
     End Function
 
@@ -4761,6 +4824,13 @@ Public Class General
         Return l_string
     End Function
 
+    ''' <summary>
+    ''' Splits string into tokens and returns an array or list of these.
+    ''' </summary>
+    ''' <param name="delimited_string">The text to split</param>
+    ''' <param name="delimeter">The delimiter</param>
+    ''' <param name="return_">Array or List</param>
+    ''' <returns>List(Of String) of splits (or array, if so specified)</returns>
     Public Shared Function StringToList(delimited_string As String, Optional delimeter As String = vbCrLf, Optional return_ As SideToReturn = SideToReturn.AsListOfString) As Object
         Return SplitTextInSplits(delimited_string, delimeter, return_)
     End Function
@@ -5295,32 +5365,18 @@ Public Class General
     ''' <summary>
     ''' Splits string into multiple parts.
     ''' </summary>
-    ''' <param name="string_to_split"></param>
-    ''' <param name="separator"></param>
-    ''' <param name="side_to_return"></param>
-    ''' <returns></returns>
+    ''' <param name="string_to_split">The text to split</param>
+    ''' <param name="separator">The delimiter</param>
+    ''' <param name="side_to_return">Array or List</param>
+    ''' <returns>Array or List (as specified by side_to_return)</returns>
     Public Shared Function SplitTextInSplits(string_to_split As String, separator As String, Optional side_to_return As SideToReturn = SideToReturn.AsArray)
-        If string_to_split.Length < 1 Then Return Nothing
-
-        Dim str As String
-        Dim strArr() As String
-        str = string_to_split
-        strArr = str.Split(separator)
-
-        Dim l As New List(Of String)
-
         Select Case side_to_return
             Case SideToReturn.AsArray
-                Return strArr
+                Return If(string_to_split.Length < 1, {}, string_to_split.Split(separator))
             Case SideToReturn.AsListOfString
-                With strArr
-                    For i = 0 To .Length - 1
-                        l.Add(strArr(i))
-                    Next
-                End With
-                Return l
+                Return If(string_to_split.Length < 1, New List(Of String), string_to_split.Split(separator).ToList)
             Case SideToReturn.AsListToString
-                Return ListToString(strArr)
+                Return ListToString(string_to_split)
         End Select
     End Function
     'Private Shared Function number_of_splits(string_to_split As String, separator As String)
@@ -5722,6 +5778,16 @@ Public Class General
     'End Function
 
 
+    ''' <summary>
+    ''' Appends long value with specified word but in plural. Retained only for legacy. Use ToPlural(Long, String, String, Boolean, TextCase, Boolean).
+    ''' </summary>
+    ''' <param name="count_"></param>
+    ''' <param name="str_to_change"></param>
+    ''' <param name="rest_of_full_string"></param>
+    ''' <param name="prefixed"></param>
+    ''' <param name="textCase"></param>
+    ''' <param name="prepend_with_approximately_if_count_is_of_type_double"></param>
+    ''' <returns></returns>
     Public Shared Function ToPlural(count_ As Long, str_to_change As SingularWord, Optional rest_of_full_string As String = "", Optional prefixed As Boolean = True, Optional textCase As TextCase = TextCase.LowerCase, Optional prepend_with_approximately_if_count_is_of_type_double As Boolean = False) As String
 
         If prepend_with_approximately_if_count_is_of_type_double = True And count_ Mod 2 <> 0 Then
@@ -5731,711 +5797,115 @@ Public Class General
         End If
     End Function
 
-    Private Shared Function ToPlural(count_ As Long, str_to_change As String, Optional rest_of_full_string As String = "", Optional prefixed As Boolean = True, Optional textCase As TextCase = TextCase.LowerCase) As String
-        Dim c = 0
-        Try
-            If count_.ToString.Length > 0 Then c = count_
-        Catch
-        End Try
 
-        Dim val_ As String = ""
+    ''' <summary>
+    ''' Pluralize word. Obeys a host of the rules of turning singular word to plural, but cannot handle all rules.
+    ''' </summary>
+    ''' <param name="str_to_change"></param>
+    ''' <returns></returns>
+    Public Shared Function ToPlural(str_to_change As String) As String
+        'If str_to_change.Trim.Length < 3 Then Return str_to_change
+
+        'Following https://www.lingualbox.com/blog/ten-rules-you-should-know-when-making-nouns-plural
+
+
+        '#3
+        'Nouns ending in -s, -ss, sh, -ch, -x, -z
+        'Add -es
+
+        If str_to_change.ToLower.EndsWith("s") Or
+            str_to_change.ToLower.EndsWith("ss") Or
+            str_to_change.ToLower.EndsWith("sh") Or
+            str_to_change.ToLower.EndsWith("ch") Or
+            str_to_change.ToLower.EndsWith("x") Or
+            str_to_change.ToLower.EndsWith("z") Then
+            Return str_to_change.Trim & "es"
+
+
+            '#4a
+            'nouns that end in two vowels and an -f, add -s at the end of the word
+        ElseIf str_to_change.ToLower.EndsWith("f") And WordEndsWithTwoVowelsThenF(str_to_change) Then
+            Return str_to_change.Trim & "s"
+
+
+            '#4b
+            'Nouns that end in -f or -fe preceded by a single vowel or consonant are made plural by dropping the -f or -fe and adding -es
+        ElseIf (str_to_change.ToLower.EndsWith("f") Or str_to_change.ToLower.EndsWith("fe")) And WordEndsWithSingleVowelOrConsonantThenFOrFe(str_to_change) Then
+            Dim result As String = ""
+            If (str_to_change.ToLower.EndsWith("f")) Then
+                result = Mid(str_to_change, 0, str_to_change.Length - 1)
+            ElseIf (str_to_change.ToLower.EndsWith("fe")) Then
+                result = Mid(str_to_change, 0, str_to_change.Length - 2)
+            End If
+            Return result & "es"
+
+
+            '#5a
+            'If the noun is ending in -y and the letter prior to the -y is a vowel, retain the -y and add -s at the end of the word
+        ElseIf str_to_change.ToLower.EndsWith("y") And WordEndsWithVowelThenY(str_to_change) Then
+            Return str_to_change.Trim & "s"
+
+
+            '#5b
+            'For singular nouns with a consonant plus -y, change the -y to -i and add -es
+        ElseIf str_to_change.ToLower.EndsWith("y") And Not WordEndsWithVowelThenY(str_to_change) Then
+            Return Mid(str_to_change, 0, str_to_change.Length - 1) & "ies"
+
+
+            '#6a
+            'For nouns that end with a consonant plus an -o, you can change it into a plural form by adding -es
+        ElseIf str_to_change.ToLower.EndsWith("o") And WordEndsWithConsonantThenO(str_to_change) Then
+            Return str_to_change & "es"
+
+
+            '#6b
+            'For nouns that end with a vowel before an -o add -s to make the plural
+        ElseIf str_to_change.ToLower.EndsWith("o") And Not WordEndsWithConsonantThenO(str_to_change) Then
+            Return str_to_change & "s"
+
+
+            '#1
+        Else
+            Return str_to_change & "s"
+        End If
+
+    End Function
+
+    Private Shared Function WordEndsWithVowelThenY(s As String) As Boolean
+        Return If(s.Trim.Length >= 2, IsVowel(s(s.Length - 2)), False)
+    End Function
+
+    Private Shared Function WordEndsWithConsonantThenO(s As String) As Boolean
+        Return If(s.Trim.Length >= 2, IsConsonant(s(s.Length - 2)), False)
+    End Function
+    Private Shared Function WordEndsWithTwoVowelsThenF(s As String) As Boolean
+        Return If(s.Trim.Length >= 3, (IsVowel(s(s.Length - 2)) And IsVowel(s(s.Length - 3))), False)
+    End Function
+
+    Private Shared Function WordEndsWithSingleVowelOrConsonantThenFOrFe(s As String) As Boolean
+        Return If(s.Trim.Length >= 2, (IsVowel(s(s.Length - 2)) Or IsConsonant(s(s.Length - 2))), False)
+    End Function
+
+    ''' <summary>
+    ''' Appends number with pluralized form of given word.
+    ''' </summary>
+    ''' <param name="count_"></param>
+    ''' <param name="str_to_change"></param>
+    ''' <param name="rest_of_full_string"></param>
+    ''' <param name="prefixed">If true, prefixes word with ""a"" if count = 1, otherwise prefixes word with value of count_</param>
+    ''' <param name="textCase">Result should be in the form TextCase.Capitalize, TextCase.UpperCase, TextCase.LowerCase or as-is</param>
+    ''' <returns></returns>
+    Public Shared Function ToPlural(count_ As Long, str_to_change As String, Optional rest_of_full_string As String = "", Optional prefixed As Boolean = True, Optional textCase As TextCase = TextCase.LowerCase) As String
+        If str_to_change.Trim.Length < 1 Then Return ""
+
+        Dim c = If(count_.ToString.Trim.Length > 0, count_, 0)
+
+        Dim val_ As String
 
         If Val(c) = 1 Then
-            Select Case str_to_change.ToString.ToLower
-                Case "message"
-                    If prefixed Then
-                        val_ = "a new message"
-                    Else
-                        val_ = "message"
-                    End If
-                Case "messages"
-                    If prefixed Then
-                        val_ = "a new message"
-                    Else
-                        val_ = "message"
-                    End If
-                Case "mark"
-                    If prefixed Then
-                        val_ = "1 mark "
-                    Else
-                        val_ = "mark"
-                    End If
-                Case "marks"
-                    If prefixed Then
-                        val_ = "1 mark "
-                    Else
-                        val_ = "mark"
-                    End If
-                Case "minute"
-                    If prefixed Then
-                        val_ = "1 minute "
-                    Else
-                        val_ = "minute"
-                    End If
-                Case "minutes"
-                    If prefixed Then
-                        val_ = "1 minute "
-                    Else
-                        val_ = "minute"
-                    End If
-
-                Case "day"
-                    If prefixed Then
-                        val_ = "1 day "
-                    Else
-                        val_ = "day"
-                    End If
-                Case "days"
-                    If prefixed Then
-                        val_ = "1 day "
-                    Else
-                        val_ = "day"
-                    End If
-
-                Case "student"
-                    If prefixed Then
-                        val_ = "1 student "
-                    Else
-                        val_ = "student"
-                    End If
-                Case "students"
-                    If prefixed Then
-                        val_ = "1 student "
-                    Else
-                        val_ = "student"
-                    End If
-
-                Case "month"
-                    If prefixed Then
-                        val_ = "1 month "
-                    Else
-                        val_ = "month"
-                    End If
-                Case "months"
-                    If prefixed Then
-                        val_ = "1 month "
-                    Else
-                        val_ = "month"
-                    End If
-
-                Case "year"
-                    If prefixed Then
-                        val_ = "1 year "
-                    Else
-                        val_ = "year"
-                    End If
-                Case "years"
-                    If prefixed Then
-                        val_ = "1 year "
-                    Else
-                        val_ = "year"
-                    End If
-
-                Case "hour"
-                    If prefixed Then
-                        val_ = "1 hour "
-                    Else
-                        val_ = "hour"
-                    End If
-                Case "hours"
-                    If prefixed Then
-                        val_ = "1 hour "
-                    Else
-                        val_ = "hour"
-                    End If
-
-                Case "second"
-                    If prefixed Then
-                        val_ = "1 second "
-                    Else
-                        val_ = "second"
-                    End If
-                Case "seconds"
-                    If prefixed Then
-                        val_ = "1 second "
-                    Else
-                        val_ = "second"
-                    End If
-
-                Case "account"
-                    If prefixed Then
-                        val_ = "1 account "
-                    Else
-                        val_ = "account"
-                    End If
-                Case "accounts"
-                    If prefixed Then
-                        val_ = "1 account "
-                    Else
-                        val_ = "account"
-                    End If
-
-                Case "male"
-                    If prefixed Then
-                        val_ = "1 male "
-                    Else
-                        val_ = "male"
-                    End If
-                Case "males"
-                    If prefixed Then
-                        val_ = "1 male "
-                    Else
-                        val_ = "male"
-                    End If
-
-                Case "female"
-                    If prefixed Then
-                        val_ = "1 female "
-                    Else
-                        val_ = "female"
-                    End If
-                Case "females"
-                    If prefixed Then
-                        val_ = "1 female "
-                    Else
-                        val_ = "female"
-                    End If
-
-                Case "user"
-                    If prefixed Then
-                        val_ = "1 user "
-                    Else
-                        val_ = "user"
-                    End If
-                Case "users"
-                    If prefixed Then
-                        val_ = "1 user "
-                    Else
-                        val_ = "user"
-                    End If
-
-                Case "file"
-                    If prefixed Then
-                        val_ = "1 file "
-                    Else
-                        val_ = "file"
-                    End If
-                Case "files"
-                    If prefixed Then
-                        val_ = "1 file "
-                    Else
-                        val_ = "file"
-                    End If
-
-                Case "record"
-                    If prefixed Then
-                        val_ = "1 record "
-                    Else
-                        val_ = "record"
-                    End If
-                Case "records"
-                    If prefixed Then
-                        val_ = "1 record "
-                    Else
-                        val_ = "record"
-                    End If
-
-                Case "question"
-                    If prefixed Then
-                        val_ = "1 question "
-                    Else
-                        val_ = "question"
-                    End If
-                Case "questions"
-                    If prefixed Then
-                        val_ = "1 question "
-                    Else
-                        val_ = "question"
-                    End If
-
-                Case "task"
-                    If prefixed Then
-                        val_ = "1 task "
-                    Else
-                        val_ = "task"
-                    End If
-                Case "tasks"
-                    If prefixed Then
-                        val_ = "1 task "
-                    Else
-                        val_ = "task"
-                    End If
-
-                Case "item"
-                    If prefixed Then
-                        val_ = "1 item "
-                    Else
-                        val_ = "item"
-                    End If
-                Case "items"
-                    If prefixed Then
-                        val_ = "1 item "
-                    Else
-                        val_ = "item"
-                    End If
-
-                Case "unit"
-                    If prefixed Then
-                        val_ = "1 unit "
-                    Else
-                        val_ = "unit"
-                    End If
-                Case "units"
-                    If prefixed Then
-                        val_ = "1 unit "
-                    Else
-                        val_ = "unit"
-                    End If
-
-                Case "room"
-                    If prefixed Then
-                        val_ = "1 room "
-                    Else
-                        val_ = "room"
-                    End If
-                Case "rooms"
-                    If prefixed Then
-                        val_ = "1 room "
-                    Else
-                        val_ = "room"
-                    End If
-
-                Case "client"
-                    If prefixed Then
-                        val_ = "1 client "
-                    Else
-                        val_ = "client"
-                    End If
-                Case "clients"
-                    If prefixed Then
-                        val_ = "1 client "
-                    Else
-                        val_ = "client"
-                    End If
-
-                Case "match"
-                    If prefixed Then
-                        val_ = "1 match "
-                    Else
-                        val_ = "match"
-                    End If
-                Case "matches"
-                    If prefixed Then
-                        val_ = "1 match "
-                    Else
-                        val_ = "match"
-                    End If
-
-                Case "invoice"
-                    If prefixed Then
-                        val_ = "1 invoice "
-                    Else
-                        val_ = "invoice"
-                    End If
-                Case "invoices"
-                    If prefixed Then
-                        val_ = "1 invoice "
-                    Else
-                        val_ = "invoice"
-                    End If
-
-                Case "sale"
-                    If prefixed Then
-                        val_ = "1 sale "
-                    Else
-                        val_ = "sale"
-                    End If
-                Case "sales"
-                    If prefixed Then
-                        val_ = "1 sale "
-                    Else
-                        val_ = "sale"
-                    End If
-
-                Case "receipt"
-                    If prefixed Then
-                        val_ = "1 receipt "
-                    Else
-                        val_ = "receipt"
-                    End If
-                Case "receipts"
-                    If prefixed Then
-                        val_ = "1 receipt "
-                    Else
-                        val_ = "receipt"
-                    End If
-
-                Case "product"
-                    If prefixed Then
-                        val_ = "1 product "
-                    Else
-                        val_ = "product"
-                    End If
-                Case "products"
-                    If prefixed Then
-                        val_ = "1 product "
-                    Else
-                        val_ = "product"
-                    End If
-
-                Case "application"
-                    If prefixed Then
-                        val_ = "1 application "
-                    Else
-                        val_ = "application"
-                    End If
-                Case "applications"
-                    If prefixed Then
-                        val_ = "1 application "
-                    Else
-                        val_ = "application"
-                    End If
-
-            End Select
+            val_ = If(prefixed, "a " & str_to_change.Trim, str_to_change.Trim)
         Else
-            Select Case str_to_change.ToString.ToLower
-                Case "message"
-                    If prefixed Then
-                        val_ = c & " new messages"
-                    Else
-                        val_ = "messages"
-                    End If
-                Case "messages"
-                    If prefixed Then
-                        val_ = c & " new messages"
-                    Else
-                        val_ = "messages"
-                    End If
-                Case "mark"
-                    If prefixed Then
-                        val_ = c & " marks"
-                    Else
-                        val_ = "marks"
-                    End If
-                Case "marks"
-                    If prefixed Then
-                        val_ = c & " marks"
-                    Else
-                        val_ = "marks"
-                    End If
-                Case "minute"
-                    If prefixed Then
-                        val_ = c & " minutes"
-                    Else
-                        val_ = "minutes"
-                    End If
-                Case "minutes"
-                    If prefixed Then
-                        val_ = c & " minutes"
-                    Else
-                        val_ = "minutes"
-                    End If
-
-                Case "day"
-                    If prefixed Then
-                        val_ = c & " days"
-                    Else
-                        val_ = "days"
-                    End If
-                Case "days"
-                    If prefixed Then
-                        val_ = c & " days"
-                    Else
-                        val_ = "days"
-                    End If
-
-                Case "student"
-                    If prefixed Then
-                        val_ = c & " students"
-                    Else
-                        val_ = "students"
-                    End If
-                Case "students"
-                    If prefixed Then
-                        val_ = c & " students"
-                    Else
-                        val_ = "students"
-                    End If
-
-                Case "month"
-                    If prefixed Then
-                        val_ = c & " months"
-                    Else
-                        val_ = "months"
-                    End If
-                Case "months"
-                    If prefixed Then
-                        val_ = c & " months"
-                    Else
-                        val_ = "months"
-                    End If
-                Case "year"
-                    If prefixed Then
-                        val_ = c & " years"
-                    Else
-                        val_ = "years"
-                    End If
-                Case "years"
-                    If prefixed Then
-                        val_ = c & " years"
-                    Else
-                        val_ = "years"
-                    End If
-                Case "hour"
-                    If prefixed Then
-                        val_ = c & " hours"
-                    Else
-                        val_ = "hours"
-                    End If
-                Case "hours"
-                    If prefixed Then
-                        val_ = c & " hours"
-                    Else
-                        val_ = "hours"
-                    End If
-                Case "second"
-                    If prefixed Then
-                        val_ = c & " seconds"
-                    Else
-                        val_ = "seconds"
-                    End If
-                Case "seconds"
-                    If prefixed Then
-                        val_ = c & " seconds"
-                    Else
-                        val_ = "seconds"
-                    End If
-                Case "account"
-                    If prefixed Then
-                        val_ = c & " accounts"
-                    Else
-                        val_ = "accounts"
-                    End If
-                Case "accounts"
-                    If prefixed Then
-                        val_ = c & " accounts"
-                    Else
-                        val_ = "accounts"
-                    End If
-
-                Case "male"
-                    If prefixed Then
-                        val_ = c & " males"
-                    Else
-                        val_ = "males"
-                    End If
-                Case "males"
-                    If prefixed Then
-                        val_ = c & " males"
-                    Else
-                        val_ = "males"
-                    End If
-                Case "female"
-                    If prefixed Then
-                        val_ = c & " females"
-                    Else
-                        val_ = "females"
-                    End If
-                Case "females"
-                    If prefixed Then
-                        val_ = c & " females"
-                    Else
-                        val_ = "females"
-                    End If
-                Case "user"
-                    If prefixed Then
-                        val_ = c & " users"
-                    Else
-                        val_ = "users"
-                    End If
-                Case "users"
-                    If prefixed Then
-                        val_ = c & " users"
-                    Else
-                        val_ = "users"
-                    End If
-                Case "file"
-                    If prefixed Then
-                        val_ = c & " files"
-                    Else
-                        val_ = "files"
-                    End If
-                Case "files"
-                    If prefixed Then
-                        val_ = c & " files"
-                    Else
-                        val_ = "files"
-                    End If
-                Case "record"
-                    If prefixed Then
-                        val_ = c & " records"
-                    Else
-                        val_ = "records"
-                    End If
-                Case "records"
-                    If prefixed Then
-                        val_ = c & " records"
-                    Else
-                        val_ = "records"
-                    End If
-
-                Case "question"
-                    If prefixed Then
-                        val_ = c & " questions"
-                    Else
-                        val_ = "questions"
-                    End If
-                Case "questions"
-                    If prefixed Then
-                        val_ = c & " questions"
-                    Else
-                        val_ = "questions"
-                    End If
-
-                Case "task"
-                    If prefixed Then
-                        val_ = c & " tasks"
-                    Else
-                        val_ = "tasks"
-                    End If
-                Case "tasks"
-                    If prefixed Then
-                        val_ = c & " tasks"
-                    Else
-                        val_ = "tasks"
-                    End If
-
-                Case "item"
-                    If prefixed Then
-                        val_ = c & " items"
-                    Else
-                        val_ = "items"
-                    End If
-                Case "items"
-                    If prefixed Then
-                        val_ = c & " items"
-                    Else
-                        val_ = "items"
-                    End If
-
-                Case "unit"
-                    If prefixed Then
-                        val_ = c & " units"
-                    Else
-                        val_ = "units"
-                    End If
-                Case "units"
-                    If prefixed Then
-                        val_ = c & " units"
-                    Else
-                        val_ = "units"
-                    End If
-
-                Case "room"
-                    If prefixed Then
-                        val_ = c & " rooms"
-                    Else
-                        val_ = "rooms"
-                    End If
-                Case "rooms"
-                    If prefixed Then
-                        val_ = c & " rooms"
-                    Else
-                        val_ = "rooms"
-                    End If
-
-                Case "client"
-                    If prefixed Then
-                        val_ = c & " clients"
-                    Else
-                        val_ = "clients"
-                    End If
-                Case "clients"
-                    If prefixed Then
-                        val_ = c & " clients"
-                    Else
-                        val_ = "clients"
-                    End If
-
-                Case "match"
-                    If prefixed Then
-                        val_ = c & " matches"
-                    Else
-                        val_ = "matches"
-                    End If
-                Case "matches"
-                    If prefixed Then
-                        val_ = c & " matches"
-                    Else
-                        val_ = "matches"
-                    End If
-
-                Case "invoice"
-                    If prefixed Then
-                        val_ = c & " invoices"
-                    Else
-                        val_ = "invoices"
-                    End If
-                Case "invoices"
-                    If prefixed Then
-                        val_ = c & " invoices"
-                    Else
-                        val_ = "invoices"
-                    End If
-
-                Case "sale"
-                    If prefixed Then
-                        val_ = c & " sales"
-                    Else
-                        val_ = "sales"
-                    End If
-                Case "sales"
-                    If prefixed Then
-                        val_ = c & " sales"
-                    Else
-                        val_ = "sales"
-                    End If
-
-                Case "receipt"
-                    If prefixed Then
-                        val_ = c & " receipts"
-                    Else
-                        val_ = "receipts"
-                    End If
-                Case "receipts"
-                    If prefixed Then
-                        val_ = c & " receipts"
-                    Else
-                        val_ = "receipts"
-                    End If
-
-                Case "product"
-                    If prefixed Then
-                        val_ = c & " products"
-                    Else
-                        val_ = "products"
-                    End If
-                Case "products"
-                    If prefixed Then
-                        val_ = c & " products"
-                    Else
-                        val_ = "products"
-                    End If
-
-                Case "application"
-                    If prefixed Then
-                        val_ = c & " applications"
-                    Else
-                        val_ = "applications"
-                    End If
-                Case "applications"
-                    If prefixed Then
-                        val_ = c & " applications"
-                    Else
-                        val_ = "applications"
-                    End If
-
-            End Select
+            val_ = If(prefixed, c & " " & ToPlural(str_to_change.Trim), ToPlural(str_to_change.Trim))
         End If
 
         If rest_of_full_string.Length > 0 Then
@@ -6444,6 +5914,716 @@ Public Class General
 
         Return TransformText(val_, textCase)
     End Function
+
+    'Private Shared Function ToPlural(count_ As Long, str_to_change As String, Optional rest_of_full_string As String = "", Optional prefixed As Boolean = True, Optional textCase As TextCase = TextCase.LowerCase) As String
+    '    Dim c = If(count_.ToString.Trim.Length > 0, count_, 0)
+
+    '    Dim val_ As String = ""
+
+    '    If Val(c) = 1 Then
+    '        Select Case str_to_change.ToString.ToLower
+    '            Case "message"
+    '                If prefixed Then
+    '                    val_ = "a new message"
+    '                Else
+    '                    val_ = "message"
+    '                End If
+    '            Case "messages"
+    '                If prefixed Then
+    '                    val_ = "a new message"
+    '                Else
+    '                    val_ = "message"
+    '                End If
+    '            Case "mark"
+    '                If prefixed Then
+    '                    val_ = "1 mark "
+    '                Else
+    '                    val_ = "mark"
+    '                End If
+    '            Case "marks"
+    '                If prefixed Then
+    '                    val_ = "1 mark "
+    '                Else
+    '                    val_ = "mark"
+    '                End If
+    '            Case "minute"
+    '                If prefixed Then
+    '                    val_ = "1 minute "
+    '                Else
+    '                    val_ = "minute"
+    '                End If
+    '            Case "minutes"
+    '                If prefixed Then
+    '                    val_ = "1 minute "
+    '                Else
+    '                    val_ = "minute"
+    '                End If
+
+    '            Case "day"
+    '                If prefixed Then
+    '                    val_ = "1 day "
+    '                Else
+    '                    val_ = "day"
+    '                End If
+    '            Case "days"
+    '                If prefixed Then
+    '                    val_ = "1 day "
+    '                Else
+    '                    val_ = "day"
+    '                End If
+
+    '            Case "student"
+    '                If prefixed Then
+    '                    val_ = "1 student "
+    '                Else
+    '                    val_ = "student"
+    '                End If
+    '            Case "students"
+    '                If prefixed Then
+    '                    val_ = "1 student "
+    '                Else
+    '                    val_ = "student"
+    '                End If
+
+    '            Case "month"
+    '                If prefixed Then
+    '                    val_ = "1 month "
+    '                Else
+    '                    val_ = "month"
+    '                End If
+    '            Case "months"
+    '                If prefixed Then
+    '                    val_ = "1 month "
+    '                Else
+    '                    val_ = "month"
+    '                End If
+
+    '            Case "year"
+    '                If prefixed Then
+    '                    val_ = "1 year "
+    '                Else
+    '                    val_ = "year"
+    '                End If
+    '            Case "years"
+    '                If prefixed Then
+    '                    val_ = "1 year "
+    '                Else
+    '                    val_ = "year"
+    '                End If
+
+    '            Case "hour"
+    '                If prefixed Then
+    '                    val_ = "1 hour "
+    '                Else
+    '                    val_ = "hour"
+    '                End If
+    '            Case "hours"
+    '                If prefixed Then
+    '                    val_ = "1 hour "
+    '                Else
+    '                    val_ = "hour"
+    '                End If
+
+    '            Case "second"
+    '                If prefixed Then
+    '                    val_ = "1 second "
+    '                Else
+    '                    val_ = "second"
+    '                End If
+    '            Case "seconds"
+    '                If prefixed Then
+    '                    val_ = "1 second "
+    '                Else
+    '                    val_ = "second"
+    '                End If
+
+    '            Case "account"
+    '                If prefixed Then
+    '                    val_ = "1 account "
+    '                Else
+    '                    val_ = "account"
+    '                End If
+    '            Case "accounts"
+    '                If prefixed Then
+    '                    val_ = "1 account "
+    '                Else
+    '                    val_ = "account"
+    '                End If
+
+    '            Case "male"
+    '                If prefixed Then
+    '                    val_ = "1 male "
+    '                Else
+    '                    val_ = "male"
+    '                End If
+    '            Case "males"
+    '                If prefixed Then
+    '                    val_ = "1 male "
+    '                Else
+    '                    val_ = "male"
+    '                End If
+
+    '            Case "female"
+    '                If prefixed Then
+    '                    val_ = "1 female "
+    '                Else
+    '                    val_ = "female"
+    '                End If
+    '            Case "females"
+    '                If prefixed Then
+    '                    val_ = "1 female "
+    '                Else
+    '                    val_ = "female"
+    '                End If
+
+    '            Case "user"
+    '                If prefixed Then
+    '                    val_ = "1 user "
+    '                Else
+    '                    val_ = "user"
+    '                End If
+    '            Case "users"
+    '                If prefixed Then
+    '                    val_ = "1 user "
+    '                Else
+    '                    val_ = "user"
+    '                End If
+
+    '            Case "file"
+    '                If prefixed Then
+    '                    val_ = "1 file "
+    '                Else
+    '                    val_ = "file"
+    '                End If
+    '            Case "files"
+    '                If prefixed Then
+    '                    val_ = "1 file "
+    '                Else
+    '                    val_ = "file"
+    '                End If
+
+    '            Case "record"
+    '                If prefixed Then
+    '                    val_ = "1 record "
+    '                Else
+    '                    val_ = "record"
+    '                End If
+    '            Case "records"
+    '                If prefixed Then
+    '                    val_ = "1 record "
+    '                Else
+    '                    val_ = "record"
+    '                End If
+
+    '            Case "question"
+    '                If prefixed Then
+    '                    val_ = "1 question "
+    '                Else
+    '                    val_ = "question"
+    '                End If
+    '            Case "questions"
+    '                If prefixed Then
+    '                    val_ = "1 question "
+    '                Else
+    '                    val_ = "question"
+    '                End If
+
+    '            Case "task"
+    '                If prefixed Then
+    '                    val_ = "1 task "
+    '                Else
+    '                    val_ = "task"
+    '                End If
+    '            Case "tasks"
+    '                If prefixed Then
+    '                    val_ = "1 task "
+    '                Else
+    '                    val_ = "task"
+    '                End If
+
+    '            Case "item"
+    '                If prefixed Then
+    '                    val_ = "1 item "
+    '                Else
+    '                    val_ = "item"
+    '                End If
+    '            Case "items"
+    '                If prefixed Then
+    '                    val_ = "1 item "
+    '                Else
+    '                    val_ = "item"
+    '                End If
+
+    '            Case "unit"
+    '                If prefixed Then
+    '                    val_ = "1 unit "
+    '                Else
+    '                    val_ = "unit"
+    '                End If
+    '            Case "units"
+    '                If prefixed Then
+    '                    val_ = "1 unit "
+    '                Else
+    '                    val_ = "unit"
+    '                End If
+
+    '            Case "room"
+    '                If prefixed Then
+    '                    val_ = "1 room "
+    '                Else
+    '                    val_ = "room"
+    '                End If
+    '            Case "rooms"
+    '                If prefixed Then
+    '                    val_ = "1 room "
+    '                Else
+    '                    val_ = "room"
+    '                End If
+
+    '            Case "client"
+    '                If prefixed Then
+    '                    val_ = "1 client "
+    '                Else
+    '                    val_ = "client"
+    '                End If
+    '            Case "clients"
+    '                If prefixed Then
+    '                    val_ = "1 client "
+    '                Else
+    '                    val_ = "client"
+    '                End If
+
+    '            Case "match"
+    '                If prefixed Then
+    '                    val_ = "1 match "
+    '                Else
+    '                    val_ = "match"
+    '                End If
+    '            Case "matches"
+    '                If prefixed Then
+    '                    val_ = "1 match "
+    '                Else
+    '                    val_ = "match"
+    '                End If
+
+    '            Case "invoice"
+    '                If prefixed Then
+    '                    val_ = "1 invoice "
+    '                Else
+    '                    val_ = "invoice"
+    '                End If
+    '            Case "invoices"
+    '                If prefixed Then
+    '                    val_ = "1 invoice "
+    '                Else
+    '                    val_ = "invoice"
+    '                End If
+
+    '            Case "sale"
+    '                If prefixed Then
+    '                    val_ = "1 sale "
+    '                Else
+    '                    val_ = "sale"
+    '                End If
+    '            Case "sales"
+    '                If prefixed Then
+    '                    val_ = "1 sale "
+    '                Else
+    '                    val_ = "sale"
+    '                End If
+
+    '            Case "receipt"
+    '                If prefixed Then
+    '                    val_ = "1 receipt "
+    '                Else
+    '                    val_ = "receipt"
+    '                End If
+    '            Case "receipts"
+    '                If prefixed Then
+    '                    val_ = "1 receipt "
+    '                Else
+    '                    val_ = "receipt"
+    '                End If
+
+    '            Case "product"
+    '                If prefixed Then
+    '                    val_ = "1 product "
+    '                Else
+    '                    val_ = "product"
+    '                End If
+    '            Case "products"
+    '                If prefixed Then
+    '                    val_ = "1 product "
+    '                Else
+    '                    val_ = "product"
+    '                End If
+
+    '            Case "application"
+    '                If prefixed Then
+    '                    val_ = "1 application "
+    '                Else
+    '                    val_ = "application"
+    '                End If
+    '            Case "applications"
+    '                If prefixed Then
+    '                    val_ = "1 application "
+    '                Else
+    '                    val_ = "application"
+    '                End If
+
+    '        End Select
+    '    Else
+    '        Select Case str_to_change.ToString.ToLower
+    '            Case "message"
+    '                If prefixed Then
+    '                    val_ = c & " new messages"
+    '                Else
+    '                    val_ = "messages"
+    '                End If
+    '            Case "messages"
+    '                If prefixed Then
+    '                    val_ = c & " new messages"
+    '                Else
+    '                    val_ = "messages"
+    '                End If
+    '            Case "mark"
+    '                If prefixed Then
+    '                    val_ = c & " marks"
+    '                Else
+    '                    val_ = "marks"
+    '                End If
+    '            Case "marks"
+    '                If prefixed Then
+    '                    val_ = c & " marks"
+    '                Else
+    '                    val_ = "marks"
+    '                End If
+    '            Case "minute"
+    '                If prefixed Then
+    '                    val_ = c & " minutes"
+    '                Else
+    '                    val_ = "minutes"
+    '                End If
+    '            Case "minutes"
+    '                If prefixed Then
+    '                    val_ = c & " minutes"
+    '                Else
+    '                    val_ = "minutes"
+    '                End If
+
+    '            Case "day"
+    '                If prefixed Then
+    '                    val_ = c & " days"
+    '                Else
+    '                    val_ = "days"
+    '                End If
+    '            Case "days"
+    '                If prefixed Then
+    '                    val_ = c & " days"
+    '                Else
+    '                    val_ = "days"
+    '                End If
+
+    '            Case "student"
+    '                If prefixed Then
+    '                    val_ = c & " students"
+    '                Else
+    '                    val_ = "students"
+    '                End If
+    '            Case "students"
+    '                If prefixed Then
+    '                    val_ = c & " students"
+    '                Else
+    '                    val_ = "students"
+    '                End If
+
+    '            Case "month"
+    '                If prefixed Then
+    '                    val_ = c & " months"
+    '                Else
+    '                    val_ = "months"
+    '                End If
+    '            Case "months"
+    '                If prefixed Then
+    '                    val_ = c & " months"
+    '                Else
+    '                    val_ = "months"
+    '                End If
+    '            Case "year"
+    '                If prefixed Then
+    '                    val_ = c & " years"
+    '                Else
+    '                    val_ = "years"
+    '                End If
+    '            Case "years"
+    '                If prefixed Then
+    '                    val_ = c & " years"
+    '                Else
+    '                    val_ = "years"
+    '                End If
+    '            Case "hour"
+    '                If prefixed Then
+    '                    val_ = c & " hours"
+    '                Else
+    '                    val_ = "hours"
+    '                End If
+    '            Case "hours"
+    '                If prefixed Then
+    '                    val_ = c & " hours"
+    '                Else
+    '                    val_ = "hours"
+    '                End If
+    '            Case "second"
+    '                If prefixed Then
+    '                    val_ = c & " seconds"
+    '                Else
+    '                    val_ = "seconds"
+    '                End If
+    '            Case "seconds"
+    '                If prefixed Then
+    '                    val_ = c & " seconds"
+    '                Else
+    '                    val_ = "seconds"
+    '                End If
+    '            Case "account"
+    '                If prefixed Then
+    '                    val_ = c & " accounts"
+    '                Else
+    '                    val_ = "accounts"
+    '                End If
+    '            Case "accounts"
+    '                If prefixed Then
+    '                    val_ = c & " accounts"
+    '                Else
+    '                    val_ = "accounts"
+    '                End If
+
+    '            Case "male"
+    '                If prefixed Then
+    '                    val_ = c & " males"
+    '                Else
+    '                    val_ = "males"
+    '                End If
+    '            Case "males"
+    '                If prefixed Then
+    '                    val_ = c & " males"
+    '                Else
+    '                    val_ = "males"
+    '                End If
+    '            Case "female"
+    '                If prefixed Then
+    '                    val_ = c & " females"
+    '                Else
+    '                    val_ = "females"
+    '                End If
+    '            Case "females"
+    '                If prefixed Then
+    '                    val_ = c & " females"
+    '                Else
+    '                    val_ = "females"
+    '                End If
+    '            Case "user"
+    '                If prefixed Then
+    '                    val_ = c & " users"
+    '                Else
+    '                    val_ = "users"
+    '                End If
+    '            Case "users"
+    '                If prefixed Then
+    '                    val_ = c & " users"
+    '                Else
+    '                    val_ = "users"
+    '                End If
+    '            Case "file"
+    '                If prefixed Then
+    '                    val_ = c & " files"
+    '                Else
+    '                    val_ = "files"
+    '                End If
+    '            Case "files"
+    '                If prefixed Then
+    '                    val_ = c & " files"
+    '                Else
+    '                    val_ = "files"
+    '                End If
+    '            Case "record"
+    '                If prefixed Then
+    '                    val_ = c & " records"
+    '                Else
+    '                    val_ = "records"
+    '                End If
+    '            Case "records"
+    '                If prefixed Then
+    '                    val_ = c & " records"
+    '                Else
+    '                    val_ = "records"
+    '                End If
+
+    '            Case "question"
+    '                If prefixed Then
+    '                    val_ = c & " questions"
+    '                Else
+    '                    val_ = "questions"
+    '                End If
+    '            Case "questions"
+    '                If prefixed Then
+    '                    val_ = c & " questions"
+    '                Else
+    '                    val_ = "questions"
+    '                End If
+
+    '            Case "task"
+    '                If prefixed Then
+    '                    val_ = c & " tasks"
+    '                Else
+    '                    val_ = "tasks"
+    '                End If
+    '            Case "tasks"
+    '                If prefixed Then
+    '                    val_ = c & " tasks"
+    '                Else
+    '                    val_ = "tasks"
+    '                End If
+
+    '            Case "item"
+    '                If prefixed Then
+    '                    val_ = c & " items"
+    '                Else
+    '                    val_ = "items"
+    '                End If
+    '            Case "items"
+    '                If prefixed Then
+    '                    val_ = c & " items"
+    '                Else
+    '                    val_ = "items"
+    '                End If
+
+    '            Case "unit"
+    '                If prefixed Then
+    '                    val_ = c & " units"
+    '                Else
+    '                    val_ = "units"
+    '                End If
+    '            Case "units"
+    '                If prefixed Then
+    '                    val_ = c & " units"
+    '                Else
+    '                    val_ = "units"
+    '                End If
+
+    '            Case "room"
+    '                If prefixed Then
+    '                    val_ = c & " rooms"
+    '                Else
+    '                    val_ = "rooms"
+    '                End If
+    '            Case "rooms"
+    '                If prefixed Then
+    '                    val_ = c & " rooms"
+    '                Else
+    '                    val_ = "rooms"
+    '                End If
+
+    '            Case "client"
+    '                If prefixed Then
+    '                    val_ = c & " clients"
+    '                Else
+    '                    val_ = "clients"
+    '                End If
+    '            Case "clients"
+    '                If prefixed Then
+    '                    val_ = c & " clients"
+    '                Else
+    '                    val_ = "clients"
+    '                End If
+
+    '            Case "match"
+    '                If prefixed Then
+    '                    val_ = c & " matches"
+    '                Else
+    '                    val_ = "matches"
+    '                End If
+    '            Case "matches"
+    '                If prefixed Then
+    '                    val_ = c & " matches"
+    '                Else
+    '                    val_ = "matches"
+    '                End If
+
+    '            Case "invoice"
+    '                If prefixed Then
+    '                    val_ = c & " invoices"
+    '                Else
+    '                    val_ = "invoices"
+    '                End If
+    '            Case "invoices"
+    '                If prefixed Then
+    '                    val_ = c & " invoices"
+    '                Else
+    '                    val_ = "invoices"
+    '                End If
+
+    '            Case "sale"
+    '                If prefixed Then
+    '                    val_ = c & " sales"
+    '                Else
+    '                    val_ = "sales"
+    '                End If
+    '            Case "sales"
+    '                If prefixed Then
+    '                    val_ = c & " sales"
+    '                Else
+    '                    val_ = "sales"
+    '                End If
+
+    '            Case "receipt"
+    '                If prefixed Then
+    '                    val_ = c & " receipts"
+    '                Else
+    '                    val_ = "receipts"
+    '                End If
+    '            Case "receipts"
+    '                If prefixed Then
+    '                    val_ = c & " receipts"
+    '                Else
+    '                    val_ = "receipts"
+    '                End If
+
+    '            Case "product"
+    '                If prefixed Then
+    '                    val_ = c & " products"
+    '                Else
+    '                    val_ = "products"
+    '                End If
+    '            Case "products"
+    '                If prefixed Then
+    '                    val_ = c & " products"
+    '                Else
+    '                    val_ = "products"
+    '                End If
+
+    '            Case "application"
+    '                If prefixed Then
+    '                    val_ = c & " applications"
+    '                Else
+    '                    val_ = "applications"
+    '                End If
+    '            Case "applications"
+    '                If prefixed Then
+    '                    val_ = c & " applications"
+    '                Else
+    '                    val_ = "applications"
+    '                End If
+
+    '        End Select
+    '    End If
+
+    '    If rest_of_full_string.Length > 0 Then
+    '        val_ &= " " & rest_of_full_string
+    '    End If
+
+    '    Return TransformText(val_, textCase)
+    'End Function
 
     ''' <summary>
     ''' Determines if val_ is within 0 and 100.
