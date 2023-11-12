@@ -43,6 +43,40 @@ Public Class Machine
         SendMessageW(h, WM_APPCOMMAND, h, New IntPtr(APPCOMMAND_VOLUME_UP))
     End Sub
 
+    Public Shared Shadows Sub SetEnvironmentVariable(key As String, value As String, Optional target As EnvironmentVariableTarget = EnvironmentVariableTarget.User)
+        Environment.SetEnvironmentVariable(key, value, target)
+    End Sub
 
+    Public Shared Shadows Function GetEnvironmentVariable(key As String, Optional target As EnvironmentVariableTarget = EnvironmentVariableTarget.User) As String
+        Return Environment.GetEnvironmentVariable(key, target)
+    End Function
+
+    Public Shared Shadows Function GetEnvironmentVariable(key As String, default_value As String, Optional target As EnvironmentVariableTarget = EnvironmentVariableTarget.User) As String
+        Return If(GetEnvironmentVariable(key, target).Trim.Length > 0, GetEnvironmentVariable(key, target), default_value)
+    End Function
+
+    Public Shared Sub SetEnvironmentVariableForUser(key As String, value As String)
+        SetEnvironmentVariable(key, value, EnvironmentVariableTarget.User)
+    End Sub
+
+    Public Shared Sub SetEnvironmentVariableForSystem(key As String, value As String)
+        SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Machine)
+    End Sub
+
+    Public Shared Function GetEnvironmentVariableForUser(key As String, default_value As String) As String
+        Return If(GetEnvironmentVariable(key, EnvironmentVariableTarget.User).Trim.Length > 0, GetEnvironmentVariable(key, EnvironmentVariableTarget.User), default_value)
+    End Function
+
+    Public Shared Function GetEnvironmentVariableForUser(key As String) As String
+        Return GetEnvironmentVariable(key, EnvironmentVariableTarget.User)
+    End Function
+
+    Public Shared Function GetEnvironmentVariableForSystem(key As String) As String
+        Return GetEnvironmentVariable(key, EnvironmentVariableTarget.Machine)
+    End Function
+
+    Public Shared Function GetEnvironmentVariableForSystem(key As String, default_value As String) As String
+        Return If(GetEnvironmentVariable(key, EnvironmentVariableTarget.Machine).Trim.Length > 0, GetEnvironmentVariable(key, EnvironmentVariableTarget.Machine), default_value)
+    End Function
 
 End Class
