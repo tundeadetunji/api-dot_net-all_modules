@@ -12,7 +12,6 @@ Reusable code that can be imported into .Net Framework/Core projects via <a href
 using static iNovation.Code.Desktop;
 using static iNovation.Code.Encryption;
 using static iNovation.Code.Media;
-using static iNovation.Code.PC;
 using static iNovation.Code.Sequel;
 using static iNovation.Code.Web;</pre>
 
@@ -22,7 +21,6 @@ Imports iNovation.Code.General
 Imports iNovation.Code.Desktop
 Imports iNovation.Code.Encryption
 Imports iNovation.Code.Media
-Imports iNovation.Code.PC
 Imports iNovation.Code.Sequel
 Imports iNovation.Code.Web
 </pre>
