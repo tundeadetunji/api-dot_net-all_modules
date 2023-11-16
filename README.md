@@ -64,6 +64,10 @@ Dim feedback as new iNovation.Code.Feedback()
 Desktop and Web  both contain the same functions but Desktop targets desktop environment while Web targets ASP.NET environment, their references differ and may conflict if used together.
 </p>
 
+<p>
+    For more, please refer to invidual documentation/ReadMe files.
+</p>
+
 <!--
 <br>
 <h3>Dependency:</h3>
