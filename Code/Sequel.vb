@@ -143,8 +143,8 @@ Public Class Sequel
 
     End Function
 
-    Public Shared Function QTablesInDatabase(connection_string As String) As List(Of Object)
-        Dim result As List(Of Object) = New List(Of Object)
+    Public Shared Function QTablesInDatabase(connection_string As String) As List(Of String)
+        Dim result As List(Of String) = New List(Of String)
         Try
             result = General.QList(General.BuildSelectString("sys.Tables", {"name"}, Nothing, "name"), connection_string)
         Catch ex As Exception

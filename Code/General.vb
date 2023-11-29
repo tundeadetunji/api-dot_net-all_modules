@@ -2932,8 +2932,8 @@ Public Class General
     ''' <param name="connection_string"></param>
     ''' <param name="select_parameter_keys_values_"></param>
     ''' <returns></returns>
-    Public Shared Function QList(query As String, connection_string As String, Optional select_parameter_keys_values_ As Array = Nothing) As List(Of Object)
-        Dim l As New List(Of Object)
+    Public Shared Function QList(query As String, connection_string As String, Optional select_parameter_keys_values_ As Array = Nothing) As List(Of String)
+        Dim l As New List(Of String)
 
         Dim select_parameter_keys_values() = {}
         select_parameter_keys_values = select_parameter_keys_values_
@@ -4678,7 +4678,7 @@ Public Class General
         Return result
     End Function
 
-    Public Shared Function DictionaryToList(dict As Dictionary(Of String, Object), Optional side_to_return As SideToReturn = SideToReturn.Right) As List(Of Object)
+    Public Shared Function DictionaryToList(dict As Dictionary(Of String, Object), Optional side_to_return As SideToReturn = SideToReturn.Right) As List(Of String)
 
         Dim result = Nothing
         Select Case side_to_return
