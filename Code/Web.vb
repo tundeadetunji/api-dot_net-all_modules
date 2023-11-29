@@ -524,9 +524,9 @@ Public Class Web
     ''' Attaches List as DataSource to DropDownList or ListBox.
     ''' </summary>
     ''' <param name="TheControl">DropDownList or ListBox</param>
-    ''' <param name="TheList">List or Array</param>
+    ''' <param name="TheList">List</param>
     ''' <returns></returns>
-    Public Shared Function BindProperty(TheControl As WebControl, TheList As IEnumerable(Of String)) As WebControl
+    Public Shared Function BindProperty(TheControl As WebControl, TheList As List(Of String)) As WebControl
         If TypeOf TheControl Is DropDownList Then
             CType(TheControl, DropDownList).DataSource = TheList
             CType(TheControl, DropDownList).DataBind()
@@ -544,7 +544,7 @@ Public Class Web
     ''' <param name="list_"></param>
     ''' <param name="FirstItemIsEmpty"></param>
     ''' <returns></returns>
-    Public Shared Function BindProperty(control_ As DropDownList, list_ As IEnumerable(Of String), FirstItemIsEmpty As Boolean, Optional Top_Items_Are As Array = Nothing, Optional clear_before_fill As Boolean = True) As WebControl
+    Public Shared Function BindProperty(control_ As DropDownList, list_ As List(Of String), FirstItemIsEmpty As Boolean, Optional Top_Items_Are As Array = Nothing, Optional clear_before_fill As Boolean = True) As WebControl
         If control_.Items.Count > 0 Then Return control_
 
         If FirstItemIsEmpty Then control_.Items.Add(EmptyString)
@@ -640,7 +640,7 @@ Public Class Web
     ''' <param name="control_"></param>
     ''' <param name="list_"></param>
     ''' <returns></returns>
-    Public Shared Function BindProperty(control_ As ListBox, list_ As IEnumerable(Of String), Optional Top_Items_Are As Array = Nothing, Optional clear_before_fill As Boolean = False) As WebControl
+    Public Shared Function BindProperty(control_ As ListBox, list_ As List(Of String), Optional Top_Items_Are As Array = Nothing, Optional clear_before_fill As Boolean = False) As WebControl
         If control_.Items.Count > 0 Then Return control_
         Dim l As New List(Of String)
         If Top_Items_Are IsNot Nothing Then

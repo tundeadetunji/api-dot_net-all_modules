@@ -291,7 +291,7 @@ Public Class General
     End Function
 
     ''clear
-    Public Shared Function FilterStringFromFileKind(fileKinds As IEnumerable(Of FileKind)) As String
+    Public Shared Function FilterStringFromFileKind(fileKinds As List(Of FileKind)) As String
         If fileKinds.Count < 1 Then Return ""
         Dim result As String = ""
         Dim temp As New List(Of FileKind)
@@ -4678,7 +4678,7 @@ Public Class General
         Return result
     End Function
 
-    Public Shared Function DictionaryToList(dict As Dictionary(Of String, Object), Optional side_to_return As SideToReturn = SideToReturn.Right) As IEnumerable(Of Object)
+    Public Shared Function DictionaryToList(dict As Dictionary(Of String, Object), Optional side_to_return As SideToReturn = SideToReturn.Right) As List(Of Object)
 
         Dim result = Nothing
         Select Case side_to_return
@@ -4718,7 +4718,7 @@ Public Class General
         'End If
     End Function
 
-    Public Shared Function DictionaryToList(dict As Dictionary(Of String, String), Optional side_to_return As SideToReturn = SideToReturn.Right) As IEnumerable(Of String)
+    Public Shared Function DictionaryToList(dict As Dictionary(Of String, String), Optional side_to_return As SideToReturn = SideToReturn.Right) As List(Of String)
 
         Dim result = Nothing
         Select Case side_to_return

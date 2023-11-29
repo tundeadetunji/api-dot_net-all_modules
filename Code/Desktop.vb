@@ -1064,11 +1064,11 @@ Public Class Desktop
     End Function
 
     ''' <summary>
-    ''' Gets items in combobox and adds them to a list of string or array
+    ''' Gets items in combobox and adds them to a list of string
     ''' </summary>
     ''' <param name="c"></param>
     ''' <param name="returnAs">List(Of String) OR Array</param>
-    ''' <returns>List(Of String) OR Array</returns>
+    ''' <returns>List(Of String)</returns>
     Public Shared Function ComboToList(c As ComboBox, Optional returnAs As ReturnInfo = ReturnInfo.AsArray)
         Dim l As New List(Of String)
         With c
@@ -1973,9 +1973,9 @@ Public Class Desktop
     ''' Attaches List as DataSource to ComboBox or ListBox.
     ''' </summary>
     ''' <param name="TheControl">ComboBox or ListBox</param>
-    ''' <param name="TheList">List or Array</param>
+    ''' <param name="TheList">List</param>
     ''' <returns></returns>
-    Public Shared Function BindProperty(TheControl As Control, TheList As IEnumerable(Of String)) As Control
+    Public Shared Function BindProperty(TheControl As Control, TheList As List(Of String)) As Control
         If TypeOf TheControl Is ComboBox Then
             CType(TheControl, ComboBox).DataSource = TheList
         ElseIf TypeOf TheControl Is ListBox Then
@@ -1987,10 +1987,10 @@ Public Class Desktop
     ''' Attaches List as DataSource to ComboBox or ListBox.
     ''' </summary>
     ''' <param name="TheControl">ComboBox or ListBox</param>
-    ''' <param name="TheList">List or Array</param>
+    ''' <param name="TheList">List</param>
     ''' <param name="InitialSelectedIndexIsNegativeOne">Should the SelectedIndex be set to -1? Only applies to ComboBox</param>
     ''' <returns></returns>
-    Public Shared Function BindProperty(TheControl As Control, TheList As IEnumerable(Of String), InitialSelectedIndexIsNegativeOne As Boolean) As Control
+    Public Shared Function BindProperty(TheControl As Control, TheList As List(Of String), InitialSelectedIndexIsNegativeOne As Boolean) As Control
         If TypeOf TheControl Is ComboBox Then
             CType(TheControl, ComboBox).DataSource = TheList
             CType(TheControl, ComboBox).SelectedIndex = If(InitialSelectedIndexIsNegativeOne, -1, 0)
@@ -2005,11 +2005,11 @@ Public Class Desktop
     ''' Populates ComboBox or ListBox with items of List.
     ''' </summary>
     ''' <param name="TheControl">ComboBox or ListBox</param>
-    ''' <param name="TheList">List or Array</param>
+    ''' <param name="TheList">List</param>
     ''' <param name="InitialSelectedIndexIsNegativeOne">Should the SelectedIndex be set to -1? Only applies to ComboBox</param>
     ''' <param name="ReplaceUnderscoresWithSpace">If using enum with values having more than one word separted by underscore, this replaces the underscores with space</param>
     ''' <returns>TheControl</returns>
-    Public Shared Function BindProperty(TheControl As Control, TheList As IEnumerable(Of String), Optional InitialSelectedIndexIsNegativeOne As Boolean = True, Optional ReplaceUnderscoresWithSpace As Boolean = False) As Control
+    Public Shared Function BindProperty(TheControl As Control, TheList As List(Of String), Optional InitialSelectedIndexIsNegativeOne As Boolean = True, Optional ReplaceUnderscoresWithSpace As Boolean = False) As Control
         If TheList.Count < 1 Or TheControl Is Nothing Then Return Nothing
 
         If TypeOf TheControl Is ComboBox Then
@@ -2587,7 +2587,7 @@ Public Class Desktop
         End If
     End Function
 
-    Public Shared Function GetFile(FileDialogExpectedFormats_ As IEnumerable(Of FileKind), Optional title_text As String = "Select File") As String
+    Public Shared Function GetFile(FileDialogExpectedFormats_ As List(Of FileKind), Optional title_text As String = "Select File") As String
         Dim f_ As New OpenFileDialog
         f_.Multiselect = False
         f_.Filter = FilterStringFromFileKind(FileDialogExpectedFormats_)
@@ -2707,7 +2707,7 @@ Public Class Desktop
     ''' </summary>
     ''' <param name="fileKinds">What it is expected to find.</param>
     ''' <returns>String Array {0:True if no error or False if otherwise (convert to bool), 1:File Path, 2:File Extension</returns>
-    Public Shared Function GetFileAndExtension(fileKinds As IEnumerable(Of FileKind), Optional title_text As String = "Select File") As Array
+    Public Shared Function GetFileAndExtension(fileKinds As List(Of FileKind), Optional title_text As String = "Select File") As Array
         '		If audio_video_picture_exec_all_combined.Length < 1 Then audio_video_picture_exec_all_combined = "all"
         Dim f_ As New OpenFileDialog
         Dim return_() As String
