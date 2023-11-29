@@ -113,6 +113,7 @@ Partial Class Form1
         Me.u.Size = New System.Drawing.Size(330, 265)
         Me.u.TabIndex = 7
         Me.u.Text = "<html>abc</html>"
+        Me.u.WordWrap = False
         '
         'v
         '
@@ -122,6 +123,7 @@ Partial Class Form1
         Me.v.ScrollBars = System.Windows.Forms.ScrollBars.Both
         Me.v.Size = New System.Drawing.Size(330, 244)
         Me.v.TabIndex = 8
+        Me.v.WordWrap = False
         '
         'Timer1
         '

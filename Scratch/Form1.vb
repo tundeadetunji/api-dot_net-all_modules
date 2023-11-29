@@ -1,6 +1,7 @@
 ﻿Imports iNovation.Code.General
 Imports iNovation.Code.Desktop
 Imports iNovation.Code.Machine
+Imports iNovation.Code.Sequel
 Imports Microsoft.Win32
 Imports iNovation.Code.Media
 Imports System.Text.RegularExpressions
@@ -32,13 +33,23 @@ Public Class Form1
 
     Private s As String
     Private f As New Feedback
-    Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-    End Sub
-    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
-        't.Text = Environment.GetEnvironmentVariable("java_home", EnvironmentVariableTarget.Machine)
-        Environment.SetEnvironmentVariable("aaa", "bbb", EnvironmentVariableTarget.User)
-    End Sub
+    Private ReadOnly Property con_string As String = "Data Source=" & Environment.MachineName & "\SQLEXPRESS;Initial Catalog=" & Environment.GetEnvironmentVariable("InitialCatalog", EnvironmentVariableTarget.User) & ";Persist Security Info=True;User ID=" & Environment.GetEnvironmentVariable("UserId", EnvironmentVariableTarget.User) & ";Password=" & Environment.GetEnvironmentVariable("Password", EnvironmentVariableTarget.User)
 
+    Private Enum Professions
+        Pilot
+        Engineer
+        Scientist
+    End Enum
+    Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        Dim arr As String() = {"Engineer", "Scientist", "Pilot"}
+        Dim list As List(Of String) = GetEnum(New Professions)
+        BindProperty(ScratchListBox, list)
+        BindProperty(ScratchDropDown, list)
+    End Sub
+    Private ReadOnly Property target_false As String = "C:\Users\Pediforte\Desktop\Hub\2D\StrictD\file_false.txt"
+    Private ReadOnly Property target_true As String = "C:\Users\Pediforte\Desktop\Hub\2D\StrictD\file_true.txt"
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+    End Sub
     Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
     End Sub
 

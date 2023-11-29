@@ -114,8 +114,8 @@ Public Class Sequel
 
             da.Fill(dt)
             Return dt
-        Catch
-            Throw New Exception("Error fetching data")
+        Catch ex As Exception
+            Throw New Exception("Error fetching data: " & vbCrLf & ex.ToString)
         End Try
 
     End Function
@@ -166,7 +166,30 @@ Public Class Sequel
 
         Return l
     End Function
+    ''' <summary>
+    ''' Gets columns and their data types.
+    ''' </summary>
+    ''' <param name="query"></param>
+    ''' <param name="connection_string"></param>
+    ''' <param name="select_parameter_keys_values"></param>
+    ''' <returns></returns>
+    Public Shared Function QDataTypes(query As String, connection_string As String, Optional select_parameter_keys_values As Array = Nothing) As Dictionary(Of String, String)
+        Dim dt As DataTable = QDataTable(query, connection_string)
+        Dim result As New Dictionary(Of String, String)
+        Try
 
+            With dt
+                If .Columns.Count > 0 Then
+                    For i As Integer = 0 To .Columns.Count - 1
+                        result.Add(.Columns(i).ColumnName, .Columns(i).DataType.Name)
+                    Next
+                End If
+            End With
+        Catch ex As Exception
+            Throw New Exception("Error fetching data: " & vbCrLf & ex.ToString)
+        End Try
+        Return result
+    End Function
     'Public Shared Function QFieldsInTable(query As String, connection_string As String, Optional select_parameter_keys_values As Array = Nothing)
     '    Dim l As New List(Of String)
     '    Dim dt As DataTable = QDataTable(query, connection_string, select_parameter_keys_values)

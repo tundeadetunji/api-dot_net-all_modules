@@ -765,84 +765,90 @@ Public Class Desktop
         Return BindProperty(c_, GetEnum(New Gender), InitialSelectedIndexIsNegativeOne, ReplaceUnderscoresWithSpace)
     End Function
 
-    Public Shared Function Content(control_ As PictureBox, Optional use_image As Boolean = False) As Object
-        Try
-            If use_image Then
-                Return PictureFromStream(control_, ".jpg", True)
-            Else
-                Return PictureFromStream(control_)
-            End If
-        Catch ex As Exception
+    ''' <summary>
+    ''' Grabs the picture inside PictureBox. Same as passing PictureBox as src to PictureFromStream().
+    ''' </summary>
+    ''' <param name="control_"></param>
+    ''' <param name="file_extension"></param>
+    ''' <param name="PropertyIsImage"></param>
+    ''' <returns></returns>
+    Public Shared Function Content(control_ As PictureBox, Optional file_extension As FileType = FileType.jpg, Optional PropertyIsImage As Boolean = False) As Object
+        Return PictureFromStream(control_, file_extension, PropertyIsImage)
+        'Try
+        '    If use_image Then
+        '        Return PictureFromStream(control_, ".jpg", True)
+        '    Else
+        '        Return PictureFromStream(control_)
+        '    End If
+        'Catch ex As Exception
 
-        End Try
+        'End Try
 
     End Function
 
-    Public Shared Property casing__ As TextCase = TextCase.Capitalize
+    'Public Shared Property casing__ As TextCase = TextCase.Capitalize
 
     ''' <summary>
     ''' Gets the content of the control or file.
     ''' </summary>
-    ''' <param name="control_">NumericUpDown or TrackBar or CheckBox or DateTimePicker or ListBox or ComboBox or string representing path to file</param>
-    ''' <param name="casing_"></param>
+    ''' <param name="control_">NumericUpDown, TrackBar, CheckBox, DateTimePicker, ListBox, ComboBox or string representing path to file</param>
+    ''' <param name="casing">Should the output's casing be upper, lower, capitalized or as is?</param>
     ''' <param name="timeValue">Which part of the value to pick if control is DateTimePicker (e.g. Day, Hour, Minute etc)</param>
     ''' <returns></returns>
-    Public Shared Function Content(control_ As Object, Optional casing_ As TextCase = TextCase.None, Optional timeValue As TimeValue = TimeValue.ShortDate) As String
-        Dim casing As TextCase = casing__
-        If casing_ <> Nothing Then casing = casing_
+    Public Shared Function Content(control_ As Object, Optional casing As TextCase = TextCase.None, Optional trimOutput As Boolean = True, Optional timeValue As TimeValue = TimeValue.ShortDate) As String
 
         Dim d As DateTimePicker
         '		Dim html_text As HtmlInputText
         Try
             If TypeOf control_ Is NumericUpDown Then
-                Return CType(control_, NumericUpDown).Value
+                Return TransformText(CType(control_, NumericUpDown).Value, casing)
             ElseIf TypeOf control_ Is TrackBar Then
-                Return CType(control_, NumericUpDown).Value
+                Return TransformText(CType(control_, NumericUpDown).Value, casing)
             ElseIf TypeOf control_ Is CheckBox Then
-                Return CType(control_, CheckBox).Checked
+                Return TransformText(CType(control_, CheckBox).Checked, casing)
             ElseIf TypeOf control_ Is DateTimePicker Then
                 d = control_
                 Select Case timeValue
                     Case TimeValue.Day
-                        Return CType(control_, DateTimePicker).Value.Day
+                        Return TransformText(CType(control_, DateTimePicker).Value.Day, casing)
                     Case TimeValue.Hour
-                        Return CType(control_, DateTimePicker).Value.Hour
+                        Return TransformText(CType(control_, DateTimePicker).Value.Hour, casing)
                     Case TimeValue.LongDate
-                        Return CType(control_, DateTimePicker).Value.ToLongDateString
+                        Return TransformText(CType(control_, DateTimePicker).Value.ToLongDateString, casing)
                     Case TimeValue.LongTime
-                        Return CType(control_, DateTimePicker).Value.ToLongTimeString
+                        Return TransformText(CType(control_, DateTimePicker).Value.ToLongTimeString, casing)
                     Case TimeValue.Millisecond
-                        Return CType(control_, DateTimePicker).Value.Millisecond
+                        Return TransformText(CType(control_, DateTimePicker).Value.Millisecond, casing)
                     Case TimeValue.Minute
-                        Return CType(control_, DateTimePicker).Value.Minute
+                        Return TransformText(CType(control_, DateTimePicker).Value.Minute, casing)
                     Case TimeValue.Month
-                        Return CType(control_, DateTimePicker).Value.Month
+                        Return TransformText(CType(control_, DateTimePicker).Value.Month, casing)
                     Case TimeValue.Second
-                        Return CType(control_, DateTimePicker).Value.Second
+                        Return TransformText(CType(control_, DateTimePicker).Value.Second, casing)
                     Case TimeValue.ShortDate
-                        Return CType(control_, DateTimePicker).Value.ToShortDateString
+                        Return TransformText(CType(control_, DateTimePicker).Value.ToShortDateString, casing)
                     Case TimeValue.ShortTime
-                        Return CType(control_, DateTimePicker).Value.ToShortTimeString
+                        Return TransformText(CType(control_, DateTimePicker).Value.ToShortTimeString, casing)
                     Case TimeValue.Year
-                        Return CType(control_, DateTimePicker).Value.Year
+                        Return TransformText(CType(control_, DateTimePicker).Value.Year, casing)
                     Case TimeValue.DayOfWeek
-                        Return CType(control_, DateTimePicker).Value.DayOfWeek
+                        Return TransformText(CType(control_, DateTimePicker).Value.DayOfWeek, casing)
                     Case TimeValue.DayOfYear
-                        Return CType(control_, DateTimePicker).Value.DayOfYear
+                        Return TransformText(CType(control_, DateTimePicker).Value.DayOfYear, casing)
                 End Select
             ElseIf TypeOf control_ Is ComboBox Then
-                Return control_.Text
+                Return TransformText(If(trimOutput, CType(control_, ComboBox).Text.Trim, CType(control_, ComboBox).Text), casing)
             ElseIf TypeOf control_ Is ListBox Then
                 Try
-                    Return CType(control_, ListBox).SelectedItem
+                    Return TransformText(If(CType(control_, ListBox).SelectedIndex >= 0, If(trimOutput, CType(control_, ListBox).SelectedItem.ToString.Trim, CType(control_, ListBox).SelectedItem), ""), casing)
                 Catch ex As Exception
 
                 End Try
             ElseIf TypeOf control_ Is String Then
-                Return ReadText(control_)
+                Return TransformText(ReadText(control_, trimOutput), casing)
             Else
                 Try
-                    Return control_.Text
+                    Return TransformText(control_.Text, casing)
                 Catch ex As Exception
                 End Try
             End If
@@ -1375,31 +1381,33 @@ Public Class Desktop
         End Try
 
     End Sub
-
-    Private Shared Function PictureFromStream(picture_ As Object, Optional file_extension As String = ".jpg", Optional UseImage As Boolean = False)
-        Dim photo_ 'As Image
+    ''' <summary>
+    ''' Gets the content of a picture.
+    ''' </summary>
+    ''' <param name="src">PictureBox, Image, Bitmap or String representing file path</param>
+    ''' <param name="file_extension"></param>
+    ''' <param name="PropertyIsImage">If src is PictureBox, setting this to True grabs the Image property, not the BackgroundImage property</param>
+    ''' <returns></returns>
+    Private Shared Function PictureFromStream(src As Object, Optional file_extension As String = ".jpg", Optional PropertyIsImage As Boolean = False)
+        Dim photo_
         Dim stream_ As New IO.MemoryStream
 
-        If TypeOf picture_ Is PictureBox Then
-            Select Case UseImage
+        If TypeOf src Is PictureBox Then
+            Select Case PropertyIsImage
                 Case True
-                    photo_ = picture_.Image
+                    photo_ = src.Image
                 Case False
-                    photo_ = picture_.BackgroundImage
+                    photo_ = src.BackgroundImage
             End Select
-        ElseIf TypeOf picture_ Is Image Then
-            photo_ = picture_
-        ElseIf TypeOf picture_ Is String Then
-            photo_ = Image.FromFile(picture_)
+        ElseIf TypeOf src Is Image Or TypeOf src Is Bitmap Then
+            photo_ = src
+        Else
+            photo_ = Image.FromFile(src)
         End If
 
 
         If photo_ IsNot Nothing Then
             Select Case LCase(file_extension)
-                Case ".jpg"
-                    photo_.Save(stream_, Imaging.ImageFormat.Jpeg)
-                Case ".jpeg"
-                    photo_.Save(stream_, Imaging.ImageFormat.Jpeg)
                 Case ".png"
                     photo_.Save(stream_, Imaging.ImageFormat.Png)
                 Case ".gif"
@@ -1416,6 +1424,19 @@ Public Class Desktop
         End If
         Return stream_.GetBuffer
     End Function
+    ''' <summary>
+    ''' Gets the content of a picture.
+    ''' </summary>
+    ''' <param name="src">PictureBox, Image, Bitmap or String representing file path</param>
+    ''' <param name="file_extension"></param>
+    ''' <param name="PropertyIsImage">If src is PictureBox, setting this to True grabs the Image property, not the BackgroundImage property</param>
+    ''' <returns></returns>
+
+    Private Shared Function PictureFromStream(src As Object, Optional file_extension As FileType = FileType.jpg, Optional PropertyIsImage As Boolean = False)
+        Return PictureFromStream(src, "." & file_extension.ToString, PropertyIsImage)
+    End Function
+
+
     Private Shared Function PictureFromStream_REVERT_TO_THIS(picture_ As PictureBox, Optional file_extension As String = ".jpg", Optional UseImage As Boolean = False) As Byte()
         Dim photo_ As Image
         Dim stream_ As New IO.MemoryStream
@@ -1952,12 +1973,45 @@ Public Class Desktop
     ''' Attaches List as DataSource to ComboBox or ListBox.
     ''' </summary>
     ''' <param name="TheControl">ComboBox or ListBox</param>
-    ''' <param name="TheList">List, Array or Collection</param>
+    ''' <param name="TheList">List or Array</param>
+    ''' <returns></returns>
+    Public Shared Function BindProperty(TheControl As Control, TheList As IEnumerable(Of String)) As Control
+        If TypeOf TheControl Is ComboBox Then
+            CType(TheControl, ComboBox).DataSource = TheList
+        ElseIf TypeOf TheControl Is ListBox Then
+            CType(TheControl, ListBox).DataSource = TheList
+        End If
+        Return TheControl
+    End Function
+    ''' <summary>
+    ''' Attaches List as DataSource to ComboBox or ListBox.
+    ''' </summary>
+    ''' <param name="TheControl">ComboBox or ListBox</param>
+    ''' <param name="TheList">List or Array</param>
+    ''' <param name="InitialSelectedIndexIsNegativeOne">Should the SelectedIndex be set to -1? Only applies to ComboBox</param>
+    ''' <returns></returns>
+    Public Shared Function BindProperty(TheControl As Control, TheList As IEnumerable(Of String), InitialSelectedIndexIsNegativeOne As Boolean) As Control
+        If TypeOf TheControl Is ComboBox Then
+            CType(TheControl, ComboBox).DataSource = TheList
+            CType(TheControl, ComboBox).SelectedIndex = If(InitialSelectedIndexIsNegativeOne, -1, 0)
+        ElseIf TypeOf TheControl Is ListBox Then
+            CType(TheControl, ListBox).DataSource = TheList
+        End If
+
+        Return TheControl
+    End Function
+
+    ''' <summary>
+    ''' Populates ComboBox or ListBox with items of List.
+    ''' </summary>
+    ''' <param name="TheControl">ComboBox or ListBox</param>
+    ''' <param name="TheList">List or Array</param>
     ''' <param name="InitialSelectedIndexIsNegativeOne">Should the SelectedIndex be set to -1? Only applies to ComboBox</param>
     ''' <param name="ReplaceUnderscoresWithSpace">If using enum with values having more than one word separted by underscore, this replaces the underscores with space</param>
-    ''' <returns></returns>
-    Public Shared Function BindProperty(TheControl As Control, TheList As Object, Optional InitialSelectedIndexIsNegativeOne As Boolean = True, Optional ReplaceUnderscoresWithSpace As Boolean = False) As Control
+    ''' <returns>TheControl</returns>
+    Public Shared Function BindProperty(TheControl As Control, TheList As IEnumerable(Of String), Optional InitialSelectedIndexIsNegativeOne As Boolean = True, Optional ReplaceUnderscoresWithSpace As Boolean = False) As Control
         If TheList.Count < 1 Or TheControl Is Nothing Then Return Nothing
+
         If TypeOf TheControl Is ComboBox Then
             Dim c As ComboBox = CType(TheControl, ComboBox)
             c.DataSource = Nothing
@@ -1980,7 +2034,7 @@ Public Class Desktop
     End Function
 
     ''' <summary>
-    ''' Attaches List as DataSource to ComboBox or ListBox. Discontinued. Use BindProperty(Control, Object, Boolean).
+    ''' Attaches List as DataSource to ComboBox or ListBox. Discontinued. Use other methods of same name as suitable.
     ''' </summary>
     ''' <param name="control_"></param>
     ''' <param name="list_"></param>
@@ -2715,9 +2769,11 @@ Public Class Desktop
     ''' <param name="prompt_">Message to display.</param>
     ''' <param name="default_response">String to return if none is given by user.</param>
     ''' <param name="title_">Title of the input box.</param>
+    ''' <param name="ReturnDefaultResponseIfNoResponse">When set to true, it returns value of default_response if user types nothing in input box or presses cancel on the input box</param>
     ''' <returns></returns>
-    Public Shared Function GetText(prompt_ As String, Optional default_response As String = "", Optional title_ As String = "") As String
-        Return InputBox(prompt_, title_, default_response)
+    Public Shared Function GetText(prompt_ As String, Optional default_response As String = "", Optional title_ As String = "", Optional ReturnDefaultResponseIfNoResponse As Boolean = False) As String
+        Dim response As String = InputBox(prompt_, title_, default_response)
+        Return If(response.Trim.Length > 0, response, If(ReturnDefaultResponseIfNoResponse, default_response, ""))
     End Function
 
     ''' <summary>

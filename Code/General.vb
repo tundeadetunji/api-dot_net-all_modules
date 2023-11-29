@@ -12,6 +12,10 @@ Imports System.Collections.ObjectModel
 
 Public Class General
 
+#Region "misc"
+    Public Shared Property EmptyString As String = ""
+#End Region
+
 #Region "Structures"
 
     Public Structure CustomApplicationInfo
@@ -271,7 +275,7 @@ Public Class General
         Return result
     End Function
     ''clear
-    Public Shared Function ExtensionsFromFileKind(fileKind_ToString As String) As List(Of String)
+    Private Shared Function ExtensionsFromFileKindEx(fileKind_ToString As String) As List(Of String)
         Dim result As New List(Of String)
         If fileKind_ToString.Equals(FileKind.AnyFileKind.ToString) Then
             result.Add("*.*")
@@ -301,7 +305,7 @@ Public Class General
         Return result
     End Function
     ''clear
-    Public Shared Function FilterStringFromFileKind(fileKind As String) As String
+    Private Shared Function FilterStringFromFileKindEx(fileKind As String) As String
 
         Dim result As String = displayNameFromFileKind(fileKind)
         Dim extensions As List(Of String) = ExtensionsFromFileKind(fileKind)
@@ -323,7 +327,7 @@ Public Class General
         Return result
     End Function
 
-    Private Shared Function displayNameFromFileKind(FileKind_ToString As String) As String
+    Private Shared Function displayNameFromFileKindEx(FileKind_ToString As String) As String
         Return If(FileKind_ToString.Equals(FileKind.AnyFileKind.ToString), "Any file", FileKind_ToString.ToString.Replace("FileKind", "").Replace("filekind", "").Replace("Filekind", "").Replace("fileKind", "") & " files")
     End Function
     Private Shared Function displayNameFromFileKind(fileKind As FileKind) As String
@@ -2877,7 +2881,7 @@ Public Class General
     ''' <param name="parameters_keys_values_">Parameters.</param>
     ''' <param name="return_type_is">Return string by default. To return image, choose ByteArray</param>
     ''' <returns></returns>
-    Public Shared Function QData(query_ As String, connection_string As String, Optional parameters_keys_values_ As Array = Nothing, Optional return_type_is As Optimization = Optimization.FaultTolerant)
+    Public Shared Function QData(query_ As String, connection_string As String, Optional parameters_keys_values_ As Array = Nothing, Optional return_type_is As Optimization = Optimization.AsIs)
         Dim select_parameter_keys_values() = {}
         select_parameter_keys_values = parameters_keys_values_
 
@@ -6760,8 +6764,8 @@ Public Class General
     ''' <param name="file_">The path to the file.</param>
     ''' <param name="txt_">Intended string content of the file.</param>
     ''' <param name="append_">Should it add to the content of the file (if it has) or overwrite everything?</param>
-    ''' <param name="dont_trim">Should trailing spaces be ignored?</param>
-    Public Shared Function WriteText(file_ As String, txt_ As String, Optional append_ As Boolean = False, Optional dont_trim As Boolean = True)
+    ''' <param name="trim_text">Should trailing spaces be ignored?</param>
+    Public Shared Sub WriteText(file_ As String, txt_ As String, Optional append_ As Boolean = False, Optional trim_text As Boolean = False)
         'If file_.Length < 1 Then Return
 
         'Dim t As String = txt_
@@ -6779,35 +6783,30 @@ Public Class General
         Else
             FileOpen(1, [FileVar], OpenMode.Output)
         End If
-        If dont_trim Then
-            PrintLine(1, txt_)
-        Else
+        If trim_text Then
             PrintLine(1, txt_.Trim)
+        Else
+            PrintLine(1, txt_)
         End If
         FileClose(1)
 
-    End Function
+    End Sub
 
     ''' <summary>
     ''' Retrieves the content of a file (format is text).
     ''' </summary>
     ''' <param name="file_">The path to the file.</param>
-    ''' <param name="dont_trim">Should trailing spaces be ignored?</param>
+    ''' <param name="trim_text">Should trailing spaces be ignored?</param>
     ''' <returns>The (text) content of the file.</returns>
-    Public Shared Function ReadText(file_ As String, Optional dont_trim As Boolean = False) As String
+    Public Shared Function ReadText(file_ As String, Optional trim_text As Boolean = True) As String
         'If file_ Is Nothing Then Exit Function
 
         'If CType(file_, String).Length < 1 Then Exit Function
 
         If file_.Length < 1 Then Return ""
-        If Path.GetExtension(file_).Contains("doc") Then GoTo 2
+        'If Path.GetExtension(file_).Contains("doc") Then GoTo 2
 
-        Dim r As String = My.Computer.FileSystem.ReadAllText(file_).Trim
-        If dont_trim = True Then
-            r = My.Computer.FileSystem.ReadAllText(file_)
-        End If
-        Return r
-
+        Return If(trim_text, My.Computer.FileSystem.ReadAllText(file_).Trim, My.Computer.FileSystem.ReadAllText(file_))
 
 
 
