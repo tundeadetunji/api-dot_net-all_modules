@@ -41,14 +41,14 @@ Public Class Form1
         Scientist
     End Enum
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        Dim arr As String() = {"Engineer", "Scientist", "Pilot"}
         Dim list As List(Of String) = GetEnum(New Professions)
-        BindProperty(ScratchListBox, list)
-        BindProperty(ScratchDropDown, list)
+        BindItems(ScratchListBox, list, False)
+
     End Sub
     Private ReadOnly Property target_false As String = "C:\Users\Pediforte\Desktop\Hub\2D\StrictD\file_false.txt"
     Private ReadOnly Property target_true As String = "C:\Users\Pediforte\Desktop\Hub\2D\StrictD\file_true.txt"
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        ListsAddItem(ScratchListBox, "item")
     End Sub
     Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
     End Sub

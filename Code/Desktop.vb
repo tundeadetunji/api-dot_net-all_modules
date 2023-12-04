@@ -1975,11 +1975,43 @@ Public Class Desktop
     ''' <param name="TheControl">ComboBox or ListBox</param>
     ''' <param name="TheList">List</param>
     ''' <returns></returns>
-    Public Shared Function BindProperty(TheControl As Control, TheList As List(Of String)) As Control
-        If TypeOf TheControl Is ComboBox Then
-            CType(TheControl, ComboBox).DataSource = TheList
-        ElseIf TypeOf TheControl Is ListBox Then
-            CType(TheControl, ListBox).DataSource = TheList
+    'Public Shared Function BindItems(TheControl As Control, TheList As List(Of String)) As Control
+    '    If TypeOf TheControl Is ComboBox Then
+    '        CType(TheControl, ComboBox).DataSource = TheList
+    '    ElseIf TypeOf TheControl Is ListBox Then
+    '        CType(TheControl, ListBox).DataSource = TheList
+    '    End If
+    '    Return TheControl
+    'End Function
+
+    ''' <summary>
+    ''' Attaches List as DataSource to ComboBox or ListBox.
+    ''' </summary>
+    ''' <param name="TheControl">ComboBox or ListBox</param>
+    ''' <param name="TheList">List</param>
+    ''' <returns></returns>
+    Public Shared Function BindItems(TheControl As Control, TheList As List(Of String), Optional AsDataSource As Boolean = True) As Control
+        If AsDataSource Then
+            If TypeOf TheControl Is ComboBox Then
+                CType(TheControl, ComboBox).DataSource = TheList
+            ElseIf TypeOf TheControl Is ListBox Then
+                CType(TheControl, ListBox).DataSource = TheList
+            End If
+        Else
+            If TypeOf TheControl Is ComboBox Then
+                CType(TheControl, ComboBox).DataSource = Nothing
+                CType(TheControl, ComboBox).Items.Clear()
+                For i = 0 To TheList.Count - 1
+                    CType(TheControl, ComboBox).Items.Add(TheList(i))
+                Next
+            ElseIf TypeOf TheControl Is ListBox Then
+                CType(TheControl, ListBox).DataSource = Nothing
+                CType(TheControl, ListBox).Items.Clear()
+                For i = 0 To TheList.Count - 1
+                    CType(TheControl, ListBox).Items.Add(TheList(i))
+                Next
+            End If
+
         End If
         Return TheControl
     End Function
