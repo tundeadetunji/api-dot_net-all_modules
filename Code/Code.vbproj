@@ -99,6 +99,7 @@
     <Compile Include="SearchEngineQueryString.vb" />
     <Compile Include="Sequel.vb" />
     <Compile Include="ServerSide.vb" />
+    <Compile Include="Styler.vb" />
     <Compile Include="Values.vb" />
     <Compile Include="Web.vb" />
   </ItemGroup>

@@ -9,8 +9,12 @@ Imports System.Drawing
 Imports System.Web.UI
 Imports System.Web.UI.HtmlControls
 Imports System.Web.UI.WebControls
+Imports System.Net
+Imports System.IO
 
 Public Class Web
+
+#Region "Web"
 
     Public Shared Function toTitleCase(str As String) As String
         Return str.Substring(0, 1).ToUpper + str.Substring(1)
@@ -517,368 +521,6 @@ Public Class Web
     '    Return stream_.GetBuffer
     'End Function
 
-#Region "Bindings"
-
-
-    ''' <summary>
-    ''' Attaches List as DataSource to DropDownList or ListBox.
-    ''' </summary>
-    ''' <param name="TheControl">DropDownList or ListBox</param>
-    ''' <param name="TheList">List</param>
-    ''' <returns></returns>
-    Public Shared Function BindProperty(TheControl As WebControl, TheList As List(Of String)) As WebControl
-        If TypeOf TheControl Is DropDownList Then
-            CType(TheControl, DropDownList).DataSource = TheList
-            CType(TheControl, DropDownList).DataBind()
-        ElseIf TypeOf TheControl Is ListBox Then
-            CType(TheControl, ListBox).DataSource = TheList
-            CType(TheControl, ListBox).DataBind()
-        End If
-        Return TheControl
-    End Function
-
-    ''' <summary>
-    ''' Populates DropDownList with items of List. Won't do anything if DropDownList already has items.
-    ''' </summary>
-    ''' <param name="control_"></param>
-    ''' <param name="list_"></param>
-    ''' <param name="FirstItemIsEmpty"></param>
-    ''' <returns></returns>
-    Public Shared Function BindProperty(control_ As DropDownList, list_ As List(Of String), FirstItemIsEmpty As Boolean, Optional Top_Items_Are As Array = Nothing, Optional clear_before_fill As Boolean = True) As WebControl
-        If control_.Items.Count > 0 Then Return control_
-
-        If FirstItemIsEmpty Then control_.Items.Add(EmptyString)
-
-        Dim l As New List(Of String)
-        If Top_Items_Are IsNot Nothing Then
-            If Top_Items_Are.Length > 0 Then
-                With Top_Items_Are
-                    For i = 0 To .Length - 1
-                        l.Add(Top_Items_Are(i))
-                    Next
-                End With
-            End If
-        End If
-        For i = 0 To CType(list_, List(Of String)).Count - 1
-            l.Add(list_(i))
-        Next
-        Try
-            If (clear_before_fill) And (Top_Items_Are Is Nothing) Then
-                CType(control_, DropDownList).Items.Clear()
-                CType(control_, DropDownList).DataSource = Nothing
-            End If
-        Catch ex As Exception
-
-        End Try
-        With l
-            Try
-                For i = 0 To .Count - 1
-                    CType(control_, DropDownList).Items.Add(l(i))
-                Next
-            Catch ex As Exception
-
-            End Try
-        End With
-        Return control_
-    End Function
-
-    ''' <summary>
-    ''' Attaches Array as DataSource to DropDownList. Won't do anything if DropDownList already has items.
-    ''' </summary>
-    ''' <param name="control_"></param>
-    ''' <param name="list_"></param>
-    ''' <param name="Top_Items_Are">Optional list of items to prepend the list with</param>
-    ''' <param name="FirstItemIsEmpty"></param>
-    ''' <returns></returns>
-    'Public Shared Function BindProperty(control_ As DropDownList, list_ As Array, Optional Top_Items_Are As Array = Nothing, Optional FirstItemIsEmpty As Boolean = True, Optional clear_before_fill As Boolean = True) As WebControl
-    '    If control_.Items.Count > 0 Then Return control_
-
-    '    If FirstItemIsEmpty Then control_.Items.Add(EmptyString)
-
-    '    Dim l As New List(Of String)
-    '    'If InitialSelectedIndexIsNegativeOne Then l.Add("")
-    '    If Top_Items_Are IsNot Nothing Then
-    '        If Top_Items_Are.Length > 0 Then
-    '            With Top_Items_Are
-    '                For i = 0 To .Length - 1
-    '                    l.Add(Top_Items_Are(i))
-    '                Next
-    '            End With
-    '        End If
-    '    End If
-    '    If TypeOf (list_) Is Array Then
-    '        For i = 0 To CType(list_, Array).Length - 1
-    '            l.Add(list_(i))
-    '        Next
-    '    End If
-
-    '    Try
-    '        If (clear_before_fill) And (Top_Items_Are Is Nothing) Then
-    '            CType(control_, DropDownList).Items.Clear()
-    '            CType(control_, DropDownList).DataSource = Nothing
-    '        End If
-    '    Catch ex As Exception
-
-    '    End Try
-    '    With l
-    '        Try
-    '            For i = 0 To .Count - 1
-    '                CType(control_, DropDownList).Items.Add(l(i))
-    '            Next
-    '        Catch ex As Exception
-
-    '        End Try
-    '    End With
-    '    Return control_
-    'End Function
-
-
-
-    ''' <summary>
-    ''' Populates ListBox with items of List. Won't do anything if ListBox already has items.
-    ''' </summary>
-    ''' <param name="control_"></param>
-    ''' <param name="list_"></param>
-    ''' <returns></returns>
-    Public Shared Function BindProperty(control_ As ListBox, list_ As List(Of String), Optional Top_Items_Are As Array = Nothing, Optional clear_before_fill As Boolean = False) As WebControl
-        If control_.Items.Count > 0 Then Return control_
-        Dim l As New List(Of String)
-        If Top_Items_Are IsNot Nothing Then
-            If Top_Items_Are.Length > 0 Then
-                With Top_Items_Are
-                    For i = 0 To .Length - 1
-                        l.Add(Top_Items_Are(i))
-                    Next
-                End With
-            End If
-        End If
-        For i = 0 To CType(list_, List(Of String)).Count - 1
-            l.Add(list_(i))
-        Next
-        Try
-            If clear_before_fill Then
-                CType(control_, ListBox).Items.Clear()
-                CType(control_, ListBox).DataSource = Nothing
-            End If
-        Catch ex As Exception
-        End Try
-        With l
-            Try
-                For i = 0 To .Count - 1
-                    CType(control_, ListBox).Items.Add(l(i))
-                Next
-            Catch ex As Exception
-
-            End Try
-        End With
-        Return control_
-    End Function
-
-    ''' <summary>
-    ''' Attaches Array as DataSource to ListBox. Won't do anything if ListBox already has items.
-    ''' </summary>
-    ''' <param name="control_"></param>
-    ''' <param name="list_"></param>
-    ''' <returns></returns>
-    'Public Shared Function BindProperty(control_ As ListBox, list_ As Array, Optional Top_Items_Are As Array = Nothing, Optional clear_before_fill As Boolean = True) As WebControl
-    '    If control_.Items.Count > 0 Then Return control_
-    '    Dim l As New List(Of String)
-    '    If Top_Items_Are IsNot Nothing Then
-    '        If Top_Items_Are.Length > 0 Then
-    '            With Top_Items_Are
-    '                For i = 0 To .Length - 1
-    '                    l.Add(Top_Items_Are(i))
-    '                Next
-    '            End With
-    '        End If
-    '    End If
-    '    If TypeOf (list_) Is Array Then
-    '        For i = 0 To CType(list_, Array).Length - 1
-    '            l.Add(list_(i))
-    '        Next
-    '    End If
-    '    Try
-    '        If clear_before_fill Then
-    '            CType(control_, ListBox).Items.Clear()
-    '            CType(control_, ListBox).DataSource = Nothing
-    '        End If
-    '    Catch ex As Exception
-    '    End Try
-    '    With l
-    '        Try
-    '            For i = 0 To .Count - 1
-    '                CType(control_, ListBox).Items.Add(l(i))
-    '            Next
-    '        Catch ex As Exception
-
-    '        End Try
-    '    End With
-    '    Return control_
-    'End Function
-
-
-
-    '''' <summary>
-    '''' Attaches List(Of String) as DataSource to DropDownList
-    '''' </summary>
-    '''' <param name="control_"></param>
-    '''' <param name="list_"></param>
-    '''' <param name="First_Item_Is_Empty"></param>
-    '''' <returns></returns>
-    'Public Shared Function BindProperty(control_ As DropDownList, list_ As List(Of String), Optional First_Item_Is As String = "", Optional First_Item_Is_Empty As Boolean = True) As WebControl
-    '	Dim l As New List(Of String)
-    '	If First_Item_Is_Empty Then l.Add("")
-    '	If First_Item_Is.Trim.Length > 1 Then l.Add(First_Item_Is)
-    '	For i = 0 To CType(list_, List(Of String)).Count - 1
-    '		l.Add(list_(i))
-    '	Next
-    '	Try
-    '		CType(control_, DropDownList).Items.Clear()
-    '		CType(control_, DropDownList).DataSource = Nothing
-    '	Catch ex As Exception
-
-    '	End Try
-    '	With l
-    '		Try
-    '			For i = 0 To .Count - 1
-    '				CType(control_, DropDownList).Items.Add(l(i))
-    '			Next
-    '		Catch ex As Exception
-
-    '		End Try
-    '	End With
-    '	Return control_
-    'End Function
-
-    '''' <summary>
-    '''' Attaches Array as DataSource to DropDownList
-    '''' </summary>
-    '''' <param name="control_"></param>
-    '''' <param name="list_"></param>
-    '''' <param name="First_Item_Is_Empty"></param>
-    '''' <returns></returns>
-    'Public Shared Function BindProperty(control_ As DropDownList, list_ As Array, Optional First_Item_Is As String = "", Optional First_Item_Is_Empty As Boolean = True) As WebControl
-    '	Dim l As New List(Of String)
-    '	If First_Item_Is_Empty Then l.Add("")
-    '	If First_Item_Is.Trim.Length > 1 Then l.Add(First_Item_Is)
-    '	If TypeOf (list_) Is Array Then
-    '		For i = 0 To CType(list_, Array).Length - 1
-    '			l.Add(list_(i))
-    '		Next
-    '	End If
-    '	Try
-    '		CType(control_, DropDownList).Items.Clear()
-    '		CType(control_, DropDownList).DataSource = Nothing
-    '	Catch ex As Exception
-
-    '	End Try
-    '	With l
-    '		Try
-    '			For i = 0 To .Count - 1
-    '				CType(control_, DropDownList).Items.Add(l(i))
-    '			Next
-    '		Catch ex As Exception
-
-    '		End Try
-    '	End With
-    '	Return control_
-    'End Function
-
-
-
-    '''' <summary>
-    '''' Attaches List(Of String) as DataSource to ListBox
-    '''' </summary>
-    '''' <param name="control_"></param>
-    '''' <param name="list_"></param>
-    '''' <param name="First_Item_Is_Empty"></param>
-    '''' <returns></returns>
-    'Public Shared Function BindProperty(control_ As ListBox, list_ As List(Of String), Optional First_Item_Is As String = "", Optional First_Item_Is_Empty As Boolean = True) As WebControl
-    '	Dim l As New List(Of String)
-    '	If First_Item_Is_Empty Then l.Add("")
-    '	If First_Item_Is.Trim.Length > 1 Then l.Add(First_Item_Is)
-    '	For i = 0 To CType(list_, List(Of String)).Count - 1
-    '		l.Add(list_(i))
-    '	Next
-    '	Try
-    '		CType(control_, ListBox).Items.Clear()
-    '		CType(control_, ListBox).DataSource = Nothing
-    '	Catch ex As Exception
-    '	End Try
-    '	With l
-    '		Try
-    '			For i = 0 To .Count - 1
-    '				CType(control_, ListBox).Items.Add(l(i))
-    '			Next
-    '		Catch ex As Exception
-
-    '		End Try
-    '	End With
-    '	Return control_
-    'End Function
-
-    '''' <summary>
-    '''' Attaches Array as DataSource to ListBox
-    '''' </summary>
-    '''' <param name="control_"></param>
-    '''' <param name="list_"></param>
-    '''' <param name="First_Item_Is_Empty"></param>
-    '''' <returns></returns>
-    'Public Shared Function BindProperty(control_ As ListBox, list_ As Array, Optional First_Item_Is As String = "", Optional First_Item_Is_Empty As Boolean = True) As WebControl
-    '	Dim l As New List(Of String)
-    '	If First_Item_Is_Empty Then l.Add("")
-    '	If First_Item_Is.Trim.Length > 1 Then l.Add(First_Item_Is)
-    '	If TypeOf (list_) Is Array Then
-    '		For i = 0 To CType(list_, Array).Length - 1
-    '			l.Add(list_(i))
-    '		Next
-    '	End If
-    '	Try
-    '		CType(control_, ListBox).Items.Clear()
-    '		CType(control_, ListBox).DataSource = Nothing
-    '	Catch ex As Exception
-    '	End Try
-    '	With l
-    '		Try
-    '			For i = 0 To .Count - 1
-    '				CType(control_, ListBox).Items.Add(l(i))
-    '			Next
-    '		Catch ex As Exception
-
-    '		End Try
-    '	End With
-    '	Return control_
-    'End Function
-
-
-    ''' <summary>
-    ''' Binds database column/field to DropDownList.
-    ''' </summary>
-    ''' <param name="control_">Control</param>
-    ''' <param name="query_">SQL Query</param>
-    ''' <param name="connection_string">SQL Connection String</param>
-    ''' <param name="select_parameter_keys_values_">Select Parameters (Nothing, if not needed)</param>
-    ''' <param name="data_text_field">Database Field</param>
-    ''' <returns>control_</returns>
-    Public Shared Function BindProperty(control_ As DropDownList, query_ As String, connection_string As String, Optional select_parameter_keys_values_ As Array = Nothing, Optional data_text_field As String = "", Optional ignore_if_control_has_items As Boolean = True) As WebControl
-        Return DData(control_, query_, connection_string, data_text_field, data_text_field, select_parameter_keys_values_, ignore_if_control_has_items)
-    End Function
-
-    ''' <summary>
-    ''' Binds database column/field to ListBox.
-    ''' </summary>
-    ''' <param name="control_">Control</param>
-    ''' <param name="query_">SQL Query</param>
-    ''' <param name="connection_string">SQL Connection String</param>
-    ''' <param name="select_parameter_keys_values_">Select Parameters (Nothing, if not needed)</param>
-    ''' <param name="data_text_field">Database Field</param>
-    ''' <returns>control_</returns>
-    Public Shared Function BindProperty(control_ As ListBox, query_ As String, connection_string As String, Optional select_parameter_keys_values_ As Array = Nothing, Optional data_text_field As String = "", Optional ignore_if_control_has_items As Boolean = True) As WebControl
-        Return LData(control_, query_, connection_string, data_text_field, data_text_field, select_parameter_keys_values_, ignore_if_control_has_items)
-    End Function
-
-#End Region
-
     Public Shared Function ExtractHeader(select_keys As String()) As List(Of String)
         Dim a As String() = select_keys
         Dim l As New List(Of String)
@@ -897,13 +539,6 @@ Public Class Web
         Next
         Return l
     End Function
-
-
-#Region "Statistics"
-
-
-
-#End Region
 
     Public Shared Function RandomColor(l As List(Of Integer)) As String
         Dim r As Integer = RandomList(0, 256, l)
@@ -1401,6 +1036,403 @@ Public Class Web
         Return counter
     End Function
 
+    Public Shared Function EnumDrop(drop As ListBox, enum__ As Object, Optional as_drop_not_list As Boolean = True) As Object
+        Dim e = GetEnum(enum__)
+        Dim l As New List(Of String)
+        With e
+            For i = 0 To .Count - 1
+                l.Add(EnumToDrop(e(i)))
+            Next
+        End With
+
+        l.Sort()
+
+        With drop
+            .DataSource = Nothing
+            .Items.Clear()
+            For i = 0 To l.Count - 1
+                .Items.Add(l(i))
+            Next
+        End With
+
+        If as_drop_not_list Then
+            Return drop
+        Else
+            Return l
+        End If
+    End Function
+
+
+#End Region
+
+#Region "Bindings"
+
+
+    ''' <summary>
+    ''' Attaches List as DataSource to DropDownList or ListBox.
+    ''' </summary>
+    ''' <param name="TheControl">DropDownList or ListBox</param>
+    ''' <param name="TheList">List</param>
+    ''' <returns></returns>
+    Public Shared Function BindProperty(TheControl As WebControl, TheList As List(Of String)) As WebControl
+        If TypeOf TheControl Is DropDownList Then
+            CType(TheControl, DropDownList).DataSource = TheList
+            CType(TheControl, DropDownList).DataBind()
+        ElseIf TypeOf TheControl Is ListBox Then
+            CType(TheControl, ListBox).DataSource = TheList
+            CType(TheControl, ListBox).DataBind()
+        End If
+        Return TheControl
+    End Function
+
+    ''' <summary>
+    ''' Populates DropDownList with items of List. Won't do anything if DropDownList already has items.
+    ''' </summary>
+    ''' <param name="control_"></param>
+    ''' <param name="list_"></param>
+    ''' <param name="FirstItemIsEmpty"></param>
+    ''' <returns></returns>
+    Public Shared Function BindProperty(control_ As DropDownList, list_ As List(Of String), FirstItemIsEmpty As Boolean, Optional Top_Items_Are As Array = Nothing, Optional clear_before_fill As Boolean = True) As WebControl
+        If control_.Items.Count > 0 Then Return control_
+
+        If FirstItemIsEmpty Then control_.Items.Add(EmptyString)
+
+        Dim l As New List(Of String)
+        If Top_Items_Are IsNot Nothing Then
+            If Top_Items_Are.Length > 0 Then
+                With Top_Items_Are
+                    For i = 0 To .Length - 1
+                        l.Add(Top_Items_Are(i))
+                    Next
+                End With
+            End If
+        End If
+        For i = 0 To CType(list_, List(Of String)).Count - 1
+            l.Add(list_(i))
+        Next
+        Try
+            If (clear_before_fill) And (Top_Items_Are Is Nothing) Then
+                CType(control_, DropDownList).Items.Clear()
+                CType(control_, DropDownList).DataSource = Nothing
+            End If
+        Catch ex As Exception
+
+        End Try
+        With l
+            Try
+                For i = 0 To .Count - 1
+                    CType(control_, DropDownList).Items.Add(l(i))
+                Next
+            Catch ex As Exception
+
+            End Try
+        End With
+        Return control_
+    End Function
+
+    ''' <summary>
+    ''' Attaches Array as DataSource to DropDownList. Won't do anything if DropDownList already has items.
+    ''' </summary>
+    ''' <param name="control_"></param>
+    ''' <param name="list_"></param>
+    ''' <param name="Top_Items_Are">Optional list of items to prepend the list with</param>
+    ''' <param name="FirstItemIsEmpty"></param>
+    ''' <returns></returns>
+    'Public Shared Function BindProperty(control_ As DropDownList, list_ As Array, Optional Top_Items_Are As Array = Nothing, Optional FirstItemIsEmpty As Boolean = True, Optional clear_before_fill As Boolean = True) As WebControl
+    '    If control_.Items.Count > 0 Then Return control_
+
+    '    If FirstItemIsEmpty Then control_.Items.Add(EmptyString)
+
+    '    Dim l As New List(Of String)
+    '    'If InitialSelectedIndexIsNegativeOne Then l.Add("")
+    '    If Top_Items_Are IsNot Nothing Then
+    '        If Top_Items_Are.Length > 0 Then
+    '            With Top_Items_Are
+    '                For i = 0 To .Length - 1
+    '                    l.Add(Top_Items_Are(i))
+    '                Next
+    '            End With
+    '        End If
+    '    End If
+    '    If TypeOf (list_) Is Array Then
+    '        For i = 0 To CType(list_, Array).Length - 1
+    '            l.Add(list_(i))
+    '        Next
+    '    End If
+
+    '    Try
+    '        If (clear_before_fill) And (Top_Items_Are Is Nothing) Then
+    '            CType(control_, DropDownList).Items.Clear()
+    '            CType(control_, DropDownList).DataSource = Nothing
+    '        End If
+    '    Catch ex As Exception
+
+    '    End Try
+    '    With l
+    '        Try
+    '            For i = 0 To .Count - 1
+    '                CType(control_, DropDownList).Items.Add(l(i))
+    '            Next
+    '        Catch ex As Exception
+
+    '        End Try
+    '    End With
+    '    Return control_
+    'End Function
+
+
+
+    ''' <summary>
+    ''' Populates ListBox with items of List. Won't do anything if ListBox already has items.
+    ''' </summary>
+    ''' <param name="control_"></param>
+    ''' <param name="list_"></param>
+    ''' <returns></returns>
+    Public Shared Function BindProperty(control_ As ListBox, list_ As List(Of String), Optional Top_Items_Are As Array = Nothing, Optional clear_before_fill As Boolean = False) As WebControl
+        If control_.Items.Count > 0 Then Return control_
+        Dim l As New List(Of String)
+        If Top_Items_Are IsNot Nothing Then
+            If Top_Items_Are.Length > 0 Then
+                With Top_Items_Are
+                    For i = 0 To .Length - 1
+                        l.Add(Top_Items_Are(i))
+                    Next
+                End With
+            End If
+        End If
+        For i = 0 To CType(list_, List(Of String)).Count - 1
+            l.Add(list_(i))
+        Next
+        Try
+            If clear_before_fill Then
+                CType(control_, ListBox).Items.Clear()
+                CType(control_, ListBox).DataSource = Nothing
+            End If
+        Catch ex As Exception
+        End Try
+        With l
+            Try
+                For i = 0 To .Count - 1
+                    CType(control_, ListBox).Items.Add(l(i))
+                Next
+            Catch ex As Exception
+
+            End Try
+        End With
+        Return control_
+    End Function
+
+    ''' <summary>
+    ''' Attaches Array as DataSource to ListBox. Won't do anything if ListBox already has items.
+    ''' </summary>
+    ''' <param name="control_"></param>
+    ''' <param name="list_"></param>
+    ''' <returns></returns>
+    'Public Shared Function BindProperty(control_ As ListBox, list_ As Array, Optional Top_Items_Are As Array = Nothing, Optional clear_before_fill As Boolean = True) As WebControl
+    '    If control_.Items.Count > 0 Then Return control_
+    '    Dim l As New List(Of String)
+    '    If Top_Items_Are IsNot Nothing Then
+    '        If Top_Items_Are.Length > 0 Then
+    '            With Top_Items_Are
+    '                For i = 0 To .Length - 1
+    '                    l.Add(Top_Items_Are(i))
+    '                Next
+    '            End With
+    '        End If
+    '    End If
+    '    If TypeOf (list_) Is Array Then
+    '        For i = 0 To CType(list_, Array).Length - 1
+    '            l.Add(list_(i))
+    '        Next
+    '    End If
+    '    Try
+    '        If clear_before_fill Then
+    '            CType(control_, ListBox).Items.Clear()
+    '            CType(control_, ListBox).DataSource = Nothing
+    '        End If
+    '    Catch ex As Exception
+    '    End Try
+    '    With l
+    '        Try
+    '            For i = 0 To .Count - 1
+    '                CType(control_, ListBox).Items.Add(l(i))
+    '            Next
+    '        Catch ex As Exception
+
+    '        End Try
+    '    End With
+    '    Return control_
+    'End Function
+
+
+
+    '''' <summary>
+    '''' Attaches List(Of String) as DataSource to DropDownList
+    '''' </summary>
+    '''' <param name="control_"></param>
+    '''' <param name="list_"></param>
+    '''' <param name="First_Item_Is_Empty"></param>
+    '''' <returns></returns>
+    'Public Shared Function BindProperty(control_ As DropDownList, list_ As List(Of String), Optional First_Item_Is As String = "", Optional First_Item_Is_Empty As Boolean = True) As WebControl
+    '	Dim l As New List(Of String)
+    '	If First_Item_Is_Empty Then l.Add("")
+    '	If First_Item_Is.Trim.Length > 1 Then l.Add(First_Item_Is)
+    '	For i = 0 To CType(list_, List(Of String)).Count - 1
+    '		l.Add(list_(i))
+    '	Next
+    '	Try
+    '		CType(control_, DropDownList).Items.Clear()
+    '		CType(control_, DropDownList).DataSource = Nothing
+    '	Catch ex As Exception
+
+    '	End Try
+    '	With l
+    '		Try
+    '			For i = 0 To .Count - 1
+    '				CType(control_, DropDownList).Items.Add(l(i))
+    '			Next
+    '		Catch ex As Exception
+
+    '		End Try
+    '	End With
+    '	Return control_
+    'End Function
+
+    '''' <summary>
+    '''' Attaches Array as DataSource to DropDownList
+    '''' </summary>
+    '''' <param name="control_"></param>
+    '''' <param name="list_"></param>
+    '''' <param name="First_Item_Is_Empty"></param>
+    '''' <returns></returns>
+    'Public Shared Function BindProperty(control_ As DropDownList, list_ As Array, Optional First_Item_Is As String = "", Optional First_Item_Is_Empty As Boolean = True) As WebControl
+    '	Dim l As New List(Of String)
+    '	If First_Item_Is_Empty Then l.Add("")
+    '	If First_Item_Is.Trim.Length > 1 Then l.Add(First_Item_Is)
+    '	If TypeOf (list_) Is Array Then
+    '		For i = 0 To CType(list_, Array).Length - 1
+    '			l.Add(list_(i))
+    '		Next
+    '	End If
+    '	Try
+    '		CType(control_, DropDownList).Items.Clear()
+    '		CType(control_, DropDownList).DataSource = Nothing
+    '	Catch ex As Exception
+
+    '	End Try
+    '	With l
+    '		Try
+    '			For i = 0 To .Count - 1
+    '				CType(control_, DropDownList).Items.Add(l(i))
+    '			Next
+    '		Catch ex As Exception
+
+    '		End Try
+    '	End With
+    '	Return control_
+    'End Function
+
+
+
+    '''' <summary>
+    '''' Attaches List(Of String) as DataSource to ListBox
+    '''' </summary>
+    '''' <param name="control_"></param>
+    '''' <param name="list_"></param>
+    '''' <param name="First_Item_Is_Empty"></param>
+    '''' <returns></returns>
+    'Public Shared Function BindProperty(control_ As ListBox, list_ As List(Of String), Optional First_Item_Is As String = "", Optional First_Item_Is_Empty As Boolean = True) As WebControl
+    '	Dim l As New List(Of String)
+    '	If First_Item_Is_Empty Then l.Add("")
+    '	If First_Item_Is.Trim.Length > 1 Then l.Add(First_Item_Is)
+    '	For i = 0 To CType(list_, List(Of String)).Count - 1
+    '		l.Add(list_(i))
+    '	Next
+    '	Try
+    '		CType(control_, ListBox).Items.Clear()
+    '		CType(control_, ListBox).DataSource = Nothing
+    '	Catch ex As Exception
+    '	End Try
+    '	With l
+    '		Try
+    '			For i = 0 To .Count - 1
+    '				CType(control_, ListBox).Items.Add(l(i))
+    '			Next
+    '		Catch ex As Exception
+
+    '		End Try
+    '	End With
+    '	Return control_
+    'End Function
+
+    '''' <summary>
+    '''' Attaches Array as DataSource to ListBox
+    '''' </summary>
+    '''' <param name="control_"></param>
+    '''' <param name="list_"></param>
+    '''' <param name="First_Item_Is_Empty"></param>
+    '''' <returns></returns>
+    'Public Shared Function BindProperty(control_ As ListBox, list_ As Array, Optional First_Item_Is As String = "", Optional First_Item_Is_Empty As Boolean = True) As WebControl
+    '	Dim l As New List(Of String)
+    '	If First_Item_Is_Empty Then l.Add("")
+    '	If First_Item_Is.Trim.Length > 1 Then l.Add(First_Item_Is)
+    '	If TypeOf (list_) Is Array Then
+    '		For i = 0 To CType(list_, Array).Length - 1
+    '			l.Add(list_(i))
+    '		Next
+    '	End If
+    '	Try
+    '		CType(control_, ListBox).Items.Clear()
+    '		CType(control_, ListBox).DataSource = Nothing
+    '	Catch ex As Exception
+    '	End Try
+    '	With l
+    '		Try
+    '			For i = 0 To .Count - 1
+    '				CType(control_, ListBox).Items.Add(l(i))
+    '			Next
+    '		Catch ex As Exception
+
+    '		End Try
+    '	End With
+    '	Return control_
+    'End Function
+
+
+    ''' <summary>
+    ''' Binds database column/field to DropDownList.
+    ''' </summary>
+    ''' <param name="control_">Control</param>
+    ''' <param name="query_">SQL Query</param>
+    ''' <param name="connection_string">SQL Connection String</param>
+    ''' <param name="select_parameter_keys_values_">Select Parameters (Nothing, if not needed)</param>
+    ''' <param name="data_text_field">Database Field</param>
+    ''' <returns>control_</returns>
+    Public Shared Function BindProperty(control_ As DropDownList, query_ As String, connection_string As String, Optional select_parameter_keys_values_ As Array = Nothing, Optional data_text_field As String = "", Optional ignore_if_control_has_items As Boolean = True) As WebControl
+        Return DData(control_, query_, connection_string, data_text_field, data_text_field, select_parameter_keys_values_, ignore_if_control_has_items)
+    End Function
+
+    ''' <summary>
+    ''' Binds database column/field to ListBox.
+    ''' </summary>
+    ''' <param name="control_">Control</param>
+    ''' <param name="query_">SQL Query</param>
+    ''' <param name="connection_string">SQL Connection String</param>
+    ''' <param name="select_parameter_keys_values_">Select Parameters (Nothing, if not needed)</param>
+    ''' <param name="data_text_field">Database Field</param>
+    ''' <returns>control_</returns>
+    Public Shared Function BindProperty(control_ As ListBox, query_ As String, connection_string As String, Optional select_parameter_keys_values_ As Array = Nothing, Optional data_text_field As String = "", Optional ignore_if_control_has_items As Boolean = True) As WebControl
+        Return LData(control_, query_, connection_string, data_text_field, data_text_field, select_parameter_keys_values_, ignore_if_control_has_items)
+    End Function
+
+#End Region
+
+
+#Region "Statistics"
+
+
+
+#End Region
 
 #Region "Nationality"
     Public Sub CountriesDrop(d_ As DropDownList, Optional FirstIsEmpty As Boolean = True)
@@ -1437,32 +1469,6 @@ Public Class Web
 #End Region
 
 
-    Public Shared Function EnumDrop(drop As ListBox, enum__ As Object, Optional as_drop_not_list As Boolean = True) As Object
-        Dim e = GetEnum(enum__)
-        Dim l As New List(Of String)
-        With e
-            For i = 0 To .Count - 1
-                l.Add(EnumToDrop(e(i)))
-            Next
-        End With
-
-        l.Sort()
-
-        With drop
-            .DataSource = Nothing
-            .Items.Clear()
-            For i = 0 To l.Count - 1
-                .Items.Add(l(i))
-            Next
-        End With
-
-        If as_drop_not_list Then
-            Return drop
-        Else
-            Return l
-        End If
-    End Function
-
 #Region "JavaScript"
 
     ''' <summary>
@@ -1477,6 +1483,14 @@ Public Class Web
     End Sub
 
     'Public Shared Sub Toast(str_ As String, UpdatePanel As Object, script_manager_object As Object, Optional path_to_js_file As String = "scripts/custom.js")
+    ''' <summary>
+    ''' Runs a JS function.
+    ''' </summary>
+    ''' <param name="function_"></param>
+    ''' <param name="arg_"></param>
+    ''' <param name="page_or_updatePanel"></param>
+    ''' <param name="script_manager_object"></param>
+    ''' <param name="path_to_js_file"></param>
     Public Shared Sub JavaScript(function_ As String, arg_ As Object, page_or_updatePanel As Object, script_manager_object As Object, Optional path_to_js_file As String = "scripts/custom.js")
         Dim param_
         If TypeOf (arg_) Is String Then
@@ -2544,5 +2558,21 @@ Public Class Web
 
 #End Region
 
+
+#Region "HTTP"
+    ''' <summary>
+    ''' Quick http call.
+    ''' </summary>
+    ''' <param name="path_to_remote_resource"></param>
+    ''' <returns>String.</returns>
+    Public Shared Function Peek(path_to_remote_resource As String) As String
+        Dim client As New WebClient()
+        Dim stream As Stream = client.OpenRead(path_to_remote_resource)
+        Dim reader As New StreamReader(stream)
+        Dim content As String = reader.ReadToEnd()
+        Return content
+    End Function
+
+#End Region
 
 End Class

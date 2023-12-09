@@ -17,6 +17,7 @@ Imports System.Runtime.InteropServices
 
 Public Class Desktop
 
+#Region "Desktop"
 
     Public Shared Function GetRunningPrograms(Optional sought As SideToReturn = SideToReturn.AsCustomApplicationInfo, Optional only_if_main_window_title_is_not_blank As Boolean = False, Optional machine_name As String = Nothing)
 
@@ -242,7 +243,6 @@ Public Class Desktop
         End Select
     End Function
 
-#Region "General"
     Public suffx
     Public prefx
     Public countr
@@ -495,7 +495,6 @@ Public Class Desktop
 
     End Sub
 
-#End Region
     ''' <summary>
     ''' Displays a message box, accompanied by voice feedback.
     ''' </summary>
@@ -1083,119 +1082,6 @@ Public Class Desktop
         End If
     End Function
 
-#Region "Si_JSON"
-    ''' <summary>
-    ''' Converts the items of ListBox to JSON. You can save the output directly to the database. Not intended to be used as dictionary. Opposite of DatabaseToControlJSON.
-    ''' </summary>
-    ''' <param name="l">ListBox with items</param>
-    ''' <returns>String to save to database</returns>
-    Public Shared Function Si_ControlToDatabaseJSON(l As ListBox) As String
-        Dim val_ As String = ""
-        Dim ltemp As ListBox = l
-        If ltemp.Items.Count > 0 Then
-            With ltemp
-                .SelectedIndex = 0
-                For k As Integer = 0 To .Items.Count - 1
-                    val_ &= "'" & .SelectedItem & "':'" & .SelectedItem & "'"
-
-                    If k <> .Items.Count - 1 Then
-                        val_ &= ", "
-                        .SelectedIndex += 1
-                    End If
-                Next
-            End With
-        End If
-        Return val_
-    End Function
-
-    ''' <summary>
-    ''' Takes database Si_JSON string and populates control (ListBox, ComboBox or Textbox) with it. Opposite of ControlToDatabaseJSON. You can use NFunctions.DatabaseToListJSON() instead if you want it as a list.
-    ''' </summary>
-    ''' <param name="val_">Database JSON string</param>
-    ''' <param name="control_">Control to bind to</param>
-    ''' <param name="step_">Should the values be treated strictly as dictionary?</param>
-
-    Public Shared Sub Si_BindListToControl(val_ As String, Optional control_ As Control = Nothing, Optional step_ As Integer = 1)
-        If val_.Length < 1 Then Exit Sub
-
-        Clear(control_)
-
-        Dim s As New List(Of String)
-        Try
-            s.Clear()
-        Catch ex As Exception
-        End Try
-        s = Si_StringToList(val_.Trim)
-
-        Dim c As ComboBox
-        Dim l_ As ListBox
-        Dim t As TextBox
-
-        If TypeOf control_ Is ComboBox Then
-            c = control_
-            c.DataSource = s
-            Exit Sub
-        ElseIf TypeOf control_ Is ListBox Then
-            l_ = control_
-            l_.DataSource = s
-            Exit Sub
-        End If
-
-        If TypeOf control_ Is TextBox Then
-            t = control_
-            t.Text = ""
-            For i As Integer = 0 To s.Count - 1 Step step_
-                t.Text &= s(i).ToString & vbCrLf
-            Next
-        End If
-    End Sub
-
-#End Region
-
-#Region "Nationality"
-    Public Sub CountriesDrop(d_ As ComboBox, Optional FirstIsEmpty As Boolean = True)
-        If d_.Items.Count > 0 Then Exit Sub
-
-        'Dim web_methods_ As New Web_Module.Methods
-        '		Dim d_w As New Web_Module.DataConnectionWeb
-
-        Clear(d_)
-
-        If FirstIsEmpty Then d_.Items.Add("")
-
-        Dim l As List(Of String) = CountriesList()
-        For i As Integer = 0 To l.Count - 1
-            d_.Items.Add(l(i).ToString)
-        Next
-    End Sub
-
-    Public Sub StatesOfNigeriaDrop(d_ As ComboBox, Optional FirstIsEmpty As Boolean = True)
-        If d_.Items.Count > 0 Then Exit Sub
-
-        'Dim web_methods_ As New Web_Module.Methods
-        '		Dim d_w As New Web_Module.DataConnectionWeb
-
-        Clear(d_)
-
-        If FirstIsEmpty Then d_.Items.Add("")
-
-        Dim l As List(Of String) = StatesOfNigeriaList
-        For i As Integer = 0 To l.Count - 1
-            d_.Items.Add(l(i).ToString)
-        Next
-    End Sub
-    Public Sub LGAsDrop(con_string__ As String, d_ As ComboBox, Optional state_ As String = Nothing, Optional country_ As String = "Nigeria")
-        Dim q As String
-        If state_ IsNot Nothing Then
-            BindProperty(d_, PropertyToBind.Items, BuildSelectString_DISTINCT("MyAdminDropdownState", {"LGAsOfNigeria"}, {"Countries", "StatesOfNigeria"}), con_string__, {"Countries", country_, "StatesOfNigeria", state_}, "LGAsOfNigeria")
-            Exit Sub
-        End If
-
-        BindProperty(d_, PropertyToBind.Items, BuildSelectString_DISTINCT("MyAdminDropdownState", {"LGAsOfNigeria"}, Nothing), con_string__, Nothing, "LGAsOfNigeria")
-    End Sub
-
-#End Region
-
     Public Sub ClearSearch(LocateBy_ As ComboBox, LoadThis_ As ComboBox, Optional Stat_ As TextBox = Nothing)
         Clear(LoadThis_)
         LocateBy_.Text = ""
@@ -1469,6 +1355,1039 @@ Public Class Desktop
         End If
         Return stream_.GetBuffer
     End Function
+
+    ''' <summary>
+    ''' Prompts the user to select application and argument, then creates batch file and writes it to file optionally.
+    ''' </summary>
+    ''' <param name="filename"></param>
+    ''' <param name="append"></param>
+    ''' <returns></returns>
+    Public Shared Function BatchFileFromScratch(Optional filename As String = Nothing, Optional no_quotes As Boolean = False, Optional append As Boolean = True) As String
+        Dim application = GetFile(FileDialogExpectedFormat.any)
+        If application.Length < 1 Then Return ""
+        Dim details As New List(Of String)
+        details.Add(application)
+        Dim argument = GetFile(FileDialogExpectedFormat.any, "Select Argument")
+        details.Add(argument)
+        Return BatchFile(details(0), details(1), no_quotes, filename, append)
+    End Function
+
+    ''' <summary>
+    ''' Creates batch file string and writes it to file optionally.
+    ''' </summary>
+    ''' <param name="application"></param>
+    ''' <param name="argument"></param>
+    ''' <param name="filename"></param>
+    ''' <param name="append"></param>
+    ''' <returns></returns>
+
+    Public Shared Function BatchFile(application As String, Optional argument As String = Nothing, Optional no_quotes As Boolean = False, Optional filename As String = Nothing, Optional append As Boolean = True) As String
+        If CType(application, String).Trim.Length < 1 Then
+            Return ""
+            Exit Function
+        End If
+
+        Dim r As String = ""
+
+        If no_quotes = False Then
+            r = """" & application & """" & vbCr
+            If argument IsNot Nothing Then
+                If CType(argument, String).Trim.Length > 1 Then r = """" & application & """" & " " & """" & argument & """" & vbCr
+            End If
+        Else
+            r = application & vbCr
+            If argument IsNot Nothing Then
+                If CType(argument, String).Trim.Length > 1 Then r = application & " " & argument & vbCr
+            End If
+        End If
+        If filename IsNot Nothing Then
+            If filename.Length > 0 Then
+                My.Computer.FileSystem.WriteAllText(filename, r, append)
+            End If
+        End If
+        Return r
+    End Function
+    'Public Shared Function BatchFile(application As String, Optional argument As String = Nothing, Optional filename As String = Nothing, Optional append As Boolean = True) As String
+    '    If CType(application, String).Trim.Length < 1 Then
+    '        Return ""
+    '        Exit Function
+    '    End If
+
+    '    Dim r As String = """" & application & """" & vbCr
+    '    If argument IsNot Nothing Then
+    '        If CType(argument, String).Trim.Length > 1 Then r = """" & application & """" & " " & """" & argument & """" & vbCr
+    '    End If
+    '    If filename IsNot Nothing Then
+    '        If filename.Length > 0 Then
+    '            My.Computer.FileSystem.WriteAllText(filename, r, append)
+    '        End If
+    '    End If
+    '    Return r
+    'End Function
+
+
+    ''' <summary>
+    ''' Search.
+    ''' </summary>
+    ''' <param name="control_">Textbox to search from.</param>
+    ''' <param name="sought_">What to select if found in control_'s content.</param>
+    ''' <param name="current_position">Variable to keep track of how many of sought_ has been found (should be overwritten at each next call otherwise it'll only always check once).</param>
+    ''' <returns>0 if sought_ isn't found, else next index where it is found.</returns>
+    ''' <example>
+    ''' 'DECLARATION
+    ''' Public search_position As Integer = 1
+    ''' Public search_ As String = ""
+    ''' 'Ctrl+F
+    ''' search_ = GetText("Locate ...")
+    ''' search_position = LocateText(tContent, search_, search_position)
+    ''' 'F3
+    ''' If search_.Length > 0 Then search_position = LocateText(tContent, search_, search_position)
+    ''' </example>
+    Public Shared Function LocateText(control_ As TextBox, sought_ As String, Optional current_position As Integer = Nothing) As Integer
+        If control_.Text.Length < 1 Then Return 0
+        Dim search_ As Integer = 1
+        If current_position <> Nothing Then search_ = Val(current_position)
+        If search_ = 0 Then search_ = 1
+
+        For i% = search_ To control_.Text.Length
+            If Mid(control_.Text, i, sought_.Length).ToLower() = sought_.Trim.ToLower() Then
+                control_.SelectionStart = i - 1
+                control_.SelectionLength = sought_.Length
+                control_.ScrollToCaret()
+                control_.Focus()
+                search_ = i + 1
+                Exit For
+            ElseIf Mid(control_.Text, i, sought_.Length).ToLower() <> sought_.Trim.ToLower() And control_.Text.Length - i < sought_.Length Then
+                search_ = 0
+                Exit For
+            End If
+        Next
+        Return search_
+
+        'DECLARATION
+        'Public search_position As Integer = 1
+        'Public search_ As String = ""
+        'Ctrl+F
+        'search_ = GetText("Locate ...")
+        'search_position = LocateText(tContent, search_, search_position)
+        'F3
+        'If search_.Length > 0 Then search_position = LocateText(tContent, search_, search_position)
+
+
+        'INITIALLY
+        'u.text = 0
+        'RECURRENT, IF u.text > 0
+        'u.Text = LocateText(t, "html", u.Text)
+
+    End Function
+
+    'Private Shared Function CommitFile(txt_ As String, Optional default_ext As String = ".txt", Optional add_extension As Boolean = True, Optional filter_ As String = "Document|*.txt", Optional title_ As String = "Save file...") As String
+    '    If txt_.Length < 1 Then Return ""
+    '    Dim return_ As String = ""
+    '    Dim filter__ As String = filter_docs
+    '    If filter_.Length > 0 Then filter__ = filter_
+
+    '    Dim default_ext__ As String = ".txt"
+    '    If default_ext.Length > 0 Then default_ext__ = default_ext
+
+    '    Dim title__ As String = "Save file..."
+    '    If title_.Length > 0 Then title__ = title_
+
+    '    Dim save_file As New SaveFileDialog
+    '    With save_file
+    '        .Filter = filter__
+    '        .DefaultExt = default_ext__
+    '        .AddExtension = add_extension
+    '        .Title = title__
+    '        .ShowDialog()
+
+    '        If .FileName.Length > 0 Then
+    '            WriteText(.FileName, txt_)
+    '            return_ = .FileName
+    '        End If
+    '    End With
+    '    Return return_
+    'End Function
+
+    Public Function SetTextToClipboard(str_ As String) As Boolean
+        Try
+            Clipboard.SetText(str_)
+            Return True
+        Catch ex As Exception
+            Return False
+        End Try
+    End Function
+    Public Function GetTextFromClipboard(str_ As String) As String
+        Try
+            If Clipboard.ContainsText Then
+                Return Clipboard.GetText
+            End If
+        Catch ex As Exception
+        End Try
+    End Function
+    Public Shared Sub PermitFile(file_ As String, Optional temp_file As String = "", Optional user_ As String = "")
+        Dim list As New List(Of String)
+        list.Add(file_)
+        PermitFiles(list, user_)
+    End Sub
+    Public Shared Sub PermitFiles(file_ As List(Of String), Optional temp_file As String = "", Optional user_ As String = "")
+        On Error Resume Next
+        Dim t_file As String
+        If temp_file.Length < 1 Then temp_file = My.Application.Info.DirectoryPath & "\FilePermissions.bat"
+        If user_.Length < 1 Then user_ = Environment.UserName
+
+        Dim str_ As String = ""
+        For i As Integer = 0 To file_.Count - 1
+            str_ &= "icacls """ & file_(i) & """ /grant " & user_ & ":(F)" & vbCrLf
+        Next
+        WriteText(temp_file, str_)
+        StartFile(temp_file)
+
+    End Sub
+
+    Public Sub PermissionForFile(file_ As String, Optional perm_ As FileSystemRights = FileSystemRights.FullControl, Optional remove_existing As Boolean = False)
+        If file_.Length < 1 Then Exit Sub
+        If perm_.ToString.Length < 1 Then perm_ = FileSystemRights.FullControl
+
+        Dim user_ As String = Environment.UserName
+
+        Dim FilePath As String = file_
+        Dim UserAccount As String = user_
+        Dim FileInfo As IO.FileInfo = New IO.FileInfo(FilePath)
+        Dim FileAcl As New FileSecurity
+        FileAcl.AddAccessRule(New FileSystemAccessRule(UserAccount, perm_, AccessControlType.Deny))
+    End Sub
+    ''' <summary>
+    ''' Sets folder acccess. Windows related.
+    ''' </summary>
+    ''' <param name="folder_">Folder to set permission on</param>
+    ''' <param name="perm_">Type of permission</param>
+    ''' <param name="remove_existing">Should existing permissions for this user be overwritten if found?</param>
+    Public Sub PermissionForFolder(folder_ As String, Optional perm_ As FileSystemRights = FileSystemRights.FullControl, Optional remove_existing As Boolean = False)
+        If folder_.Length < 1 Then Exit Sub
+        If perm_.ToString.Length < 1 Then perm_ = FileSystemRights.FullControl
+
+        Dim user_ As String = Environment.UserName
+
+        Dim FolderPath As String = folder_
+        Dim UserAccount As String = user_
+
+        Dim FolderInfo As IO.DirectoryInfo = New IO.DirectoryInfo(FolderPath)
+        Dim FolderAcl As New DirectorySecurity
+        FolderAcl.AddAccessRule(New FileSystemAccessRule(UserAccount, perm_, InheritanceFlags.ContainerInherit Or InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow))
+        If remove_existing = True Then FolderAcl.SetAccessRuleProtection(True, False)
+        FolderInfo.SetAccessControl(FolderAcl)
+    End Sub
+
+    ''' <summary>
+    ''' Sets folder acccess. Windows related. Same as PermissionForFolder.
+    ''' </summary>
+    ''' <param name="folder_">Folder to set permission on</param>
+    ''' <param name="perm_">Type of permission</param>
+    ''' <param name="remove_existing">Should existing permissions for this user be overwritten if found?</param>
+
+    Public Shared Sub PermitFolder(folder_ As String, Optional perm_ As FileSystemRights = FileSystemRights.FullControl, Optional remove_existing As Boolean = False)
+        Try
+            If folder_.Length < 1 Then Exit Sub
+            If perm_.ToString.Length < 1 Then perm_ = FileSystemRights.FullControl
+
+            Dim user_ As String = Environment.UserName
+
+            Dim FolderPath As String = folder_
+            Dim UserAccount As String = user_
+
+            Dim FolderInfo As IO.DirectoryInfo = New IO.DirectoryInfo(FolderPath)
+            Dim FolderAcl As New DirectorySecurity
+            FolderAcl.AddAccessRule(New FileSystemAccessRule(UserAccount, perm_, InheritanceFlags.ContainerInherit Or InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow))
+            If remove_existing = True Then FolderAcl.SetAccessRuleProtection(True, False)
+            FolderInfo.SetAccessControl(FolderAcl)
+        Catch
+        End Try
+    End Sub
+
+    Private Shared Sub ToMachineStartup(file_ As String, key_ As String)
+        If file_.Length < 1 Or key_.Length < 1 Then Exit Sub
+        Try
+            My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run", key_, file_)
+        Catch x As Exception
+        End Try
+    End Sub
+    Public Shared Sub ToStartup(file_ As String, key_ As String)
+        ToMachineStartup(file_, key_)
+    End Sub
+
+    Public Sub RemoveFromStartup(file_ As String, key_ As String)
+        If file_.Length < 1 Or key_.Length < 1 Then Exit Sub
+
+        Using key As RegistryKey = My.Computer.Registry.CurrentUser.OpenSubKey("Software")
+            key.DeleteSubKey("Software\Microsoft\Windows\CurrentVersion\Run\" & key_)
+        End Using
+
+        Dim exists As Boolean = False
+        Try
+            If My.Computer.Registry.CurrentUser.OpenSubKey("Software\Microsoft\Windows\CurrentVersion\Run\" & key_) IsNot Nothing Then
+            End If
+        Catch
+        Finally
+        End Try
+
+    End Sub
+    Public Shared Sub RegistryRemoveKey(section As RegistryKey, subKey_ As String)
+        Try
+            section.DeleteSubKey(subKey_)
+        Catch ex As Exception
+        End Try
+
+    End Sub
+
+    Public Sub SetAttribute(file_OR_directory As String, Optional show_ As Boolean = False, Optional remove_ As Boolean = True)
+        If show_ = False And remove_ = False Then
+            Try
+                SetAttr(file_OR_directory, FileAttribute.Hidden)
+                Exit Sub
+            Catch ex As Exception
+            End Try
+        End If
+
+        If show_ = True Then
+            Try
+                SetAttr(file_OR_directory, FileAttribute.Normal)
+                Exit Sub
+            Catch ex As Exception
+            End Try
+        Else
+        End If
+
+        If remove_ = True Then
+            Try
+                SetAttr(file_OR_directory, FileAttribute.Hidden + FileAttribute.System)
+                Exit Sub
+            Catch ex As Exception
+            End Try
+        Else
+        End If
+
+    End Sub
+
+    ''' <summary>
+    ''' Creates a shortcut
+    ''' </summary>
+    ''' <param name="where_the_shortcut_points_to">The file, e.g. the executable.</param>
+    ''' <param name="where_to_put_the_shortcut">The target folder where the shortcut is going to be created.</param>
+    ''' <param name="filename_for_the_shortcut">The filename of the shortcut</param>
+    ''' <param name="icon_file">Optional icon file.</param>
+    ''' <example>
+    ''' Dim exe as String = "c:\file.pdf"
+    ''' CreateShortcut(exe, Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), icon_file)
+    ''' </example>
+    Public Shared Sub CreateShortcut(where_the_shortcut_points_to As String, where_to_put_the_shortcut As String, filename_for_the_shortcut As String, Optional icon_file As String = Nothing)
+        Dim wsh As Object = CreateObject("WScript.Shell")
+
+        wsh = CreateObject("WScript.Shell")
+
+        Dim MyShortcut, DesktopPath
+
+        ' Read desktop path using WshSpecialFolders object
+
+        DesktopPath = where_to_put_the_shortcut
+
+        MyShortcut = wsh.CreateShortcut(DesktopPath & "\" & filename_for_the_shortcut & ".lnk")
+
+        ' Set shortcut object properties and save it
+
+        MyShortcut.TargetPath = wsh.ExpandEnvironmentStrings(where_the_shortcut_points_to)
+
+        MyShortcut.WorkingDirectory = wsh.ExpandEnvironmentStrings(where_to_put_the_shortcut)
+
+        MyShortcut.WindowStyle = 4
+
+        If icon_file IsNot Nothing Then
+            If icon_file.Length > 1 Then
+                MyShortcut.IconLocation = wsh.ExpandEnvironmentStrings(icon_file)
+            End If
+        End If
+
+        'Save the shortcut
+
+        MyShortcut.Save()
+    End Sub
+
+    Public Shared Function AppIsOn(file_path As String) As Boolean
+        Dim p() As Process = Process.GetProcessesByName(Path.GetFileNameWithoutExtension(file_path.Trim))
+        AppIsOn = p.Count > 0
+    End Function
+    Public Shared Function AppNotOn(file_path As String) As Boolean
+        Dim p() As Process = Process.GetProcessesByName(Path.GetFileNameWithoutExtension(file_path.Trim))
+        AppNotOn = p.Count < 1
+    End Function
+
+    Public Shared Sub KillProcess(process_name_without_extension As String)
+        For Each proc As Process In Process.GetProcessesByName(process_name_without_extension)
+            proc.Kill()
+        Next
+    End Sub
+    Public Shared Sub TaskManager()
+        StartFile("taskmgr")
+    End Sub
+
+    Public Shared Sub StartFiles(files_list_SI As String, Optional style_ As ProcessWindowStyle = ProcessWindowStyle.Normal, Optional style__ As Boolean = False, Optional checkFirst As Boolean = True)
+        StartApps(files_list_SI, style_, style__, checkFirst)
+    End Sub
+
+
+    ''' <summary>
+    ''' Opens apps from semi-JSON string.
+    ''' </summary>
+    ''' <param name="files_list_SI">Semi-JSON string</param>
+    ''' <param name="style_">For StartApp()</param>
+    ''' <param name="style__">For StartApp()</param>
+    ''' <param name="checkFirst">For StartApp()</param>
+    Public Shared Sub StartApps(files_list_SI As String, Optional style_ As ProcessWindowStyle = ProcessWindowStyle.Normal, Optional style__ As Boolean = False, Optional checkFirst As Boolean = True)
+        '		If Exists(files_list_semiJSON) = False Then Return
+        Dim files_list_semiJSON As String = files_list_SI
+        'open apps if not already open
+        Dim v As String = files_list_semiJSON.Trim
+        If v.Length < 1 Then Return
+        ''v = v.Replace("\", "\\")
+        Dim s As New List(Of String)
+        Try
+            s.Clear()
+        Catch ex As Exception
+        End Try
+        s = Si_StringToList(v)
+        For i As Integer = 0 To s.Count - 1
+            StartFile(s(i), style_, style__, checkFirst)
+        Next
+
+    End Sub
+
+    Public Shared Sub StartAppsWithArguments(files_list_semiJSON As String, Optional style_ As ProcessWindowStyle = ProcessWindowStyle.Normal, Optional style__ As Boolean = False, Optional checkFirst As Boolean = False)
+        '		If Exists(files_list_semiJSON) = False Then Return
+
+        'open apps if not already open
+        Dim v As String = files_list_semiJSON.Trim
+        If v.Length < 1 Then Return
+        ''v = v.Replace("\", "\\")
+        Dim s As New List(Of String)
+        Try
+            s.Clear()
+        Catch ex As Exception
+        End Try
+        s = Si_StringToList(v)
+        If s.Count Mod 2 <> 0 Then Return
+        ''Dim arg_ As Array = {}
+
+        For i As Integer = 0 To s.Count - 2 Step 2
+            StartFileWithArgument(s(i), {s(i + 1)}, style_, style__, checkFirst)
+        Next
+
+        '		Dim file_2 As String = "'1':'notepad', '2':'C:\Users\Administrator\Desktop\Hub\2D\StrictD\1.txt', '3':'C:\Program Files (x86)\Windows Media Player\wmplayer.exe', '4':'C:\Users\Pediforte\Music\Music\Playlists\68.wpl'"
+
+    End Sub
+
+    Private Shared loa As List(Of String)
+    Private Shared loa_counter As Integer = 0
+    Private Shared loa_timer As Timer
+    Private Shared loa_checkFirst As Boolean
+    Private Shared loa_initial As String
+    Private Shared loa_initial_timer As Timer
+    Private Shared counter_ As Integer = 0
+    '	Private Shared loa_initial_counter As Integer = 0
+    Private Shared Sub Load_Apps()
+        If loa_counter < loa.Count - 1 Then
+            StartFileWithArgument(loa(loa_counter), loa(loa_counter + 1), loa_checkFirst)
+            loa_counter += 2
+        Else
+            loa_timer.Enabled = False
+        End If
+
+    End Sub
+
+    Private Shared Sub Load_Initial_Apps()
+        StartApps(loa_initial)
+    End Sub
+
+    Private Shared Sub onInitialAppsLoaded()
+        If counter_ = 1 Then
+            loa_initial_timer.Enabled = False
+            loa_timer.Enabled = True
+        Else
+            counter_ = 1
+            Load_Initial_Apps()
+        End If
+    End Sub
+
+    Public Shared Sub StartAppsWithArguments(files_list_semiJSON As String, interval_in_s As Integer, initial_files_list_semiJSON As String, Optional initial_interval_in_s As Integer = 15, Optional checkFirst As Boolean = False)
+        '		If Exists(files_list_semiJSON) = False Then Return
+
+        'open apps if not already open
+        Dim v As String = files_list_semiJSON.Trim
+        If v.Length < 1 Then Return
+        ''v = v.Replace("\", "\\")
+        Dim s As New List(Of String)
+        Try
+            s.Clear()
+        Catch ex As Exception
+        End Try
+        s = Si_StringToList(v)
+        If s.Count Mod 2 <> 0 Then Return
+
+        loa_initial = initial_files_list_semiJSON
+        Dim t As New Timer
+        loa_initial_timer = t
+        t.Interval = initial_interval_in_s * 1000
+
+        loa_counter = 0
+        loa = s
+        loa_checkFirst = checkFirst
+        Dim timer As New Timer
+        loa_timer = timer
+        timer.Interval = interval_in_s * 1000
+
+        AddHandler t.Tick, AddressOf onInitialAppsLoaded
+        AddHandler timer.Tick, AddressOf Load_Apps
+        Load_Initial_Apps()
+
+        t.Enabled = True
+    End Sub
+    Public Shared Sub StartAppsWithArguments(files_list_semiJSON As String, interval_in_s As Integer, Optional checkFirst As Boolean = False)
+        '		If Exists(files_list_semiJSON) = False Then Return
+
+        'open apps if not already open
+        Dim v As String = files_list_semiJSON.Trim
+        If v.Length < 1 Then Return
+        ''v = v.Replace("\", "\\")
+        Dim s As New List(Of String)
+        Try
+            s.Clear()
+        Catch ex As Exception
+        End Try
+        s = Si_StringToList(v)
+        If s.Count Mod 2 <> 0 Then Return
+
+        loa_counter = 0
+        loa = s
+        loa_checkFirst = checkFirst
+        Dim timer As New Timer
+        loa_timer = timer
+        timer.Interval = interval_in_s * 1000
+        timer.Enabled = True
+        AddHandler timer.Tick, AddressOf Load_Apps
+
+    End Sub
+
+    Public Shared Sub StopApps(files_list_semiJSON As String, Optional useShell As Boolean = False)
+        ExitApps(files_list_semiJSON, useShell)
+    End Sub
+    <DllImport("User32.dll")>
+    Public Shared Function ShowWindow(ByVal hwnd As IntPtr, ByVal cmd As Integer) As Boolean
+
+    End Function
+
+    Public Shared Function ShowApp(process_name As String, state_ As AppWindowState) As Boolean
+        If process_name.Length < 1 Then Return False
+
+        process_name = Path.GetFileNameWithoutExtension(process_name)
+
+        Try
+            Dim p() As Process = Process.GetProcessesByName(process_name)
+            For Each pr As Process In p
+                ShowWindow(pr.MainWindowHandle, state_)
+            Next
+            Return True
+        Catch ex As Exception
+            Return False
+        End Try
+
+    End Function
+
+    Public Shared Function ShowDesktop(Optional show_ As Boolean = False) As Boolean
+        Dim show_or_hide As Integer = 6
+        If show_ = True Then show_or_hide = 9
+
+        Try
+            For Each p As Process In Process.GetProcesses
+                ShowWindow(p.MainWindowHandle, show_or_hide)
+            Next
+            Return True
+        Catch
+            Return False
+        End Try
+    End Function
+
+
+    Private Shared Sub ExitApps(files_list_semiJSON As String, Optional useShell As Boolean = False)
+        '		If Exists(files_list_semiJSON) = False Then Return
+
+        Dim v As String = files_list_semiJSON.Trim
+        If v.Length < 1 Then Return
+        ''v = v.Replace("\", "\\")
+        Dim s As New List(Of String)
+        Try
+            s.Clear()
+        Catch ex As Exception
+        End Try
+        s = Si_StringToList(v)
+        For i As Integer = 0 To s.Count - 1
+            If useShell = True Then
+                'taskkill /f /im "explorer.exe"
+                Shell("taskkill /f /im """ & Path.GetFileName(s(i)) & """")
+            Else
+                ExitApp(Path.GetFileNameWithoutExtension(s(i)))
+            End If
+        Next
+
+    End Sub
+
+
+    ''' <summary>
+    ''' Depracated. Use StartFile() or StartApps instead.
+    ''' </summary>
+    ''' <param name="file_">The path to the file.</param>
+    ''' <param name="style_">ProcessWindowStyle (normal, hidden etc)</param>
+    ''' <param name="style__">Ignore ProcessWindowStyle, completely hide it.</param>
+    ''' <param name="checkFirst">Check if an instance of the file is already running (in Tasks).</param>
+    ''' <returns>True if file exists and is opened, false if not.</returns>
+
+    Private Function StartApp(file_ As String, Optional style_ As ProcessWindowStyle = ProcessWindowStyle.Normal, Optional style__ As Boolean = False, Optional checkFirst As Boolean = True) As Boolean
+        If checkFirst = True Then
+            Try
+                If AppIsOn(Path.GetFileNameWithoutExtension(file_)) Then
+                    Exit Function
+                End If
+            Catch
+            End Try
+        End If
+
+        Dim s As New ProcessStartInfo
+        If style__ = True Then
+            s.WindowStyle = ProcessWindowStyle.Hidden
+        Else
+            s.WindowStyle = style_
+        End If
+        s.FileName = file_
+        Try
+            Process.Start(s)
+            Return True
+        Catch ex As Exception
+            Return False
+        End Try
+
+2:
+    End Function
+
+    ''' <summary>
+    ''' Opens a file. If checkFirst is True, then the program file won't run if it is already running; this is ignored if it's not a program file.
+    ''' </summary>
+    ''' <param name="file_">The path to the file.</param>
+    ''' <param name="style_">ProcessWindowStyle (normal, hidden etc)</param>
+    ''' <param name="style__">Ignore ProcessWindowStyle, completely hide it.</param>
+    ''' <param name="checkFirst">Check if an instance of the file is already running (in Tasks).</param>
+    ''' <returns>True if file exists and is opened, false if not.</returns>
+    Public Shared Function StartFile(file_ As String, Optional style_ As ProcessWindowStyle = ProcessWindowStyle.Normal, Optional style__ As Boolean = False, Optional checkFirst As Boolean = False) As Boolean
+        If checkFirst = True Then
+            Try
+                If AppIsOn(Path.GetFileNameWithoutExtension(file_)) Then
+                    Exit Function
+                End If
+            Catch
+            End Try
+        End If
+
+        Dim s As New ProcessStartInfo
+        If style__ = True Then
+            s.WindowStyle = ProcessWindowStyle.Hidden
+        Else
+            s.WindowStyle = style_
+        End If
+        s.FileName = file_
+        Try
+            Process.Start(s)
+            Return True
+        Catch ex As Exception
+            Return False
+        End Try
+
+2:
+    End Function
+    ''' <summary>
+    ''' Opens a file with argument. If checkFirst is True, then the program file won't run if it is already running; this is ignored if it's not a program file. Same as StartFileWithArgument.
+    ''' </summary>
+    ''' <param name="file_"></param>
+    ''' <param name="arg_"></param>
+    ''' <param name="checkFirst"></param>
+    ''' <returns></returns>
+    Public Shared Function StartFile(file_ As String, arg_ As String, Optional checkFirst As Boolean = False) As Boolean
+        If checkFirst = True Then
+            Try
+                If AppIsOn(Path.GetFileNameWithoutExtension(file_)) Then
+                    Exit Function
+                End If
+            Catch
+            End Try
+        End If
+
+        Try
+            Process.Start(file_, arg_)
+            Return True
+        Catch ex As Exception
+            Return False
+        End Try
+    End Function
+
+    Public Shared Sub StartFileThenExit(fileToStart As String, fileToStop As String, Optional startFirst As Boolean = True)
+        If fileToStart.Trim.Length < 1 Then Return
+        If startFirst Then
+            StartFile(fileToStart)
+            If fileToStop.Trim.Length > 0 Then ExitApp(fileToStop)
+        Else
+            If fileToStop.Trim.Length > 0 Then ExitApp(fileToStop)
+            StartFile(fileToStart)
+        End If
+    End Sub
+    Public Shared Sub StartFileThenExit(fileToStart As String)
+        If fileToStart.Trim.Length < 1 Then Return
+        StartFile(fileToStart)
+        ExitApp()
+    End Sub
+
+    Public Shared Function StartFileWithArgument(file_ As String, Optional arg_ As String = Nothing, Optional checkFirst As Boolean = False) As Boolean
+        If checkFirst = True Then
+            Try
+                If AppIsOn(Path.GetFileNameWithoutExtension(file_)) Then
+                    Exit Function
+                End If
+            Catch
+            End Try
+        End If
+
+        Try
+            Process.Start(file_, arg_)
+            Return True
+        Catch ex As Exception
+            Return False
+        End Try
+    End Function
+
+    Public Shared Function StartFileWithArgument(file_ As String, list_of_arguments As Array, Optional style_ As ProcessWindowStyle = ProcessWindowStyle.Normal, Optional style__ As Boolean = False, Optional checkFirst As Boolean = False) As Boolean
+        Dim arg_ As Array = list_of_arguments, arg__ As String
+        If checkFirst = True Then
+            Try
+                If AppIsOn(Path.GetFileNameWithoutExtension(file_)) Then
+                    Exit Function
+                End If
+            Catch
+            End Try
+        End If
+
+        Dim s As New ProcessStartInfo
+        If style__ = True Then
+            s.WindowStyle = ProcessWindowStyle.Hidden
+        Else
+            s.WindowStyle = style_
+        End If
+        s.FileName = file_
+        arg__ = array_to_string(arg_)
+        s.Arguments = arg__
+        Try
+            Process.Start(s)
+            Return True
+        Catch ex As Exception
+            Return False
+        End Try
+    End Function
+    Private Shared Function array_to_string(array As Array) As String
+        Dim s = ""
+        Try
+            For i = 0 To array.Length - 1
+                s &= array(i) & " "
+            Next
+        Catch
+        End Try
+        Return s.Trim
+    End Function
+
+    Public Shared Function SaveFile(filter As FileKind, Optional title As String = "Choose where to save your file.", Optional filename As String = "") As String
+        Dim s As New SaveFileDialog
+        With s
+            If filename.Length > 0 Then .FileName = filename
+            .Filter = FilterStringFromFileKind(filter)
+            .OverwritePrompt = True
+            .Title = title
+            .ShowDialog()
+            If .FileName.ToString.Length > 0 Then
+                Return .FileName
+            Else
+                Return ""
+            End If
+        End With
+    End Function
+
+    Public Shared Sub SaveFile(content As String, filter As FileKind, Optional title As String = "Choose where to save your file.", Optional filename As String = "")
+        Dim s As String = SaveFile(filter, title, filename)
+        If s.Length > 0 Then WriteText(s, content, False, True)
+    End Sub
+
+    Private Shared Function SaveFile(_filename, _filter) As Array
+        Dim f_ As New SaveFileDialog
+        Dim return_() As String
+
+        With f_
+            .FileName = _filename
+            .Filter = _filter
+            .ShowDialog()
+
+            If .FileName.Trim <> "" Then
+                return_ = {True, .FileName}
+            ElseIf .FileName.Trim = "" Then
+                return_ = {False, .FileName}
+            End If
+        End With
+        Return return_
+    End Function
+
+    Public Shared Function DiskLocation(default_string As String, Optional description_ As String = "", Optional root_folder As String = "", Optional show_new_folder_button As Boolean = True) As Array
+        Dim f_ As New FolderBrowserDialog
+        Dim return_() As String
+
+        With f_
+            .Description = description_
+            If root_folder.Length > 0 Then .RootFolder = root_folder
+            .ShowNewFolderButton = show_new_folder_button
+
+            .ShowDialog()
+
+            If .SelectedPath.Trim <> "" Then
+                return_ = {True, .SelectedPath}
+            ElseIf .SelectedPath.Trim = "" Then
+                return_ = {False, default_string}
+            End If
+        End With
+        Return return_
+    End Function
+
+    Public Shared Sub Hibernate()
+        Try
+            Application.SetSuspendState(PowerState.Hibernate, True, True)
+        Catch
+        End Try
+    End Sub
+
+    Public Shared Sub LogOff()
+        Try
+            Process.Start(Environment.GetFolderPath(Environment.SpecialFolder.System) & "\shutdown.exe", "-l")
+        Catch
+        End Try
+    End Sub
+    Public Shared Sub Restart()
+        Try
+            Process.Start(Environment.GetFolderPath(Environment.SpecialFolder.System) & "\shutdown.exe", "-r -f -t 0")
+        Catch
+        End Try
+    End Sub
+    Public Shared Sub Shutdown()
+        Try
+            Process.Start(Environment.GetFolderPath(Environment.SpecialFolder.System) & "\shutdown.exe", "-s -f -t 0")
+        Catch
+        End Try
+    End Sub
+
+    Public Shared Sub Sleep()
+        Try
+            Application.SetSuspendState(PowerState.Suspend, True, False)
+        Catch ex As Exception
+
+        End Try
+    End Sub
+    <System.Runtime.InteropServices.DllImport("user32.dll")>
+    Friend Shared Sub LockWorkStation()
+
+    End Sub
+    Public Shared Sub LockPC()
+        LockWorkStation()
+    End Sub
+
+    Public Shared Sub ExitApp(Optional process_name As String = "")
+        'taskkill /f /im "explorer.exe"
+
+        Try
+            Select Case process_name.Length
+                Case < 1
+                    Environment.Exit(0)
+                Case Else
+                    If AppIsOn(process_name) Then KillProcess(process_name)
+            End Select
+        Catch
+        End Try
+    End Sub
+
+    Public Shared Sub CopyFiles(src As String, tgt As String, Optional dialogs As FileIO.UIOption = FileIO.UIOption.AllDialogs)
+        If src.Trim.Length < 1 Or tgt.Trim.Length < 1 Then Return
+        My.Computer.FileSystem.CopyDirectory(src, tgt, dialogs, FileIO.UICancelOption.DoNothing)
+    End Sub
+
+    Public Shared Shadows Function RenameFile(src_file_path, tgt_file_name_plus_extension) As Boolean
+        Try
+            My.Computer.FileSystem.RenameFile(src_file_path, tgt_file_name_plus_extension)
+            Return True
+        Catch ex As Exception
+            Return False
+        End Try
+
+    End Function
+    Private Shared Property DoEvent_PlayAudio_file As String
+    Private Shared Property DoEvent_PlayAudio_mode As AudioPlayMode
+    Private Shared Sub DoEvent_PlayAudio()
+        My.Computer.Audio.Play(DoEvent_PlayAudio_file, DoEvent_PlayAudio_mode)
+    End Sub
+    Private Shared thread '' As New System.Threading.Thread(AddressOf DoEvent_PlayAudio)
+
+    Public Shared Sub PlayAudioFile(file_ As String, Optional mode_ As AudioPlayMode = AudioPlayMode.WaitToComplete, Optional threaded_ As Boolean = True)
+        If file_ Is Nothing Then Exit Sub
+        If file_.Length < 1 Then Exit Sub
+        Try
+            If threaded_ = True Then
+                DoEvent_PlayAudio_file = file_
+                DoEvent_PlayAudio_mode = mode_
+                thread = New System.Threading.Thread(AddressOf DoEvent_PlayAudio)
+                thread.Start()
+            Else
+                My.Computer.Audio.Play(file_, mode_)
+            End If
+        Catch ex As Exception
+        End Try
+    End Sub
+
+    Public Shared Sub StopPlayingAudioFile()
+        Try
+            My.Computer.Audio.Stop()
+        Catch ex As Exception
+        End Try
+    End Sub
+
+    Public Shared Function Exists(file_ As String) As Boolean
+        If file_.Length < 1 Then
+            Return False
+            Exit Function
+        End If
+        Exists = My.Computer.FileSystem.FileExists(file_) Or My.Computer.FileSystem.DirectoryExists(file_)
+    End Function
+
+
+#End Region
+
+#Region "Si_JSON"
+    ''' <summary>
+    ''' Converts the items of ListBox to JSON. You can save the output directly to the database. Not intended to be used as dictionary. Opposite of DatabaseToControlJSON.
+    ''' </summary>
+    ''' <param name="l">ListBox with items</param>
+    ''' <returns>String to save to database</returns>
+    Public Shared Function Si_ControlToDatabaseJSON(l As ListBox) As String
+        Dim val_ As String = ""
+        Dim ltemp As ListBox = l
+        If ltemp.Items.Count > 0 Then
+            With ltemp
+                .SelectedIndex = 0
+                For k As Integer = 0 To .Items.Count - 1
+                    val_ &= "'" & .SelectedItem & "':'" & .SelectedItem & "'"
+
+                    If k <> .Items.Count - 1 Then
+                        val_ &= ", "
+                        .SelectedIndex += 1
+                    End If
+                Next
+            End With
+        End If
+        Return val_
+    End Function
+
+    ''' <summary>
+    ''' Takes database Si_JSON string and populates control (ListBox, ComboBox or Textbox) with it. Opposite of ControlToDatabaseJSON. You can use NFunctions.DatabaseToListJSON() instead if you want it as a list.
+    ''' </summary>
+    ''' <param name="val_">Database JSON string</param>
+    ''' <param name="control_">Control to bind to</param>
+    ''' <param name="step_">Should the values be treated strictly as dictionary?</param>
+
+    Public Shared Sub Si_BindListToControl(val_ As String, Optional control_ As Control = Nothing, Optional step_ As Integer = 1)
+        If val_.Length < 1 Then Exit Sub
+
+        Clear(control_)
+
+        Dim s As New List(Of String)
+        Try
+            s.Clear()
+        Catch ex As Exception
+        End Try
+        s = Si_StringToList(val_.Trim)
+
+        Dim c As ComboBox
+        Dim l_ As ListBox
+        Dim t As TextBox
+
+        If TypeOf control_ Is ComboBox Then
+            c = control_
+            c.DataSource = s
+            Exit Sub
+        ElseIf TypeOf control_ Is ListBox Then
+            l_ = control_
+            l_.DataSource = s
+            Exit Sub
+        End If
+
+        If TypeOf control_ Is TextBox Then
+            t = control_
+            t.Text = ""
+            For i As Integer = 0 To s.Count - 1 Step step_
+                t.Text &= s(i).ToString & vbCrLf
+            Next
+        End If
+    End Sub
+
+#End Region
+
+#Region "Nationality"
+    Public Sub CountriesDrop(d_ As ComboBox, Optional FirstIsEmpty As Boolean = True)
+        If d_.Items.Count > 0 Then Exit Sub
+
+        'Dim web_methods_ As New Web_Module.Methods
+        '		Dim d_w As New Web_Module.DataConnectionWeb
+
+        Clear(d_)
+
+        If FirstIsEmpty Then d_.Items.Add("")
+
+        Dim l As List(Of String) = CountriesList()
+        For i As Integer = 0 To l.Count - 1
+            d_.Items.Add(l(i).ToString)
+        Next
+    End Sub
+
+    Public Sub StatesOfNigeriaDrop(d_ As ComboBox, Optional FirstIsEmpty As Boolean = True)
+        If d_.Items.Count > 0 Then Exit Sub
+
+        'Dim web_methods_ As New Web_Module.Methods
+        '		Dim d_w As New Web_Module.DataConnectionWeb
+
+        Clear(d_)
+
+        If FirstIsEmpty Then d_.Items.Add("")
+
+        Dim l As List(Of String) = StatesOfNigeriaList
+        For i As Integer = 0 To l.Count - 1
+            d_.Items.Add(l(i).ToString)
+        Next
+    End Sub
+    Public Sub LGAsDrop(con_string__ As String, d_ As ComboBox, Optional state_ As String = Nothing, Optional country_ As String = "Nigeria")
+        Dim q As String
+        If state_ IsNot Nothing Then
+            BindProperty(d_, PropertyToBind.Items, BuildSelectString_DISTINCT("MyAdminDropdownState", {"LGAsOfNigeria"}, {"Countries", "StatesOfNigeria"}), con_string__, {"Countries", country_, "StatesOfNigeria", state_}, "LGAsOfNigeria")
+            Exit Sub
+        End If
+
+        BindProperty(d_, PropertyToBind.Items, BuildSelectString_DISTINCT("MyAdminDropdownState", {"LGAsOfNigeria"}, Nothing), con_string__, Nothing, "LGAsOfNigeria")
+    End Sub
+
+#End Region
 
 #Region "Bindings"
     ''' <summary>
@@ -2274,7 +3193,7 @@ Public Class Desktop
 
 #End Region
 
-#Region ""
+#Region "Sequel"
     Public Shared Function Display(filename As String, p As Object, Optional use_image As Boolean = False)
         Try
             If use_image Then
@@ -2584,8 +3503,8 @@ Public Class Desktop
         End If
     End Function
 
-    Public Shared Function GetFolders(directory_ As String, Optional search_depth As FileIO.SearchOption = FileIO.SearchOption.SearchAllSubDirectories) As ReadOnlyCollection(Of String)
-        Return GetDirectories(directory_, search_depth)
+    Public Shared Function GetFolders(directory_ As String, Optional search_depth As FileIO.SearchOption = FileIO.SearchOption.SearchAllSubDirectories) As List(Of String)
+        Return GetDirectories(directory_, search_depth).ToList
     End Function
 
 
@@ -3648,922 +4567,6 @@ Public Class Desktop
     End Function
 #End Region
 
-    ''' <summary>
-    ''' Prompts the user to select application and argument, then creates batch file and writes it to file optionally.
-    ''' </summary>
-    ''' <param name="filename"></param>
-    ''' <param name="append"></param>
-    ''' <returns></returns>
-    Public Shared Function BatchFileFromScratch(Optional filename As String = Nothing, Optional no_quotes As Boolean = False, Optional append As Boolean = True) As String
-        Dim application = GetFile(FileDialogExpectedFormat.any)
-        If application.Length < 1 Then Return ""
-        Dim details As New List(Of String)
-        details.Add(application)
-        Dim argument = GetFile(FileDialogExpectedFormat.any, "Select Argument")
-        details.Add(argument)
-        Return BatchFile(details(0), details(1), no_quotes, filename, append)
-    End Function
-
-    ''' <summary>
-    ''' Creates batch file string and writes it to file optionally.
-    ''' </summary>
-    ''' <param name="application"></param>
-    ''' <param name="argument"></param>
-    ''' <param name="filename"></param>
-    ''' <param name="append"></param>
-    ''' <returns></returns>
-
-    Public Shared Function BatchFile(application As String, Optional argument As String = Nothing, Optional no_quotes As Boolean = False, Optional filename As String = Nothing, Optional append As Boolean = True) As String
-        If CType(application, String).Trim.Length < 1 Then
-            Return ""
-            Exit Function
-        End If
-
-        Dim r As String = ""
-
-        If no_quotes = False Then
-            r = """" & application & """" & vbCr
-            If argument IsNot Nothing Then
-                If CType(argument, String).Trim.Length > 1 Then r = """" & application & """" & " " & """" & argument & """" & vbCr
-            End If
-        Else
-            r = application & vbCr
-            If argument IsNot Nothing Then
-                If CType(argument, String).Trim.Length > 1 Then r = application & " " & argument & vbCr
-            End If
-        End If
-        If filename IsNot Nothing Then
-            If filename.Length > 0 Then
-                My.Computer.FileSystem.WriteAllText(filename, r, append)
-            End If
-        End If
-        Return r
-    End Function
-    'Public Shared Function BatchFile(application As String, Optional argument As String = Nothing, Optional filename As String = Nothing, Optional append As Boolean = True) As String
-    '    If CType(application, String).Trim.Length < 1 Then
-    '        Return ""
-    '        Exit Function
-    '    End If
-
-    '    Dim r As String = """" & application & """" & vbCr
-    '    If argument IsNot Nothing Then
-    '        If CType(argument, String).Trim.Length > 1 Then r = """" & application & """" & " " & """" & argument & """" & vbCr
-    '    End If
-    '    If filename IsNot Nothing Then
-    '        If filename.Length > 0 Then
-    '            My.Computer.FileSystem.WriteAllText(filename, r, append)
-    '        End If
-    '    End If
-    '    Return r
-    'End Function
-
-
-    ''' <summary>
-    ''' Search.
-    ''' </summary>
-    ''' <param name="control_">Textbox to search from.</param>
-    ''' <param name="sought_">What to select if found in control_'s content.</param>
-    ''' <param name="current_position">Variable to keep track of how many of sought_ has been found (should be overwritten at each next call otherwise it'll only always check once).</param>
-    ''' <returns>0 if sought_ isn't found, else next index where it is found.</returns>
-    ''' <example>
-    ''' 'DECLARATION
-    ''' Public search_position As Integer = 1
-    ''' Public search_ As String = ""
-    ''' 'Ctrl+F
-    ''' search_ = GetText("Locate ...")
-    ''' search_position = LocateText(tContent, search_, search_position)
-    ''' 'F3
-    ''' If search_.Length > 0 Then search_position = LocateText(tContent, search_, search_position)
-    ''' </example>
-    Public Shared Function LocateText(control_ As TextBox, sought_ As String, Optional current_position As Integer = Nothing) As Integer
-        If control_.Text.Length < 1 Then Return 0
-        Dim search_ As Integer = 1
-        If current_position <> Nothing Then search_ = Val(current_position)
-        If search_ = 0 Then search_ = 1
-
-        For i% = search_ To control_.Text.Length
-            If Mid(control_.Text, i, sought_.Length).ToLower() = sought_.Trim.ToLower() Then
-                control_.SelectionStart = i - 1
-                control_.SelectionLength = sought_.Length
-                control_.ScrollToCaret()
-                control_.Focus()
-                search_ = i + 1
-                Exit For
-            ElseIf Mid(control_.Text, i, sought_.Length).ToLower() <> sought_.Trim.ToLower() And control_.Text.Length - i < sought_.Length Then
-                search_ = 0
-                Exit For
-            End If
-        Next
-        Return search_
-
-        'DECLARATION
-        'Public search_position As Integer = 1
-        'Public search_ As String = ""
-        'Ctrl+F
-        'search_ = GetText("Locate ...")
-        'search_position = LocateText(tContent, search_, search_position)
-        'F3
-        'If search_.Length > 0 Then search_position = LocateText(tContent, search_, search_position)
-
-
-        'INITIALLY
-        'u.text = 0
-        'RECURRENT, IF u.text > 0
-        'u.Text = LocateText(t, "html", u.Text)
-
-    End Function
-
-    'Private Shared Function CommitFile(txt_ As String, Optional default_ext As String = ".txt", Optional add_extension As Boolean = True, Optional filter_ As String = "Document|*.txt", Optional title_ As String = "Save file...") As String
-    '    If txt_.Length < 1 Then Return ""
-    '    Dim return_ As String = ""
-    '    Dim filter__ As String = filter_docs
-    '    If filter_.Length > 0 Then filter__ = filter_
-
-    '    Dim default_ext__ As String = ".txt"
-    '    If default_ext.Length > 0 Then default_ext__ = default_ext
-
-    '    Dim title__ As String = "Save file..."
-    '    If title_.Length > 0 Then title__ = title_
-
-    '    Dim save_file As New SaveFileDialog
-    '    With save_file
-    '        .Filter = filter__
-    '        .DefaultExt = default_ext__
-    '        .AddExtension = add_extension
-    '        .Title = title__
-    '        .ShowDialog()
-
-    '        If .FileName.Length > 0 Then
-    '            WriteText(.FileName, txt_)
-    '            return_ = .FileName
-    '        End If
-    '    End With
-    '    Return return_
-    'End Function
-
-    Public Function SetTextToClipboard(str_ As String) As Boolean
-        Try
-            Clipboard.SetText(str_)
-            Return True
-        Catch ex As Exception
-            Return False
-        End Try
-    End Function
-    Public Function GetTextFromClipboard(str_ As String) As String
-        Try
-            If Clipboard.ContainsText Then
-                Return Clipboard.GetText
-            End If
-        Catch ex As Exception
-        End Try
-    End Function
-    Public Shared Sub PermitFile(file_ As String, Optional temp_file As String = "", Optional user_ As String = "")
-        Dim list As New List(Of String)
-        list.Add(file_)
-        PermitFiles(list, user_)
-    End Sub
-    Public Shared Sub PermitFiles(file_ As List(Of String), Optional temp_file As String = "", Optional user_ As String = "")
-        On Error Resume Next
-        Dim t_file As String
-        If temp_file.Length < 1 Then temp_file = My.Application.Info.DirectoryPath & "\FilePermissions.bat"
-        If user_.Length < 1 Then user_ = Environment.UserName
-
-        Dim str_ As String = ""
-        For i As Integer = 0 To file_.Count - 1
-            str_ &= "icacls """ & file_(i) & """ /grant " & user_ & ":(F)" & vbCrLf
-        Next
-        WriteText(temp_file, str_)
-        StartFile(temp_file)
-
-    End Sub
-
-    Public Sub PermissionForFile(file_ As String, Optional perm_ As FileSystemRights = FileSystemRights.FullControl, Optional remove_existing As Boolean = False)
-        If file_.Length < 1 Then Exit Sub
-        If perm_.ToString.Length < 1 Then perm_ = FileSystemRights.FullControl
-
-        Dim user_ As String = Environment.UserName
-
-        Dim FilePath As String = file_
-        Dim UserAccount As String = user_
-        Dim FileInfo As IO.FileInfo = New IO.FileInfo(FilePath)
-        Dim FileAcl As New FileSecurity
-        FileAcl.AddAccessRule(New FileSystemAccessRule(UserAccount, perm_, AccessControlType.Deny))
-    End Sub
-    ''' <summary>
-    ''' Sets folder acccess. Windows related.
-    ''' </summary>
-    ''' <param name="folder_">Folder to set permission on</param>
-    ''' <param name="perm_">Type of permission</param>
-    ''' <param name="remove_existing">Should existing permissions for this user be overwritten if found?</param>
-    Public Sub PermissionForFolder(folder_ As String, Optional perm_ As FileSystemRights = FileSystemRights.FullControl, Optional remove_existing As Boolean = False)
-        If folder_.Length < 1 Then Exit Sub
-        If perm_.ToString.Length < 1 Then perm_ = FileSystemRights.FullControl
-
-        Dim user_ As String = Environment.UserName
-
-        Dim FolderPath As String = folder_
-        Dim UserAccount As String = user_
-
-        Dim FolderInfo As IO.DirectoryInfo = New IO.DirectoryInfo(FolderPath)
-        Dim FolderAcl As New DirectorySecurity
-        FolderAcl.AddAccessRule(New FileSystemAccessRule(UserAccount, perm_, InheritanceFlags.ContainerInherit Or InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow))
-        If remove_existing = True Then FolderAcl.SetAccessRuleProtection(True, False)
-        FolderInfo.SetAccessControl(FolderAcl)
-    End Sub
-
-    ''' <summary>
-    ''' Sets folder acccess. Windows related. Same as PermissionForFolder.
-    ''' </summary>
-    ''' <param name="folder_">Folder to set permission on</param>
-    ''' <param name="perm_">Type of permission</param>
-    ''' <param name="remove_existing">Should existing permissions for this user be overwritten if found?</param>
-
-    Public Shared Sub PermitFolder(folder_ As String, Optional perm_ As FileSystemRights = FileSystemRights.FullControl, Optional remove_existing As Boolean = False)
-        Try
-            If folder_.Length < 1 Then Exit Sub
-            If perm_.ToString.Length < 1 Then perm_ = FileSystemRights.FullControl
-
-            Dim user_ As String = Environment.UserName
-
-            Dim FolderPath As String = folder_
-            Dim UserAccount As String = user_
-
-            Dim FolderInfo As IO.DirectoryInfo = New IO.DirectoryInfo(FolderPath)
-            Dim FolderAcl As New DirectorySecurity
-            FolderAcl.AddAccessRule(New FileSystemAccessRule(UserAccount, perm_, InheritanceFlags.ContainerInherit Or InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow))
-            If remove_existing = True Then FolderAcl.SetAccessRuleProtection(True, False)
-            FolderInfo.SetAccessControl(FolderAcl)
-        Catch
-        End Try
-    End Sub
-
-    Private Shared Sub ToMachineStartup(file_ As String, key_ As String)
-        If file_.Length < 1 Or key_.Length < 1 Then Exit Sub
-        Try
-            My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run", key_, file_)
-        Catch x As Exception
-        End Try
-    End Sub
-    Public Shared Sub ToStartup(file_ As String, key_ As String)
-        ToMachineStartup(file_, key_)
-    End Sub
-
-    Public Sub RemoveFromStartup(file_ As String, key_ As String)
-        If file_.Length < 1 Or key_.Length < 1 Then Exit Sub
-
-        Using key As RegistryKey = My.Computer.Registry.CurrentUser.OpenSubKey("Software")
-            key.DeleteSubKey("Software\Microsoft\Windows\CurrentVersion\Run\" & key_)
-        End Using
-
-        Dim exists As Boolean = False
-        Try
-            If My.Computer.Registry.CurrentUser.OpenSubKey("Software\Microsoft\Windows\CurrentVersion\Run\" & key_) IsNot Nothing Then
-            End If
-        Catch
-        Finally
-        End Try
-
-    End Sub
-    Public Shared Sub RegistryRemoveKey(section As RegistryKey, subKey_ As String)
-        Try
-            section.DeleteSubKey(subKey_)
-        Catch ex As Exception
-        End Try
-
-    End Sub
-
-    Public Sub SetAttribute(file_OR_directory As String, Optional show_ As Boolean = False, Optional remove_ As Boolean = True)
-        If show_ = False And remove_ = False Then
-            Try
-                SetAttr(file_OR_directory, FileAttribute.Hidden)
-                Exit Sub
-            Catch ex As Exception
-            End Try
-        End If
-
-        If show_ = True Then
-            Try
-                SetAttr(file_OR_directory, FileAttribute.Normal)
-                Exit Sub
-            Catch ex As Exception
-            End Try
-        Else
-        End If
-
-        If remove_ = True Then
-            Try
-                SetAttr(file_OR_directory, FileAttribute.Hidden + FileAttribute.System)
-                Exit Sub
-            Catch ex As Exception
-            End Try
-        Else
-        End If
-
-    End Sub
-
-    ''' <summary>
-    ''' Creates a shortcut
-    ''' </summary>
-    ''' <param name="where_the_shortcut_points_to">The file, e.g. the executable.</param>
-    ''' <param name="where_to_put_the_shortcut">The target folder where the shortcut is going to be created.</param>
-    ''' <param name="filename_for_the_shortcut">The filename of the shortcut</param>
-    ''' <param name="icon_file">Optional icon file.</param>
-    ''' <example>
-    ''' Dim exe as String = "c:\file.pdf"
-    ''' CreateShortcut(exe, Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), icon_file)
-    ''' </example>
-    Public Shared Sub CreateShortcut(where_the_shortcut_points_to As String, where_to_put_the_shortcut As String, filename_for_the_shortcut As String, Optional icon_file As String = Nothing)
-        Dim wsh As Object = CreateObject("WScript.Shell")
-
-        wsh = CreateObject("WScript.Shell")
-
-        Dim MyShortcut, DesktopPath
-
-        ' Read desktop path using WshSpecialFolders object
-
-        DesktopPath = where_to_put_the_shortcut
-
-        MyShortcut = wsh.CreateShortcut(DesktopPath & "\" & filename_for_the_shortcut & ".lnk")
-
-        ' Set shortcut object properties and save it
-
-        MyShortcut.TargetPath = wsh.ExpandEnvironmentStrings(where_the_shortcut_points_to)
-
-        MyShortcut.WorkingDirectory = wsh.ExpandEnvironmentStrings(where_to_put_the_shortcut)
-
-        MyShortcut.WindowStyle = 4
-
-        If icon_file IsNot Nothing Then
-            If icon_file.Length > 1 Then
-                MyShortcut.IconLocation = wsh.ExpandEnvironmentStrings(icon_file)
-            End If
-        End If
-
-        'Save the shortcut
-
-        MyShortcut.Save()
-    End Sub
-
-    Public Shared Function AppIsOn(file_path As String) As Boolean
-        Dim p() As Process = Process.GetProcessesByName(Path.GetFileNameWithoutExtension(file_path.Trim))
-        AppIsOn = p.Count > 0
-    End Function
-    Public Shared Function AppNotOn(file_path As String) As Boolean
-        Dim p() As Process = Process.GetProcessesByName(Path.GetFileNameWithoutExtension(file_path.Trim))
-        AppNotOn = p.Count < 1
-    End Function
-
-    Public Shared Sub KillProcess(process_name_without_extension As String)
-        For Each proc As Process In Process.GetProcessesByName(process_name_without_extension)
-            proc.Kill()
-        Next
-    End Sub
-    Public Shared Sub TaskManager()
-        StartFile("taskmgr")
-    End Sub
-
-    Public Shared Sub StartFiles(files_list_SI As String, Optional style_ As ProcessWindowStyle = ProcessWindowStyle.Normal, Optional style__ As Boolean = False, Optional checkFirst As Boolean = True)
-        StartApps(files_list_SI, style_, style__, checkFirst)
-    End Sub
-
-
-    ''' <summary>
-    ''' Opens apps from semi-JSON string.
-    ''' </summary>
-    ''' <param name="files_list_SI">Semi-JSON string</param>
-    ''' <param name="style_">For StartApp()</param>
-    ''' <param name="style__">For StartApp()</param>
-    ''' <param name="checkFirst">For StartApp()</param>
-    Public Shared Sub StartApps(files_list_SI As String, Optional style_ As ProcessWindowStyle = ProcessWindowStyle.Normal, Optional style__ As Boolean = False, Optional checkFirst As Boolean = True)
-        '		If Exists(files_list_semiJSON) = False Then Return
-        Dim files_list_semiJSON As String = files_list_SI
-        'open apps if not already open
-        Dim v As String = files_list_semiJSON.Trim
-        If v.Length < 1 Then Return
-        ''v = v.Replace("\", "\\")
-        Dim s As New List(Of String)
-        Try
-            s.Clear()
-        Catch ex As Exception
-        End Try
-        s = Si_StringToList(v)
-        For i As Integer = 0 To s.Count - 1
-            StartFile(s(i), style_, style__, checkFirst)
-        Next
-
-    End Sub
-
-    Public Shared Sub StartAppsWithArguments(files_list_semiJSON As String, Optional style_ As ProcessWindowStyle = ProcessWindowStyle.Normal, Optional style__ As Boolean = False, Optional checkFirst As Boolean = False)
-        '		If Exists(files_list_semiJSON) = False Then Return
-
-        'open apps if not already open
-        Dim v As String = files_list_semiJSON.Trim
-        If v.Length < 1 Then Return
-        ''v = v.Replace("\", "\\")
-        Dim s As New List(Of String)
-        Try
-            s.Clear()
-        Catch ex As Exception
-        End Try
-        s = Si_StringToList(v)
-        If s.Count Mod 2 <> 0 Then Return
-        ''Dim arg_ As Array = {}
-
-        For i As Integer = 0 To s.Count - 2 Step 2
-            StartFileWithArgument(s(i), {s(i + 1)}, style_, style__, checkFirst)
-        Next
-
-        '		Dim file_2 As String = "'1':'notepad', '2':'C:\Users\Administrator\Desktop\Hub\2D\StrictD\1.txt', '3':'C:\Program Files (x86)\Windows Media Player\wmplayer.exe', '4':'C:\Users\Pediforte\Music\Music\Playlists\68.wpl'"
-
-    End Sub
-
-    Private Shared loa As List(Of String)
-    Private Shared loa_counter As Integer = 0
-    Private Shared loa_timer As Timer
-    Private Shared loa_checkFirst As Boolean
-    Private Shared loa_initial As String
-    Private Shared loa_initial_timer As Timer
-    Private Shared counter_ As Integer = 0
-    '	Private Shared loa_initial_counter As Integer = 0
-    Private Shared Sub Load_Apps()
-        If loa_counter < loa.Count - 1 Then
-            StartFileWithArgument(loa(loa_counter), loa(loa_counter + 1), loa_checkFirst)
-            loa_counter += 2
-        Else
-            loa_timer.Enabled = False
-        End If
-
-    End Sub
-
-    Private Shared Sub Load_Initial_Apps()
-        StartApps(loa_initial)
-    End Sub
-
-    Private Shared Sub onInitialAppsLoaded()
-        If counter_ = 1 Then
-            loa_initial_timer.Enabled = False
-            loa_timer.Enabled = True
-        Else
-            counter_ = 1
-            Load_Initial_Apps()
-        End If
-    End Sub
-
-    Public Shared Sub StartAppsWithArguments(files_list_semiJSON As String, interval_in_s As Integer, initial_files_list_semiJSON As String, Optional initial_interval_in_s As Integer = 15, Optional checkFirst As Boolean = False)
-        '		If Exists(files_list_semiJSON) = False Then Return
-
-        'open apps if not already open
-        Dim v As String = files_list_semiJSON.Trim
-        If v.Length < 1 Then Return
-        ''v = v.Replace("\", "\\")
-        Dim s As New List(Of String)
-        Try
-            s.Clear()
-        Catch ex As Exception
-        End Try
-        s = Si_StringToList(v)
-        If s.Count Mod 2 <> 0 Then Return
-
-        loa_initial = initial_files_list_semiJSON
-        Dim t As New Timer
-        loa_initial_timer = t
-        t.Interval = initial_interval_in_s * 1000
-
-        loa_counter = 0
-        loa = s
-        loa_checkFirst = checkFirst
-        Dim timer As New Timer
-        loa_timer = timer
-        timer.Interval = interval_in_s * 1000
-
-        AddHandler t.Tick, AddressOf onInitialAppsLoaded
-        AddHandler timer.Tick, AddressOf Load_Apps
-        Load_Initial_Apps()
-
-        t.Enabled = True
-    End Sub
-    Public Shared Sub StartAppsWithArguments(files_list_semiJSON As String, interval_in_s As Integer, Optional checkFirst As Boolean = False)
-        '		If Exists(files_list_semiJSON) = False Then Return
-
-        'open apps if not already open
-        Dim v As String = files_list_semiJSON.Trim
-        If v.Length < 1 Then Return
-        ''v = v.Replace("\", "\\")
-        Dim s As New List(Of String)
-        Try
-            s.Clear()
-        Catch ex As Exception
-        End Try
-        s = Si_StringToList(v)
-        If s.Count Mod 2 <> 0 Then Return
-
-        loa_counter = 0
-        loa = s
-        loa_checkFirst = checkFirst
-        Dim timer As New Timer
-        loa_timer = timer
-        timer.Interval = interval_in_s * 1000
-        timer.Enabled = True
-        AddHandler timer.Tick, AddressOf Load_Apps
-
-    End Sub
-
-    Public Shared Sub StopApps(files_list_semiJSON As String, Optional useShell As Boolean = False)
-        ExitApps(files_list_semiJSON, useShell)
-    End Sub
-    <DllImport("User32.dll")>
-    Public Shared Function ShowWindow(ByVal hwnd As IntPtr, ByVal cmd As Integer) As Boolean
-
-    End Function
-
-    Public Shared Function ShowApp(process_name As String, state_ As AppWindowState) As Boolean
-        If process_name.Length < 1 Then Return False
-
-        process_name = Path.GetFileNameWithoutExtension(process_name)
-
-        Try
-            Dim p() As Process = Process.GetProcessesByName(process_name)
-            For Each pr As Process In p
-                ShowWindow(pr.MainWindowHandle, state_)
-            Next
-            Return True
-        Catch ex As Exception
-            Return False
-        End Try
-
-    End Function
-
-    Public Shared Function ShowDesktop(Optional show_ As Boolean = False) As Boolean
-        Dim show_or_hide As Integer = 6
-        If show_ = True Then show_or_hide = 9
-
-        Try
-            For Each p As Process In Process.GetProcesses
-                ShowWindow(p.MainWindowHandle, show_or_hide)
-            Next
-            Return True
-        Catch
-            Return False
-        End Try
-    End Function
-
-
-    Private Shared Sub ExitApps(files_list_semiJSON As String, Optional useShell As Boolean = False)
-        '		If Exists(files_list_semiJSON) = False Then Return
-
-        Dim v As String = files_list_semiJSON.Trim
-        If v.Length < 1 Then Return
-        ''v = v.Replace("\", "\\")
-        Dim s As New List(Of String)
-        Try
-            s.Clear()
-        Catch ex As Exception
-        End Try
-        s = Si_StringToList(v)
-        For i As Integer = 0 To s.Count - 1
-            If useShell = True Then
-                'taskkill /f /im "explorer.exe"
-                Shell("taskkill /f /im """ & Path.GetFileName(s(i)) & """")
-            Else
-                ExitApp(Path.GetFileNameWithoutExtension(s(i)))
-            End If
-        Next
-
-    End Sub
-
-
-    ''' <summary>
-    ''' Depracated. Use StartFile() or StartApps instead.
-    ''' </summary>
-    ''' <param name="file_">The path to the file.</param>
-    ''' <param name="style_">ProcessWindowStyle (normal, hidden etc)</param>
-    ''' <param name="style__">Ignore ProcessWindowStyle, completely hide it.</param>
-    ''' <param name="checkFirst">Check if an instance of the file is already running (in Tasks).</param>
-    ''' <returns>True if file exists and is opened, false if not.</returns>
-
-    Private Function StartApp(file_ As String, Optional style_ As ProcessWindowStyle = ProcessWindowStyle.Normal, Optional style__ As Boolean = False, Optional checkFirst As Boolean = True) As Boolean
-        If checkFirst = True Then
-            Try
-                If AppIsOn(Path.GetFileNameWithoutExtension(file_)) Then
-                    Exit Function
-                End If
-            Catch
-            End Try
-        End If
-
-        Dim s As New ProcessStartInfo
-        If style__ = True Then
-            s.WindowStyle = ProcessWindowStyle.Hidden
-        Else
-            s.WindowStyle = style_
-        End If
-        s.FileName = file_
-        Try
-            Process.Start(s)
-            Return True
-        Catch ex As Exception
-            Return False
-        End Try
-
-2:
-    End Function
-
-    ''' <summary>
-    ''' Opens a file. If checkFirst is True, then the program file won't run if it is already running; this is ignored if it's not a program file.
-    ''' </summary>
-    ''' <param name="file_">The path to the file.</param>
-    ''' <param name="style_">ProcessWindowStyle (normal, hidden etc)</param>
-    ''' <param name="style__">Ignore ProcessWindowStyle, completely hide it.</param>
-    ''' <param name="checkFirst">Check if an instance of the file is already running (in Tasks).</param>
-    ''' <returns>True if file exists and is opened, false if not.</returns>
-    Public Shared Function StartFile(file_ As String, Optional style_ As ProcessWindowStyle = ProcessWindowStyle.Normal, Optional style__ As Boolean = False, Optional checkFirst As Boolean = False) As Boolean
-        If checkFirst = True Then
-            Try
-                If AppIsOn(Path.GetFileNameWithoutExtension(file_)) Then
-                    Exit Function
-                End If
-            Catch
-            End Try
-        End If
-
-        Dim s As New ProcessStartInfo
-        If style__ = True Then
-            s.WindowStyle = ProcessWindowStyle.Hidden
-        Else
-            s.WindowStyle = style_
-        End If
-        s.FileName = file_
-        Try
-            Process.Start(s)
-            Return True
-        Catch ex As Exception
-            Return False
-        End Try
-
-2:
-    End Function
-    ''' <summary>
-    ''' Opens a file with argument. If checkFirst is True, then the program file won't run if it is already running; this is ignored if it's not a program file. Same as StartFileWithArgument.
-    ''' </summary>
-    ''' <param name="file_"></param>
-    ''' <param name="arg_"></param>
-    ''' <param name="checkFirst"></param>
-    ''' <returns></returns>
-    Public Shared Function StartFile(file_ As String, arg_ As String, Optional checkFirst As Boolean = False) As Boolean
-        If checkFirst = True Then
-            Try
-                If AppIsOn(Path.GetFileNameWithoutExtension(file_)) Then
-                    Exit Function
-                End If
-            Catch
-            End Try
-        End If
-
-        Try
-            Process.Start(file_, arg_)
-            Return True
-        Catch ex As Exception
-            Return False
-        End Try
-    End Function
-
-    Public Shared Sub StartFileThenExit(fileToStart As String, fileToStop As String, Optional startFirst As Boolean = True)
-        If fileToStart.Trim.Length < 1 Then Return
-        If startFirst Then
-            StartFile(fileToStart)
-            If fileToStop.Trim.Length > 0 Then ExitApp(fileToStop)
-        Else
-            If fileToStop.Trim.Length > 0 Then ExitApp(fileToStop)
-            StartFile(fileToStart)
-        End If
-    End Sub
-    Public Shared Sub StartFileThenExit(fileToStart As String)
-        If fileToStart.Trim.Length < 1 Then Return
-        StartFile(fileToStart)
-        ExitApp()
-    End Sub
-
-    Public Shared Function StartFileWithArgument(file_ As String, Optional arg_ As String = Nothing, Optional checkFirst As Boolean = False) As Boolean
-        If checkFirst = True Then
-            Try
-                If AppIsOn(Path.GetFileNameWithoutExtension(file_)) Then
-                    Exit Function
-                End If
-            Catch
-            End Try
-        End If
-
-        Try
-            Process.Start(file_, arg_)
-            Return True
-        Catch ex As Exception
-            Return False
-        End Try
-    End Function
-
-    Public Shared Function StartFileWithArgument(file_ As String, list_of_arguments As Array, Optional style_ As ProcessWindowStyle = ProcessWindowStyle.Normal, Optional style__ As Boolean = False, Optional checkFirst As Boolean = False) As Boolean
-        Dim arg_ As Array = list_of_arguments, arg__ As String
-        If checkFirst = True Then
-            Try
-                If AppIsOn(Path.GetFileNameWithoutExtension(file_)) Then
-                    Exit Function
-                End If
-            Catch
-            End Try
-        End If
-
-        Dim s As New ProcessStartInfo
-        If style__ = True Then
-            s.WindowStyle = ProcessWindowStyle.Hidden
-        Else
-            s.WindowStyle = style_
-        End If
-        s.FileName = file_
-        arg__ = array_to_string(arg_)
-        s.Arguments = arg__
-        Try
-            Process.Start(s)
-            Return True
-        Catch ex As Exception
-            Return False
-        End Try
-    End Function
-    Private Shared Function array_to_string(array As Array) As String
-        Dim s = ""
-        Try
-            For i = 0 To array.Length - 1
-                s &= array(i) & " "
-            Next
-        Catch
-        End Try
-        Return s.Trim
-    End Function
-
-    Public Shared Function SaveFile(filter As FileKind, Optional title As String = "Choose where to save your file.", Optional filename As String = "") As String
-        Dim s As New SaveFileDialog
-        With s
-            If filename.Length > 0 Then .FileName = filename
-            .Filter = FilterStringFromFileKind(filter)
-            .OverwritePrompt = True
-            .Title = title
-            .ShowDialog()
-            If .FileName.ToString.Length > 0 Then
-                Return .FileName
-            Else
-                Return ""
-            End If
-        End With
-    End Function
-
-    Public Shared Sub SaveFile(content As String, filter As FileKind, Optional title As String = "Choose where to save your file.", Optional filename As String = "")
-        Dim s As String = SaveFile(filter, title, filename)
-        If s.Length > 0 Then WriteText(s, content, False, True)
-    End Sub
-
-    Private Shared Function SaveFile(_filename, _filter) As Array
-        Dim f_ As New SaveFileDialog
-        Dim return_() As String
-
-        With f_
-            .FileName = _filename
-            .Filter = _filter
-            .ShowDialog()
-
-            If .FileName.Trim <> "" Then
-                return_ = {True, .FileName}
-            ElseIf .FileName.Trim = "" Then
-                return_ = {False, .FileName}
-            End If
-        End With
-        Return return_
-    End Function
-
-    Public Shared Function DiskLocation(default_string As String, Optional description_ As String = "", Optional root_folder As String = "", Optional show_new_folder_button As Boolean = True) As Array
-        Dim f_ As New FolderBrowserDialog
-        Dim return_() As String
-
-        With f_
-            .Description = description_
-            If root_folder.Length > 0 Then .RootFolder = root_folder
-            .ShowNewFolderButton = show_new_folder_button
-
-            .ShowDialog()
-
-            If .SelectedPath.Trim <> "" Then
-                return_ = {True, .SelectedPath}
-            ElseIf .SelectedPath.Trim = "" Then
-                return_ = {False, default_string}
-            End If
-        End With
-        Return return_
-    End Function
-
-    Public Shared Sub Hibernate()
-        Try
-            Application.SetSuspendState(PowerState.Hibernate, True, True)
-        Catch
-        End Try
-    End Sub
-
-    Public Shared Sub LogOff()
-        Try
-            Process.Start(Environment.GetFolderPath(Environment.SpecialFolder.System) & "\shutdown.exe", "-l")
-        Catch
-        End Try
-    End Sub
-    Public Shared Sub Restart()
-        Try
-            Process.Start(Environment.GetFolderPath(Environment.SpecialFolder.System) & "\shutdown.exe", "-r -f -t 0")
-        Catch
-        End Try
-    End Sub
-    Public Shared Sub Shutdown()
-        Try
-            Process.Start(Environment.GetFolderPath(Environment.SpecialFolder.System) & "\shutdown.exe", "-s -f -t 0")
-        Catch
-        End Try
-    End Sub
-
-    Public Shared Sub Sleep()
-        Try
-            Application.SetSuspendState(PowerState.Suspend, True, False)
-        Catch ex As Exception
-
-        End Try
-    End Sub
-    <System.Runtime.InteropServices.DllImport("user32.dll")>
-    Friend Shared Sub LockWorkStation()
-
-    End Sub
-    Public Shared Sub LockPC()
-        LockWorkStation()
-    End Sub
-
-    Public Shared Sub ExitApp(Optional process_name As String = "")
-        'taskkill /f /im "explorer.exe"
-
-        Try
-            Select Case process_name.Length
-                Case < 1
-                    Environment.Exit(0)
-                Case Else
-                    If AppIsOn(process_name) Then KillProcess(process_name)
-            End Select
-        Catch
-        End Try
-    End Sub
-
-    Public Shared Sub CopyFiles(src As String, tgt As String, Optional dialogs As FileIO.UIOption = FileIO.UIOption.AllDialogs)
-        If src.Trim.Length < 1 Or tgt.Trim.Length < 1 Then Return
-        My.Computer.FileSystem.CopyDirectory(src, tgt, dialogs, FileIO.UICancelOption.DoNothing)
-    End Sub
-
-    Public Shared Shadows Function RenameFile(src_file_path, tgt_file_name_plus_extension) As Boolean
-        Try
-            My.Computer.FileSystem.RenameFile(src_file_path, tgt_file_name_plus_extension)
-            Return True
-        Catch ex As Exception
-            Return False
-        End Try
-
-    End Function
-    Private Shared Property DoEvent_PlayAudio_file As String
-    Private Shared Property DoEvent_PlayAudio_mode As AudioPlayMode
-    Private Shared Sub DoEvent_PlayAudio()
-        My.Computer.Audio.Play(DoEvent_PlayAudio_file, DoEvent_PlayAudio_mode)
-    End Sub
-    Private Shared thread '' As New System.Threading.Thread(AddressOf DoEvent_PlayAudio)
-
-    Public Shared Sub PlayAudioFile(file_ As String, Optional mode_ As AudioPlayMode = AudioPlayMode.WaitToComplete, Optional threaded_ As Boolean = True)
-        If file_ Is Nothing Then Exit Sub
-        If file_.Length < 1 Then Exit Sub
-        Try
-            If threaded_ = True Then
-                DoEvent_PlayAudio_file = file_
-                DoEvent_PlayAudio_mode = mode_
-                thread = New System.Threading.Thread(AddressOf DoEvent_PlayAudio)
-                thread.Start()
-            Else
-                My.Computer.Audio.Play(file_, mode_)
-            End If
-        Catch ex As Exception
-        End Try
-    End Sub
-
-    Public Shared Sub StopPlayingAudioFile()
-        Try
-            My.Computer.Audio.Stop()
-        Catch ex As Exception
-        End Try
-    End Sub
-
-    Public Shared Function Exists(file_ As String) As Boolean
-        If file_.Length < 1 Then
-            Return False
-            Exit Function
-        End If
-        Exists = My.Computer.FileSystem.FileExists(file_) Or My.Computer.FileSystem.DirectoryExists(file_)
-    End Function
 
 #Region "Sound"
     Public Enum MakeTheFile
@@ -4574,22 +4577,22 @@ Public Class Desktop
     End Enum
 
     Private Declare Function record Lib "winmm.dll" Alias "mciSendStringA" (ByVal lpstrCommand As String, ByVal lpstrReturnString As String, ByVal uReturnLength As Integer, ByVal hwndCallback As Integer) As Integer
-    Private Property filename__recording As String
-    Public Property elapsed_label__recording As Label
-    Public Property remaining_label__recording As Label
-    Public Property append_text__recording As Boolean
-    Public Property what_to_display_when_finished__recording As String
-    Private Property duration_in_seconds__recording As Long
-    Private Property make_the_file__recording As MakeTheFile
-    Private timer_recording__ As Timer
-    Private counter__recording As Long
+    Private Shared Property filename__recording As String
+    Public Shared Property elapsed_label__recording As Label
+    Public Shared Property remaining_label__recording As Label
+    Public Shared Property append_text__recording As Boolean
+    Public Shared Property what_to_display_when_finished__recording As String
+    Private Shared Property duration_in_seconds__recording As Long
+    Private Shared Property make_the_file__recording As MakeTheFile
+    Private Shared timer_recording__ As Timer
+    Private Shared counter__recording As Long
     Public Structure DisplayControlsForRecordingDuration
         Public elapsed_label As Label
         Public remaining_label As Label
         Public append_text As Boolean
         Public what_to_display_when_finished As String
     End Structure
-    Public Sub Recording(directory_ As String, file_name_without_extension As String, Optional timer_ As Timer = Nothing, Optional duration_in_seconds As Long = 60, Optional file_extension As String = ".wav", Optional display_labels As DisplayControlsForRecordingDuration = Nothing, Optional auto_name_file As Boolean = False)
+    Private Shared Sub Recording(directory_ As String, file_name_without_extension As String, Optional timer_ As Timer = Nothing, Optional duration_in_seconds As Long = 60, Optional file_extension As String = ".wav", Optional display_labels As DisplayControlsForRecordingDuration = Nothing, Optional auto_name_file As Boolean = False)
         If directory_.Length < 1 Then Exit Sub
         If file_name_without_extension.Length < 1 And auto_name_file = False Then Exit Sub
 
@@ -4629,7 +4632,7 @@ Public Class Desktop
         record("record recsound", "", 0, 0)
 
     End Sub
-    Public Sub Recording(directory_ As String, file_name_without_extension As String, Optional timer_ As Timer = Nothing, Optional duration_in_seconds As Long = 60, Optional file_extension As String = ".wav", Optional display_labels As DisplayControlsForRecordingDuration = Nothing, Optional auto_name_file As Boolean = False, Optional make_the_file As MakeTheFile = MakeTheFile.Visible)
+    Public Shared Sub StartRecording(directory_ As String, file_name_without_extension As String, Optional timer_ As Timer = Nothing, Optional duration_in_seconds As Long = 60, Optional file_extension As String = ".wav", Optional display_labels As DisplayControlsForRecordingDuration = Nothing, Optional auto_name_file As Boolean = False, Optional make_the_file As MakeTheFile = MakeTheFile.Visible)
         If directory_.Length < 1 Then Exit Sub
         If file_name_without_extension.Length < 1 And auto_name_file = False Then Exit Sub
 
@@ -4637,7 +4640,7 @@ Public Class Desktop
 
         Recording(directory_, file_name_without_extension, timer_, duration_in_seconds, file_extension, display_labels, auto_name_file)
     End Sub
-    Public Sub EndRecording()
+    Public Shared Sub EndRecording()
         record("save recsound " & filename__recording, "", 0, 0)
         record("close recsound", "", 0, 0)
         Select Case make_the_file__recording
@@ -4652,7 +4655,7 @@ Public Class Desktop
         End Select
     End Sub
 
-    Private Sub RecordingTimer()
+    Private Shared Sub RecordingTimer()
         If counter__recording = duration_in_seconds__recording Then
             timer_recording__.Enabled = False
             EndRecording()

@@ -48,9 +48,12 @@ Public Class Form1
     Private ReadOnly Property target_false As String = "C:\Users\Pediforte\Desktop\Hub\2D\StrictD\file_false.txt"
     Private ReadOnly Property target_true As String = "C:\Users\Pediforte\Desktop\Hub\2D\StrictD\file_true.txt"
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
-        ListsAddItem(ScratchListBox, "item")
+        Dim folder As String = "C:\Users\Pediforte\Desktop\Hub\2D\StrictD"
+        Dim filename As String = "file"
+        StartRecording(folder, filename, Nothing, 10, ".mp3")
     End Sub
     Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
+        EndRecording()
     End Sub
 
     Private Sub Button3_Click(sender As Object, e As EventArgs) Handles Button3.Click
