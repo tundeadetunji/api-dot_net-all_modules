@@ -239,7 +239,16 @@ Public Class Sequel
 
         Return l
     End Function
-
+    ''' <summary>
+    ''' Same as QObject
+    ''' </summary>
+    ''' <param name="query"></param>
+    ''' <param name="connection_string"></param>
+    ''' <param name="select_parameter_keys_values"></param>
+    ''' <returns></returns>
+    Public Shared Function QRow(query As String, connection_string As String, Optional select_parameter_keys_values As Array = Nothing) As Dictionary(Of String, Object)
+        Return QObject(query, connection_string, select_parameter_keys_values)
+    End Function
 
     ''' <summary>
     ''' Returns Dictionary of first row returned by query
@@ -263,6 +272,18 @@ Public Class Sequel
 
         Return l
     End Function
+
+    ''' <summary>
+    ''' Same as QObjects.
+    ''' </summary>
+    ''' <param name="query"></param>
+    ''' <param name="connection_string"></param>
+    ''' <param name="select_parameter_keys_values"></param>
+    ''' <returns></returns>
+    Public Shared Function QRows(query As String, connection_string As String, Optional select_parameter_keys_values As Array = Nothing) As List(Of Dictionary(Of String, Object))
+        Return QObjects(query, connection_string, select_parameter_keys_values)
+    End Function
+
 
     ''' <summary>
     ''' Returns list of dictionaries (each of which correspond to row of the table, according to the output of query)
