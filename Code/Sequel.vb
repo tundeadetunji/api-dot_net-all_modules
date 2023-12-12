@@ -259,8 +259,8 @@ Public Class Sequel
     ''' <returns></returns>
     Public Shared Function QObject(query As String, connection_string As String, Optional select_parameter_keys_values As Array = Nothing) As Dictionary(Of String, Object)
         Dim dt As DataTable = QDataTable(query, connection_string, select_parameter_keys_values)
+        If dt.Rows.Count < 1 Then Return Nothing
         Dim l As New Dictionary(Of String, Object)
-        If dt.Rows.Count < 1 Then Return l
 
         With dt
             'For i = 0 To .Rows.Count - 1
