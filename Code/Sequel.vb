@@ -115,7 +115,8 @@ Public Class Sequel
             da.Fill(dt)
             Return dt
         Catch ex As Exception
-            Throw New Exception("Error fetching data: " & vbCrLf & ex.ToString)
+            'Throw New Exception("Error fetching data: " & vbCrLf & ex.ToString)
+            Return Nothing
         End Try
 
     End Function
@@ -155,7 +156,7 @@ Public Class Sequel
     Public Shared Function QFieldsInTable(query As String, connection_string As String)
         Dim l As New List(Of String)
         Dim dt As DataTable = QDataTable(query, connection_string)
-
+        If dt Is Nothing Then Return l
         With dt
             If .Columns.Count > 0 Then
                 For i As Integer = 0 To .Columns.Count - 1
@@ -176,6 +177,7 @@ Public Class Sequel
     Public Shared Function QDataTypes(query As String, connection_string As String, Optional select_parameter_keys_values As Array = Nothing) As Dictionary(Of String, String)
         Dim dt As DataTable = QDataTable(query, connection_string)
         Dim result As New Dictionary(Of String, String)
+        If dt Is Nothing Then Return result
         Try
 
             With dt
@@ -259,6 +261,7 @@ Public Class Sequel
     ''' <returns></returns>
     Public Shared Function QObject(query As String, connection_string As String, Optional select_parameter_keys_values As Array = Nothing) As Dictionary(Of String, Object)
         Dim dt As DataTable = QDataTable(query, connection_string, select_parameter_keys_values)
+        If dt Is Nothing Then Return Nothing
         If dt.Rows.Count < 1 Then Return Nothing
         Dim l As New Dictionary(Of String, Object)
 
@@ -297,6 +300,7 @@ Public Class Sequel
     Public Shared Function QObjects(query As String, connection_string As String, Optional select_parameter_keys_values As Array = Nothing) As List(Of Dictionary(Of String, Object))
         Dim l As New List(Of Dictionary(Of String, Object))
         Dim dt As DataTable = QDataTable(query, connection_string, select_parameter_keys_values)
+        If dt Is Nothing Then Return l
         If dt.Rows.Count < 1 Then Return l
         With dt
             For i = 0 To .Rows.Count - 1
