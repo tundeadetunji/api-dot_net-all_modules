@@ -50,7 +50,7 @@ Public Class Form1
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
         Dim user As New User With {.email = "e@u.com", .enabled = True, .firstName = "Fname", .lastName = "LName", .password = "password", .phone = "080", .registered = True, .title = "Ms"}
         Dim server As New ServerSide
-        Dim response As ServerSide.CustomResponseObject = server.Post("http://localhost:8080/api/v1/user/register", user)
+        Dim response As ServerSide.CustomResponseObject = server.Check("http://localhost:8080/api/v1/user/")
         t.Text = response.stringResponse
         u.Text = response.statusCode
     End Sub

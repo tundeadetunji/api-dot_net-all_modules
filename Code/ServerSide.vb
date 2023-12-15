@@ -9,7 +9,7 @@ Public Class ServerSide
 
 #Region "Receive"
     ''' <summary>
-    ''' Gets string result of endpoint.
+    ''' Gets string result of endpoint, no authentication.
     ''' </summary>
     ''' <param name="URL"></param>
     ''' <returns></returns>
@@ -19,6 +19,26 @@ Public Class ServerSide
             response = wb.DownloadString(URL)
         End Using
         Return response
+    End Function
+    ''' <summary>
+    ''' Same as Receive(url as string), except it returns status code alongside
+    ''' </summary>
+    ''' <param name="url"></param>
+    ''' <returns></returns>
+    Public Function Peek(url As String) As CustomResponseObject
+
+        Dim httpWebRequest As HttpWebRequest = CType(WebRequest.Create(url), HttpWebRequest)
+        httpWebRequest.ContentType = "text/plain"
+        httpWebRequest.Method = "GET"
+
+        Dim httpResponse = CType(httpWebRequest.GetResponse(), HttpWebResponse)
+
+        Dim result = ""
+        Using streamReader As New StreamReader(httpResponse.GetResponseStream())
+            result = streamReader.ReadToEnd()
+        End Using
+
+        Return New CustomResponseObject With {.objectResponse = Nothing, .statusCode = httpResponse.StatusCode, .stringResponse = result}
     End Function
 
 #End Region
@@ -43,6 +63,7 @@ Public Class ServerSide
     End Function
 
     ''' <summary>
+    ''' Http request as string, entity will be serialized as JSON.
     ''' Same as Send(url as string, entity as object) but returns status code alongside.
     ''' </summary>
     ''' <param name="url"></param>
@@ -69,7 +90,7 @@ Public Class ServerSide
     End Function
 
     ''' <summary>
-    ''' Send Http Request with JSON body, no authentication.
+    ''' Http request as string, entity will be serialized as JSON.
     ''' </summary>
     ''' <param name="url"></param>
     ''' <param name="entity"></param>
