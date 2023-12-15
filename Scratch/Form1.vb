@@ -48,9 +48,9 @@ Public Class Form1
     Private ReadOnly Property target_false As String = "C:\Users\Pediforte\Desktop\Hub\2D\StrictD\file_false.txt"
     Private ReadOnly Property target_true As String = "C:\Users\Pediforte\Desktop\Hub\2D\StrictD\file_true.txt"
     Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
-        Dim folder As String = "C:\Users\Pediforte\Desktop\Hub\2D\StrictD"
-        Dim filename As String = "file"
-        StartRecording(folder, filename, Nothing, 10, ".mp3")
+        Dim server As New ServerSide
+        Dim d As Dictionary(Of String, String)
+        server.Post("", d)
     End Sub
     Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
         EndRecording()
