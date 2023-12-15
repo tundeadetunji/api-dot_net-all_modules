@@ -32,7 +32,7 @@ Public Class ServerSide
     ''' <param name="FormValues"></param>
     ''' <returns></returns>
 
-    Public Function Send(URL As String, FormValues As Dictionary(Of String, String))
+    Public Function Send(URL As String, FormValues As Dictionary(Of String, String)) As String
         Dim data, response, responseInString
         Using wb = New WebClient()
             data = DictionaryToNameValueCollection(FormValues)
@@ -40,6 +40,32 @@ Public Class ServerSide
             responseInString = Encoding.UTF8.GetString(response)
         End Using
         Return responseInString
+    End Function
+
+    ''' <summary>
+    ''' Same as Send(url as string, entity as object) but returns status code alongside.
+    ''' </summary>
+    ''' <param name="url"></param>
+    ''' <param name="entity"></param>
+    ''' <returns></returns>
+    Public Function Post(url As String, entity As Object) As CustomResponseObject
+
+        Dim httpWebRequest As HttpWebRequest = CType(WebRequest.Create(url), HttpWebRequest)
+        httpWebRequest.ContentType = "application/json"
+        httpWebRequest.Method = "POST"
+
+        Using streamWriter As New StreamWriter(httpWebRequest.GetRequestStream())
+            Dim json As String = JsonConvert.SerializeObject(entity)
+            streamWriter.Write(json)
+        End Using
+
+        Dim httpResponse = CType(httpWebRequest.GetResponse(), HttpWebResponse)
+        Dim result = ""
+        Using streamReader As New StreamReader(httpResponse.GetResponseStream())
+            result = streamReader.ReadToEnd()
+        End Using
+
+        Return New CustomResponseObject With {.stringResponse = result, .objectResponse = Nothing, .statusCode = httpResponse.StatusCode}
     End Function
 
     ''' <summary>
@@ -84,4 +110,11 @@ Public Class ServerSide
     End Function
 #End Region
 
+#Region "Members"
+    Public Structure CustomResponseObject
+        Public stringResponse As String
+        Public objectResponse As Object
+        Public statusCode As String
+    End Structure
+#End Region
 End Class
