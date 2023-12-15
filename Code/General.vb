@@ -139,7 +139,7 @@ Public Class General
         msi = 0
     End Enum
     Public Enum POMFileKind
-        pom = 0
+        xml = 0
     End Enum
     Public Enum WindowsMediaPlayerPlaylistFileKind
         wpl = 0
