@@ -73,6 +73,7 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Bootstrap.vb" />
     <Compile Include="Charts.vb" />
     <Compile Include="CheckedDifference.vb" />
     <Compile Include="Desktop.vb" />
