@@ -145,7 +145,40 @@ Public Class Charts
 
 #Region "Bar"
 
+    Public Shared Function BarChart(labels As List(Of String), values As List(Of String), Optional width As Integer = 400, Optional height As Integer = 300) As String
+        Dim id As String = NewGUID()
+        Return "<canvas id=""" & id & """ width=""" & width & """ height=""" & height & """
+            style=""width: " & width & "px; height: " & height & "px""></canvas>
+        <script>
+            var barChartData = {
+                labels: [" & bar_labels_string(labels) & "],
+                datasets: [{ fillColor: """ & Web.RandomColor(New List(Of Integer)) & """, data: [" & bar_dataset_string(values) & "] }]
+            };
+            new Chart(document.getElementById(""" & id & """).getContext(""2d"")).Bar(barChartData);
+        </script>"
+    End Function
+    Public Shared Sub BarChart(labels As List(Of String), values As List(Of String), div_for_chart As HtmlGenericControl, Optional width As Integer = 400, Optional height As Integer = 300)
+        If div_for_chart IsNot Nothing Then div_for_chart.InnerHtml = BarChart(labels, values, width, height)
+    End Sub
+    Private Shared Function bar_labels_string(labels As List(Of String)) As String
+        Dim result As String = ""
+        For i = 0 To labels.Count - 1
+            result &= """" & labels(i) & """" & If(i < labels.Count - 1, ", ", "")
+        Next
+        Return result
+    End Function
+
+    Private Shared Function bar_dataset_string(dataset As List(Of String)) As String
+        Dim result As String = ""
+        For i = 0 To dataset.Count - 1
+            result &= dataset(i) & If(i < dataset.Count - 1, ", ", "")
+        Next
+        Return result
+    End Function
+
+
     ''' <summary>
+    ''' Discontinued. Prefer BarChart(List(Of String), List(Of String), Integer, Integer)
     ''' l_dataset.Length must be equal to x_labels.Length.
     ''' </summary>
     ''' <param name="x_labels"></param>
@@ -156,6 +189,19 @@ Public Class Charts
     Public Shared Function BarChart(x_labels As List(Of String), l_dataset As List(Of BarChartDataSet), Optional width As Integer = 400, Optional height As Integer = 300)
         Return Chart_Bar_String(x_labels, l_dataset, width, height)
     End Function
+    ''' <summary>
+    ''' Discontinued. Prefer BarChart(List(Of String),List(Of String), HtmlGenericControl, Integer, Integer).
+    ''' </summary>
+    ''' <param name="x_labels"></param>
+    ''' <param name="l_dataset"></param>
+    ''' <param name="div_for_chart"></param>
+    ''' <param name="div_for_legend"></param>
+    ''' <param name="div_for_title"></param>
+    ''' <param name="chart_title"></param>
+    ''' <param name="LegendMarkerStyle_"></param>
+    ''' <param name="width"></param>
+    ''' <param name="height"></param>
+    ''' <returns></returns>
     Public Shared Function BarChart(x_labels As List(Of String), l_dataset As List(Of BarChartDataSet), div_for_chart As HtmlGenericControl, Optional div_for_legend As HtmlGenericControl = Nothing, Optional div_for_title As HtmlGenericControl = Nothing, Optional chart_title As String = Nothing, Optional LegendMarkerStyle_ As LegendMarkerStyle = LegendMarkerStyle.Square, Optional width As Integer = 400, Optional height As Integer = 300)
         Dim s = Chart_Bar_String(x_labels, l_dataset, width, height)
 
