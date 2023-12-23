@@ -247,6 +247,9 @@ Public Class Styler
                 CType(l, Label).BackColor = Color.Transparent
                 CType(l, Label).ForeColor = If(LabelHasThisForeColor <> Nothing, LabelHasThisForeColor, Color.Black)
             End If
+            If TypeOf (l) Is PictureBox Then
+                CType(l, PictureBox).BackColor = Color.Transparent
+            End If
             If TypeOf (l) Is ListBox Then
                 CType(l, ListBox).ScrollAlwaysVisible = True
                 CType(l, ListBox).HorizontalScrollbar = ListBoxHasBothScrollBars
