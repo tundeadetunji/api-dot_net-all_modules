@@ -239,6 +239,40 @@ Public Class Styler
 #End Region
 
 #Region "Dialog"
+    Public Shared Sub Style(dialog As Form, LabelHasThisForeColor As Color, Optional ListBoxHasBothScrollBars As Boolean = True)
+        AddHandler dialog.MouseMove, New MouseEventHandler(AddressOf MouseMove)
+
+        For Each l As Control In dialog.Controls
+            If TypeOf (l) Is Label Then
+                CType(l, Label).BackColor = Color.Transparent
+                CType(l, Label).ForeColor = If(LabelHasThisForeColor <> Nothing, LabelHasThisForeColor, Color.Black)
+            End If
+            If TypeOf (l) Is ListBox Then
+                CType(l, ListBox).ScrollAlwaysVisible = True
+                CType(l, ListBox).HorizontalScrollbar = ListBoxHasBothScrollBars
+            End If
+        Next
+
+        'If LabelHasThisForeColor <> Nothing Then
+        '    For Each l As Control In dialog.Controls
+        '        If TypeOf (l) Is Label Then
+        '            CType(l, Label).ForeColor = LabelHasThisForeColor
+        '        End If
+        '    Next
+        'End If
+
+        'If ListBoxHasBothScrollBars Then
+        '    For Each l As Control In dialog.Controls
+        '        If TypeOf (l) Is ListBox Then
+        '            CType(l, ListBox).ScrollAlwaysVisible = True
+        '            CType(l, ListBox).HorizontalScrollbar = True
+        '        End If
+        '    Next
+        'End If
+
+
+
+    End Sub
     Public Shared Sub Style(dialog As Form)
         AddHandler dialog.MouseMove, New MouseEventHandler(AddressOf MouseMove)
 
@@ -246,7 +280,7 @@ Public Class Styler
         'labels
         For Each l As Control In dialog.Controls
             If TypeOf (l) Is Label Then
-                l.BackColor = Color.Transparent
+                CType(l, Label).BackColor = Color.Transparent
             End If
         Next
 
