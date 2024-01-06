@@ -2,6 +2,13 @@ MIT License
 
 Copyright (c) 2023 Tunde Adetunji
 
+Please note that
+#1 Reference to AForge is under LGPL v3 license available <a href="http://www.gnu.org/licenses/lgpl.html" target="_blank">here</a>.
+#2 Reference to Google.Api.Gax, Google.Api.Gax.Rest are under The 3-Clause BSD License available <a href="https://opensource.org/license/bsd-3-clause/" target="_blank">here</a>.
+#3 Reference to Google.Apis, Google.Apis.Auth, Google.Apis.Core,
+Firebase.Admin are under Apache-2 license available <a href="https://www.apache.org/licenses/LICENSE-2.0.txt" target="_blank">here</a>.
+
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -12,12 +19,7 @@ furnished to do so, subject to the following conditions:
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 
-Please note that 
-#1
-Reference to AForge is under LGPL v3 license as described at http://www.gnu.org/licenses/lgpl.html.
-More information at https://www.aforgenet.com/framework/license.htm.
-#2
-Reference to FluentFTP is under MIT License.
+
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
