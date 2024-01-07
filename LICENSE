@@ -1,12 +1,10 @@
-MIT License
-
 Copyright (c) 2023 Tunde Adetunji
 
 Please note that
-#1 Reference to AForge is under LGPL v3 license available at http://www.gnu.org/licenses/lgpl.html.
-#2 Reference to Google.Api.Gax, Google.Api.Gax.Rest are under The 3-Clause BSD License available at https://opensource.org/license/bsd-3-clause/.
+#1 Reference to AForge is under LGPL v3 license available at http://www.gnu.org/licenses/lgpl.html
+#2 Reference to Google.Api.Gax, Google.Api.Gax.Rest are under The 3-Clause BSD License available at https://opensource.org/license/bsd-3-clause/
 #3 Reference to Google.Apis, Google.Apis.Auth, Google.Apis.Core,
-Firebase.Admin are under Apache-2.0 license available at https://www.apache.org/licenses/LICENSE-2.0.txt.
+Firebase.Admin are under Apache-2.0 license available at https://www.apache.org/licenses/LICENSE-2.0.txt
 
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
