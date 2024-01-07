@@ -95,7 +95,7 @@ Public Class CameraAndMic
     ''' 
     ''' Ṣe ètò àti ya àwòrán pèlú ẹ̀rọ. Tí ǹkan bá wà ní inúu directory__, ǹkan náà lè lòdì sí ètò yìí, tàbí kó paradà.
     ''' </summary>
-    ''' <param name="prefer">Capture single image, video, screen single image, screen video, or audio. 
+    ''' <param name="prefer">Capture single image, video (series of images alongside audio), screen single image, screen video, or audio. 
     ''' If set to video, screen video or audio, then you must call EndCapture() manually except if number_of_seconds_to_capture is more than 0.
     ''' </param>
     ''' <param name="number_of_seconds_to_capture">Specify number of seconds to capture if prefer is set to Video.</param>
