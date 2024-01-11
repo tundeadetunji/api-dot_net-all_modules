@@ -8,11 +8,11 @@ Imports System.Runtime.InteropServices
 
 ' Review the values of the assembly attributes
 
-<Assembly: AssemblyTitle("iNovation")> 
-<Assembly: AssemblyDescription("")> 
-<Assembly: AssemblyCompany("")> 
-<Assembly: AssemblyProduct("iNovation")> 
-<Assembly: AssemblyCopyright("Copyright ©  2022")> 
+<Assembly: AssemblyTitle("Code Repertoire")>
+<Assembly: AssemblyDescription("")>
+<Assembly: AssemblyCompany("iNovation Digital Works, Nigeria")>
+<Assembly: AssemblyProduct("Code Repertoire")>
+<Assembly: AssemblyCopyright("© 2022 iNovation Digital Works, Nigeria.")>
 <Assembly: AssemblyTrademark("")> 
 
 <Assembly: ComVisible(False)>
@@ -31,5 +31,5 @@ Imports System.Runtime.InteropServices
 ' by using the '*' as shown below:
 ' <Assembly: AssemblyVersion("1.0.*")> 
 
-<Assembly: AssemblyVersion("3.5.8.0")>
-<Assembly: AssemblyFileVersion("3.5.8.0")>
+<Assembly: AssemblyVersion("3.5.9.0")>
+<Assembly: AssemblyFileVersion("3.5.9.0")>
