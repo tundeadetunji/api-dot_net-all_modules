@@ -1612,6 +1612,16 @@ Public Class Desktop
         Catch x As Exception
         End Try
     End Sub
+    Public Shared Sub ToMachineRunOnce(file_ As String, key_ As String)
+        If file_.Length < 1 Or key_.Length < 1 Then Exit Sub
+        Try
+            My.Computer.Registry.SetValue("HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\RunOnce", key_, file_)
+        Catch x As Exception
+        End Try
+    End Sub
+    Public Shared Sub ToRunOnce(file_ As String, key_ As String)
+        ToMachineRunOnce(file_, key_)
+    End Sub
     Public Shared Sub ToStartup(file_ As String, key_ As String)
         ToMachineStartup(file_, key_)
     End Sub
