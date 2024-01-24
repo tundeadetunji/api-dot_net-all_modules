@@ -1,9 +1,15 @@
 # Code Repertoire
 
 <br>
-Reusable code that can be imported into .Net Framework/Core projects via <a href="https://www.nuget.org/packages/inovationware.code/#versions-body-tab" target="_blank">Nuget</a>
+A programmer's toolkit - contains handy functions for daily use, typically imported into .Net Framework/Core projects via <a href="https://www.nuget.org/packages/inovationware.code/#versions-body-tab" target="_blank">Nuget</a>.
 
-<p>Works for .Net Framework 4.6 and greater.</p>
+<br />
+<br />
+
+<p>Compatible with .Net Framework 4.6 and greater.</p>
+
+<br />
+<br />
 
 <p>To use, add these imports as required (please check the individual files for up to date list):</p>
 
