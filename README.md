@@ -19,7 +19,8 @@ using static iNovation.Code.Desktop;
 using static iNovation.Code.Encryption;
 using static iNovation.Code.Media;
 using static iNovation.Code.Sequel;
-using static iNovation.Code.Web;</pre>
+using static iNovation.Code.Web;
+</pre>
 
 <i>VB:</i>
 <pre>
@@ -48,20 +49,25 @@ String encrypted = Encrypt(string);</pre>
 <pre>String decrypted = Decrypt(encrypted);</pre>
 <br>
 
-<h3>For non static imports:</h3>
+<h3>For static/shared imports:</h3>
 
 <i>C#:</i>
 <pre>
-iNovation.Code.Feedback feedback = new iNovation.Code.Feedback();
+using static iNovation.Code.Bootstrap;
+using static iNovation.Code.Charts;
+using static iNovation.Code.Styler;
 </pre>
+
 <i>VB:</i>
 <pre>
-Dim feedback as new iNovation.Code.Feedback()
+Imports iNovation.Code.Bootstrap
+Imports iNovation.Code.Charts
+Imports iNovation.Code.Styler
 </pre>
 
 <p>Then to utilize Text To Speech, you can use, for example</p>
 
-<pre>feedback.say("what to say out loud");</pre>
+<pre>iNovation.Code.Feedback.say("what to say out loud");</pre>
 
 <br>
 
