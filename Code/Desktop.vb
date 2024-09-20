@@ -4691,7 +4691,70 @@ Public Class Desktop
 
 #End Region
 
+#Region "Wallpaper"
+    Private Const SPI_SETDESKWALLPAPER As Integer = &H14
 
+    Private Const SPIF_UPDATEINIFILE As Integer = &H1
+
+    Private Const SPIF_SENDWININICHANGE As Integer = &H2
+
+    Private Declare Auto Function SystemParametersInfo Lib "user32.dll" (ByVal uAction As Integer, ByVal uParam As Integer, ByVal lpvParam As String, ByVal fuWinIni As Integer) As Integer
+
+    ''' <summary>
+    ''' Sets wallpaper. Stretch by default.
+    ''' </summary>
+    ''' <param name="filename">file to set as wallpaper</param>
+    Public Shared Sub SetWallpaper(filename As String)
+        Try
+
+            SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, filename, SPIF_UPDATEINIFILE Or SPIF_SENDWININICHANGE)
+
+        Catch ignored As Exception
+
+
+        End Try
+
+    End Sub
+
+    ''' <summary>
+    ''' Sets wallpaper. Stretch by default.
+    ''' </summary>
+    ''' <param name="folder">where to select the file</param>
+    ''' <param name="pickRandomly">select first (no reference to sorting) or any</param>
+    ''' <param name="supportedFileTypes"> preferred filetypes, defaults to {".jpg", ".png", ".bmp"}</param>
+    Public Shared Sub SetWallpaper(folder As String, pickRandomly As Boolean, Optional depth As SearchOption = SearchOption.TopDirectoryOnly, Optional supportedFileTypes As String() = Nothing)
+        Try
+            If Not My.Computer.FileSystem.DirectoryExists(folder) Then Return
+
+            Dim defaultFileTypes As String() = {".jpg", ".png", ".bmp"}
+
+            Dim files As String() = GetFilesOfType(folder, If(supportedFileTypes IsNot Nothing, If(supportedFileTypes.Length > 1, supportedFileTypes, defaultFileTypes), defaultFileTypes), depth)
+
+            If files.Length < 1 Then Return
+
+            SetWallpaper(If(pickRandomly, PickRandomFile(files), files(0)))
+
+        Catch ex As Exception
+
+        End Try
+
+    End Sub
+
+    Private Shared Function GetFilesOfType(folderPath As String, fileTypes As String(), Optional depth As SearchOption = SearchOption.TopDirectoryOnly) As String()
+        Dim files As New List(Of String)
+
+        For Each fileType As String In fileTypes
+            files.AddRange(Directory.GetFiles(folderPath, "*" & fileType, depth))
+        Next
+
+        Return files.ToArray
+    End Function
+
+    Private Shared Function PickRandomFile(files As String()) As String
+        Return files(New Random().Next(0, files.Length))
+    End Function
+
+#End Region
 
 End Class
 

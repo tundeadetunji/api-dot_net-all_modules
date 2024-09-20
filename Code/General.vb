@@ -6765,7 +6765,7 @@ Public Class General
     ''' <param name="txt_">Intended string content of the file.</param>
     ''' <param name="append_">Should it add to the content of the file (if it has) or overwrite everything?</param>
     ''' <param name="trim_text">Should trailing spaces be ignored?</param>
-    Public Shared Sub WriteText(file_ As String, txt_ As String, Optional append_ As Boolean = False, Optional trim_text As Boolean = False)
+    Public Shared Sub WriteText(file_ As String, txt_ As String, Optional append_ As Boolean = False, Optional trim_text As Boolean = True)
         'If file_.Length < 1 Then Return
 
         'Dim t As String = txt_
