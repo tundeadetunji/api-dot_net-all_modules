@@ -14,6 +14,7 @@ Imports System.IO
 Imports System.Security.AccessControl
 Imports Microsoft.Win32
 Imports System.Runtime.InteropServices
+Imports System.Windows.Forms.VisualStyles
 
 Public Class Desktop
 
@@ -4756,9 +4757,32 @@ Public Class Desktop
 
         Return files.ToArray
     End Function
+    ''' <summary>
+    ''' Gets the files of a selected filetypes from a folder.
+    ''' </summary>
+    ''' <param name="folderPath"></param>
+    ''' <param name="fileTypes">preferred filetypes, defaults to {".jpg", ".png", ".bmp"}</param>
+    ''' <param name="depth"></param>
+    ''' <returns></returns>
+    Public Shared Function GetFilesOfTypeAsListOfString(folderPath As String, fileTypes As List(Of String), Optional depth As SearchOption = SearchOption.TopDirectoryOnly) As List(Of String)
+        Dim files As New List(Of String)
 
+        For Each fileType As String In fileTypes
+            files.AddRange(Directory.GetFiles(folderPath, "*" & fileType, depth))
+        Next
+
+        Return files
+
+    End Function
+    Public Shared Function GetRandomFileFromFolder(folderPath As String, fileTypes As List(Of String), Optional depth As SearchOption = SearchOption.TopDirectoryOnly) As String
+        Return PickRandomFile(folderPath, fileTypes, depth)
+    End Function
     Public Shared Function PickRandomFile(files As String()) As String
         Return files(New Random().Next(0, files.Length))
+    End Function
+
+    Public Shared Function PickRandomFile(folderPath As String, fileTypes As List(Of String), Optional depth As SearchOption = SearchOption.TopDirectoryOnly) As String
+        Return New Random().Next(0, GetFilesOfType(folderPath, fileTypes.ToArray, depth).Length)
     End Function
 
 #End Region
