@@ -4721,7 +4721,7 @@ Public Class Desktop
     ''' </summary>
     ''' <param name="folder">where to select the file</param>
     ''' <param name="pickRandomly">select first (no reference to sorting) or any</param>
-    ''' <param name="supportedFileTypes"> preferred filetypes, defaults to {".jpg", ".png", ".bmp"}</param>
+    ''' <param name="supportedFileTypes">preferred filetypes, defaults to {".jpg", ".png", ".bmp"}</param>
     Public Shared Sub SetWallpaper(folder As String, pickRandomly As Boolean, Optional depth As SearchOption = SearchOption.TopDirectoryOnly, Optional supportedFileTypes As String() = Nothing)
         Try
             If Not My.Computer.FileSystem.DirectoryExists(folder) Then Return
@@ -4740,7 +4740,14 @@ Public Class Desktop
 
     End Sub
 
-    Private Shared Function GetFilesOfType(folderPath As String, fileTypes As String(), Optional depth As SearchOption = SearchOption.TopDirectoryOnly) As String()
+    ''' <summary>
+    ''' Gets the files of a selected filetypes from a folder.
+    ''' </summary>
+    ''' <param name="folderPath"></param>
+    ''' <param name="fileTypes">preferred filetypes, defaults to {".jpg", ".png", ".bmp"}</param>
+    ''' <param name="depth"></param>
+    ''' <returns></returns>
+    Public Shared Function GetFilesOfType(folderPath As String, fileTypes As String(), Optional depth As SearchOption = SearchOption.TopDirectoryOnly) As String()
         Dim files As New List(Of String)
 
         For Each fileType As String In fileTypes
@@ -4750,7 +4757,7 @@ Public Class Desktop
         Return files.ToArray
     End Function
 
-    Private Shared Function PickRandomFile(files As String()) As String
+    Public Shared Function PickRandomFile(files As String()) As String
         Return files(New Random().Next(0, files.Length))
     End Function
 
