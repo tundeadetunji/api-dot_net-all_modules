@@ -1731,8 +1731,8 @@ Public Class Desktop
         AppNotOn = p.Count < 1
     End Function
 
-    Public Shared Sub KillProcess(process_name_without_extension As String)
-        For Each proc As Process In Process.GetProcessesByName(process_name_without_extension)
+    Public Shared Sub KillProcess(process_name As String)
+        For Each proc As Process In Process.GetProcessesByName(Path.GetFileNameWithoutExtension(process_name))
             proc.Kill()
         Next
     End Sub
