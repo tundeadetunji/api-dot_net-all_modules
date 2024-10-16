@@ -1,8 +1,11 @@
 ﻿Imports Newtonsoft.Json
 Imports Newtonsoft.Json.Linq
+Imports System.Data.Common
 
 Imports System.Data.OleDb
 Imports System.Data.SqlClient
+Imports System.Reflection
+Imports System.Text
 
 Public Class Sequel
     ''' <summary>
@@ -288,7 +291,6 @@ Public Class Sequel
         Return QObjects(query, connection_string, select_parameter_keys_values)
     End Function
 
-
     ''' <summary>
     ''' Returns list of dictionaries (each of which correspond to row of the table, according to the output of query)
     ''' </summary>
@@ -314,6 +316,306 @@ Public Class Sequel
         Return l
     End Function
 
+    ''' <summary>
+    ''' Returns Type originally saved in database. Assigns column names to private and public properties.
+    ''' Assumes the name of the table is the same as the name of the type.
+    ''' Joins or transactions are not allowed for.
+    ''' May throw error if any of the properties is Read-only.
+    ''' </summary>
+    ''' <typeparam name="T">The return type.</typeparam>
+    ''' <param name="Entity">Instance of the return type.</param>
+    ''' <returns></returns>
+    Public Shared Function QEntity(Of T As Class)(Entity As T, connection_string As String, Id As Object, Optional IdColumnName As String = "Id") As T
+
+        Dim table As String = getClassName(Entity)
+        Dim container As PropContainer = SortProperties(Entity, False)
+        Dim noncollection As Dictionary(Of String, Object) = container.NonCollection
+
+        Dim tempContainer As PropContainer = SortProperties(Entity, False)
+        Dim tempNoncollection As Dictionary(Of String, Object) = tempContainer.NonCollection
+        removeIdKey(tempNoncollection, IdColumnName)
+
+        Dim kv = General.DictionaryKeyValueToArray(noncollection)
+        Dim query As String = General.BuildSelectString(table, Nothing, {IdColumnName})
+        Dim r = QRow(query, connection_string, {IdColumnName, Id})
+        Return QMap(Of T)(r, Entity)
+
+    End Function
+
+    ''' <summary>
+    ''' Inserts a new record, directly from the type.
+    ''' Assumes the name of the table is the same as the name of the type.
+    ''' Joins or transactions are not allowed for.
+    ''' </summary>
+    ''' <typeparam name="T">The type.</typeparam>
+    ''' <param name="Entity">Instance of the type.</param>
+    ''' <param name="connection_string"></param>
+    ''' <param name="IdIsAutoIncrement">Id auto-increments by 1 (default).</param>
+    Public Shared Sub QEntityCreate(Of T As Class)(Entity As T, connection_string As String, Optional IdIsAutoIncrement As Boolean = True)
+        Dim container As PropContainer = SortProperties(Entity, IdIsAutoIncrement)
+        Dim collection As Dictionary(Of String, Object) = container.Collection
+        Dim noncollection As Dictionary(Of String, Object) = container.NonCollection
+
+        Dim table As String = getClassName(Entity)
+        Dim result As StringBuilder = New StringBuilder
+
+        CommitSequel(createSaveQuery(table, noncollection), connection_string)
+    End Sub
+
+    ''' <summary>
+    ''' Updates a record, directly from the type.
+    ''' Assumes the name of the table is the same as the name of the type.
+    ''' Joins or transactions are not allowed for.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="Entity"></param>
+    ''' <param name="connection_string"></param>
+    ''' <param name="IdColumnName"></param>
+    ''' <param name="Id"></param>
+
+    Public Shared Sub QEntityUpdate(Of T As Class)(Entity As T, connection_string As String, Id As Object, Optional IdColumnName As String = "Id")
+        Dim table As String = getClassName(Entity)
+        Dim container As PropContainer = SortProperties(Entity, False)
+        Dim noncollection As Dictionary(Of String, Object) = container.NonCollection
+
+        Dim tempContainer As PropContainer = SortProperties(Entity, False)
+        Dim tempNoncollection As Dictionary(Of String, Object) = tempContainer.NonCollection
+        removeIdKey(tempNoncollection, IdColumnName)
+
+        Dim kv = General.DictionaryKeyValueToArray(noncollection)
+        Dim query As String = General.BuildUpdateString(table, tempNoncollection.Keys.ToArray, {IdColumnName})
+        CommitSequel(query, connection_string, kv)
+
+    End Sub
+
+    Private Shared Sub removeIdKey(dict As Dictionary(Of String, Object), k As String)
+        dict.Remove(k.ToUpper)
+        dict.Remove(k)
+        dict.Remove(k.ToLower)
+    End Sub
+
+    ''' <summary>
+    ''' Deletes a record, directly from the type.
+    ''' Assumes the name of the table is the same as the name of the type.
+    ''' Joins or transactions are not allowed for.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="Entity"></param>
+    ''' <param name="connection_string"></param>
+    ''' <param name="IdColumnName"></param>
+    ''' <param name="Id"></param>
+    Public Shared Sub QEntityDelete(Of T As Class)(Entity As T, connection_string As String, Id As Object, Optional IdColumnName As String = "Id")
+        Dim table As String = getClassName(Entity)
+
+        Dim query As String = General.DeleteString_CONDITIONAL(table, {IdColumnName, "="})
+        CommitSequel(query, connection_string, {IdColumnName, Id})
+    End Sub
+
+    Public Shared Function createDatabaseQuery(ByVal databaseName As String) As String
+        Return $"CREATE DATABASE {databaseName}"
+    End Function
+
+    ''' <summary>
+    ''' Ensures the database exists beforehand.
+    ''' Transactions are not allowed for.
+    ''' </summary>
+    ''' <param name="database_name"></param>
+    ''' <param name="connection_string"></param>
+    Public Shared Sub QEntityEnsureDatabase(database_name As String, connection_string As String)
+        Using connection As New SqlConnection(connection_string)
+            connection.Open()
+
+            ' Check if the database exists
+            Dim dbExists As Boolean = False
+            Dim checkDbQuery As String = $"SELECT database_id FROM sys.databases WHERE name = '{database_name}'"
+
+            Using command As New SqlCommand(checkDbQuery, connection)
+                Dim result = command.ExecuteScalar()
+                dbExists = (result IsNot Nothing)
+            End Using
+
+            ' Create the database if it does not exist
+            If Not dbExists Then
+                Using command As New SqlCommand(createDatabaseQuery(database_name), connection)
+                    command.ExecuteNonQuery()
+                    'Console.WriteLine($"Database '{DatabaseName}' created.")
+                End Using
+            Else
+                'Console.WriteLine($"Database '{DatabaseName}' already exists.")
+            End If
+        End Using
+    End Sub
+
+    Public Shared Function CreateTableQuery(Of T As Class)(ByVal Entity As T,
+                                                      Optional ByVal idPropertyName As String = "Id",
+                                                      Optional stringTargetType As String = "NVARCHAR(MAX)") As String
+        Dim tableName As String = Entity.GetType().Name
+        Dim columns As New List(Of String)
+        Dim hasIdProperty As Boolean = False
+
+        ' Check if the object has an "Id" property
+        For Each propertyInfo As PropertyInfo In Entity.GetType().GetProperties(BindingFlags.Public Or BindingFlags.NonPublic Or BindingFlags.Instance)
+            Dim columnName As String = propertyInfo.Name
+            Dim dataType As String = GetSqlDataType(propertyInfo.PropertyType, stringTargetType)
+
+            ' If the property is the "Id" property, mark it as the primary key
+            If columnName.Equals(idPropertyName, StringComparison.OrdinalIgnoreCase) Then
+                columns.Add($"{columnName} INT PRIMARY KEY IDENTITY(1,1)")
+                hasIdProperty = True
+            Else
+                columns.Add($"{columnName} {dataType}")
+            End If
+        Next
+
+        ' If the object does not have an "Id" property, add it as the primary key
+        If Not hasIdProperty Then
+            columns.Insert(0, $"{idPropertyName} INT PRIMARY KEY IDENTITY(1,1)")
+        End If
+
+        Dim query As New StringBuilder()
+        query.AppendFormat("CREATE TABLE {0} (", tableName)
+        query.Append(String.Join(", ", columns))
+        query.Append(")")
+
+        Return query.ToString()
+    End Function
+    Private Shared Function GetSqlDataType(propertyType As Type, Optional stringTargetType As String = "NVARCHAR(MAX)") As String
+        Select Case propertyType.Name
+            Case "String"
+                Return stringTargetType
+            Case "Integer", "Int32"
+                Return "INT"
+            Case "Long", "Int64"
+                Return "BIGINT"
+            Case "Boolean"
+                Return "BIT"
+            Case "DateTime"
+                Return "DATETIME"
+            Case "Decimal"
+                Return "DECIMAL(18, 2)"
+            Case "Double"
+                Return "FLOAT"
+            Case Else
+                Throw New ArgumentException($"Unsupported data type: {propertyType.Name}")
+        End Select
+    End Function
+    ''' <summary>
+    ''' Ensures the table is in the database beforehand. You can call this before any CRUD operation.
+    ''' Transactions are not allowed for.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="Entity"></param>
+    ''' <param name="database_name"></param>
+    ''' <param name="connection_string"></param>
+    Public Shared Sub QEntityEnsureTable(Of T As Class)(ByVal Entity As T, database_name As String, connection_string As String, Optional ByVal idPropertyName As String = "Id", Optional stringTargetType As String = "NVARCHAR(MAX)")
+        QEntityEnsureDatabase(database_name, connection_string)
+
+        Using connection As New SqlConnection(connection_string)
+            connection.Open()
+            connection.ChangeDatabase(database_name)
+
+            ' Check if the table exists
+            Dim tableExists As Boolean = False
+            Dim checkTableQuery As String = $"SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '{getClassName(Entity)}'"
+
+            Using command As New SqlCommand(checkTableQuery, connection)
+                Dim result = command.ExecuteScalar()
+                tableExists = (Convert.ToInt32(result) > 0)
+            End Using
+
+            ' Create the table if it does not exist
+            If Not tableExists Then
+                Using command As New SqlCommand(CreateTableQuery(Entity, idPropertyName, stringTargetType), connection)
+                    command.ExecuteNonQuery()
+                    'Console.WriteLine($"Table '{tableName}' created with the provided query.")
+                End Using
+            Else
+                'Console.WriteLine($"Table '{tableName}' already exists.")
+            End If
+        End Using
+    End Sub
+
+    Private Shared Function getClassName(entity As Object)
+        Return entity.GetType.Name
+    End Function
+
+    ''' <summary>
+    ''' Returns type directly from the value obtained from calling Sequel.QRow()
+    ''' Assumes the name of the type is the same as the name of the type.
+    ''' Joins or transactions are not allowed for.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="dictionary">Value from calling QRow</param>
+    ''' <param name="Entity"></param>
+    ''' <returns></returns>
+    Public Shared Function QMap(Of T As Class)(dictionary As Dictionary(Of String, Object), Entity As T) As T
+        If dictionary Is Nothing Then
+            Throw New ArgumentNullException(NameOf(dictionary))
+        End If
+
+        If Entity Is Nothing Then
+            Throw New ArgumentNullException(NameOf(Entity))
+        End If
+
+        Dim type = GetType(T)
+        Dim properties = type.GetProperties(BindingFlags.Instance Or BindingFlags.Public Or BindingFlags.NonPublic)
+        Dim value As Object = Nothing
+
+        For Each prop In properties
+            If dictionary.TryGetValue(prop.Name, value) Then
+                If Not prop.CanWrite Then
+                    Throw New InvalidOperationException($"Property {prop.Name} is readonly and cannot be set.")
+                End If
+                prop.SetValue(Entity, value)
+            End If
+        Next
+
+        ' Handle private fields
+        Dim fields = type.GetFields(BindingFlags.Instance Or BindingFlags.Public Or BindingFlags.NonPublic)
+
+        For Each field In fields
+            If dictionary.TryGetValue(field.Name, value) Then
+                field.SetValue(Entity, value)
+            End If
+        Next
+
+        Return Entity
+
+        'Dim mapper As SequelOrm = New SequelOrm
+        'Dim amy As User = mapper.MapDictionaryToObject(dict, New User)
+
+
+    End Function
+
+    Private Structure KvContainer
+        Public keys As Array
+        Public keys_values As Array
+    End Structure
+
+    Private Shared Function CreateKvContainer(Of T)(ByVal Entity As T) As KvContainer
+        ' Get all public and private properties of the object
+        Dim properties As PropertyInfo() = GetType(T).GetProperties(BindingFlags.Public Or BindingFlags.NonPublic Or BindingFlags.Instance)
+
+        ' Initialize arrays to hold property names and property name-value pairs
+        Dim keys As New List(Of String)()
+        Dim keys_params As New List(Of String)()
+
+        ' Iterate through each property
+        For Each prop As PropertyInfo In properties
+            ' Get the property name
+            Dim propertyName As String = prop.Name
+            ' Get the property value
+            Dim propertyValue As Object = prop.GetValue(Entity)
+
+            ' Add the property name to keys array
+            keys.Add(propertyName)
+            ' Add the property name and value to keys_params array
+            keys_params.Add($"{propertyName}: {propertyValue}")
+        Next
+
+        ' Convert lists to arrays
+        Return New KvContainer With {.keys = keys.ToArray(), .keys_values = keys_params.ToArray()}
+    End Function
 #Region "JSON"
 
     ''' <summary>
@@ -466,5 +768,96 @@ Public Class Sequel
 
 #End Region
 
+#Region "Entity ORM related"
+
+    Public Structure PropContainer
+        Public Property Collection As Dictionary(Of String, Object)
+        Public Property NonCollection As Dictionary(Of String, Object)
+    End Structure
+
+
+    Private Shared ReadOnly Property Id As String = "Id"
+    Private Shared ReadOnly Property SemiColon As String = ";"
+
+    Private Shared Function SortProperties(classInstance As Object, IdIsAutoIncrement As Boolean) As PropContainer
+        Dim nonCollectionFields As New Dictionary(Of String, Object)
+        Dim collectionFields As New Dictionary(Of String, Object)
+
+        For Each field As PropertyInfo In classInstance.GetType().GetProperties(BindingFlags.Instance Or BindingFlags.Public Or BindingFlags.NonPublic)
+            Dim fieldValue As Object = field.GetValue(classInstance)
+            Dim propertyType As Type = field.PropertyType
+
+            If field.Name.Equals(Id, StringComparison.OrdinalIgnoreCase) AndAlso IdIsAutoIncrement Then
+                ' do not add the "Id" property if IdIsAutoIncrement is true
+                Continue For
+            End If
+
+            If propertyType.IsGenericType AndAlso propertyType.GetGenericTypeDefinition() = GetType(List(Of )) OrElse propertyType.IsEnum Then
+                collectionFields.Add(field.Name, fieldValue)
+            Else
+                nonCollectionFields.Add(field.Name, fieldValue)
+            End If
+        Next
+
+        Return New PropContainer With {.Collection = collectionFields, .NonCollection = nonCollectionFields}
+    End Function
+
+    Public Shared Function GetPropertyValue(instance As Object, propertyName As String) As Object
+        Dim propertyInfo As PropertyInfo = instance.GetType().GetProperty(propertyName, BindingFlags.Instance Or BindingFlags.Public Or BindingFlags.NonPublic)
+        If propertyInfo IsNot Nothing Then
+            Return propertyInfo.GetValue(instance)
+        Else
+            Throw New ArgumentException($"Property '{propertyName}' not found in type {instance.GetType().Name}")
+        End If
+    End Function
+
+    Public Shared Function GetProperties(instance As Object, parentEntityName As String, primaryKey As Integer) As Dictionary(Of String, Object)
+        Dim properties As New Dictionary(Of String, Object)
+        For Each prop As PropertyInfo In instance.GetType().GetProperties(BindingFlags.Instance Or BindingFlags.Public Or BindingFlags.NonPublic)
+            If prop.Name.Equals(parentEntityName & Id) Then
+                properties.Add(prop.Name, primaryKey)
+            Else
+                properties.Add(prop.Name, prop.GetValue(instance))
+            End If
+        Next
+        Return properties
+    End Function
+
+    Public Shared Function HasProperty(ByVal Entity As Object, ByVal propertyName As String) As Boolean
+        Dim type As Type = Entity.GetType()
+        Dim propertyInfo As PropertyInfo = type.GetProperty(propertyName, BindingFlags.Public Or BindingFlags.Instance Or BindingFlags.NonPublic)
+
+        Return propertyInfo IsNot Nothing
+    End Function
+    Public Shared Function createSaveQuery(tableName As String, data As Dictionary(Of String, Object)) As String
+        Dim query As New StringBuilder
+        Dim values As New List(Of String)
+
+        query.Append($"INSERT INTO {tableName} (")
+        For Each key As String In data.Keys
+            query.Append($"{key}, ")
+        Next
+        query.Length -= 2 ' Remove the last comma and space
+        query.Append(") VALUES (")
+
+        For Each value As Object In data.Values
+            If value Is Nothing Then
+                values.Add("NULL")
+            ElseIf TypeOf value Is String Then
+                values.Add($"'{value.ToString().Replace("'", "''")}'")
+            ElseIf TypeOf value Is Date Then
+                values.Add($"'{value.ToString("yyyy-MM-dd HH:mm:ss")}'")
+            Else
+                values.Add(value.ToString())
+            End If
+        Next
+
+        query.Append(String.Join(", ", values))
+        query.Append(")")
+
+        Return query.Append(SemiColon).ToString()
+    End Function
+
+#End Region
 
 End Class

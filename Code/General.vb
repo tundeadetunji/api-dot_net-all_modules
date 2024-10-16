@@ -4646,6 +4646,16 @@ Public Class General
         End If
     End Function
 
+    Public Shared Function DictionaryKeyValueToArray(ByVal dictionary As Dictionary(Of String, Object)) As Object()
+        Dim array As New List(Of Object)
+
+        For Each kvp As KeyValuePair(Of String, Object) In dictionary
+            array.Add(kvp.Key)
+            array.Add(kvp.Value)
+        Next
+
+        Return array.ToArray()
+    End Function
     Public Shared Function DictionaryContains(dict As Dictionary(Of String, Object), str_sought As String) As Boolean
         Dim l As List(Of String) = DictionaryValues(dict)
         Dim l_temp As New List(Of String)
