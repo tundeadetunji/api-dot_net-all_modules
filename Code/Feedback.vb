@@ -56,33 +56,53 @@ Public Class Feedback
 
 #Region "Speech"
     Public Sub say(message As String, Optional async As Boolean = True)
-        If async = True Then
-            s.SpeakAsync(message)
-        Else
-            s.Speak(message)
-        End If
-
-    End Sub
-
-    Public Sub pause()
-        If s.State = SynthesizerState.Speaking Then
-            s.Pause()
-        End If
-    End Sub
-
-    Public Sub resumeSay()
-        If s.State = SynthesizerState.Paused Then
-            s.Resume()
-        End If
-    End Sub
-
-    Public Sub stress(message As String, Optional howManyTimes As Byte = 3, Optional async As Boolean = True)
-        For i = 1 To howManyTimes
+        Try
             If async = True Then
                 s.SpeakAsync(message)
             Else
                 s.Speak(message)
             End If
+
+        Catch ex As Exception
+
+        End Try
+
+    End Sub
+
+    Public Sub pause()
+        Try
+            If s.State = SynthesizerState.Speaking Then
+                s.Pause()
+            End If
+
+        Catch ex As Exception
+
+        End Try
+    End Sub
+
+    Public Sub resumeSay()
+        Try
+            If s.State = SynthesizerState.Paused Then
+                s.Resume()
+            End If
+
+        Catch ex As Exception
+
+        End Try
+    End Sub
+
+    Public Sub stress(message As String, Optional howManyTimes As Byte = 3, Optional async As Boolean = True)
+        For i = 1 To howManyTimes
+            Try
+                If async = True Then
+                    s.SpeakAsync(message)
+                Else
+                    s.Speak(message)
+                End If
+
+            Catch ex As Exception
+
+            End Try
         Next
     End Sub
     Public Sub createReminder(message As String, interval_in_ms As Integer, Optional howManyTimes As Byte = 3, Optional async As Boolean = False)

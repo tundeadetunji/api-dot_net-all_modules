@@ -4793,9 +4793,9 @@ Public Class General
             Next
         End With
         If format_output Then
-            Return PrepareForIO(r)
+            Return PrepareForIO(r.Trim)
         Else
-            Return r
+            Return r.Trim
         End If
     End Function
 
