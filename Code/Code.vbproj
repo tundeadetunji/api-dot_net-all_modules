@@ -99,6 +99,7 @@
     <Compile Include="CheckedDifference.vb" />
     <Compile Include="Desktop.vb" />
     <Compile Include="Encryption.vb" />
+    <Compile Include="SequelOrm.vb" />
     <Compile Include="Feedback.vb" />
     <Compile Include="General.vb" />
     <Compile Include="Machine.vb" />

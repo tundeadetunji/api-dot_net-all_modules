@@ -2,18 +2,16 @@
 <package >
   <metadata>
     <id>inovationware.code</id>
-    <version>3.6.7</version>
+    <version>3.6.6</version>
     <title>inovationware.code</title>
     <authors>inovationware</authors>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <license type="expression">MIT</license>
     <!-- <icon>icon.png</icon> -->
     <projectUrl>https://github.com/tundeadetunji/api-dot_net-all_modules</projectUrl>
-    <description>Handy Features for .Net, including Encrypt/Decrypt, Lightweight ORM, Db CRUD operations, Text to speech,
-	Bootstrap/Chart/Dashboard code e.t.c.
-    </description>
+    <description>Handy functions for .Net. Includes basic ORM capabilities.</description>
     <releaseNotes></releaseNotes>
-    <copyright>©2022 - 2024 inovationware (tundeadetunji2017@gmail.com)</copyright>
-    <tags>code inovationware request post bootstrap encrypt encryption speech power image sql entity orm admin chart dashboard sequel styling</tags>
+    <copyright>©2022 inovationware (tundeadetunji2017@gmail.com)</copyright>
+    <tags>code inovationware request post bootstrap encrypt encryption speech power image sql entity orm</tags>
   </metadata>
 </package>
