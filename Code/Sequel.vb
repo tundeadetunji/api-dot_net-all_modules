@@ -321,6 +321,7 @@ Public Class Sequel
     ''' Assumes the name of the table is the same as the name of the type.
     ''' Joins or transactions are not allowed for.
     ''' May throw error if any of the properties is Read-only.
+    ''' Prefer using equivalent in iNovation.Code.SequelOrm.*
     ''' </summary>
     ''' <typeparam name="T">The return type.</typeparam>
     ''' <param name="Entity">Instance of the return type.</param>
@@ -346,6 +347,7 @@ Public Class Sequel
     ''' Inserts a new record, directly from the type.
     ''' Assumes the name of the table is the same as the name of the type.
     ''' Joins or transactions are not allowed for.
+    ''' Prefer using equivalent in iNovation.Code.SequelOrm.*
     ''' </summary>
     ''' <typeparam name="T">The type.</typeparam>
     ''' <param name="Entity">Instance of the type.</param>
@@ -366,6 +368,7 @@ Public Class Sequel
     ''' Updates a record, directly from the type.
     ''' Assumes the name of the table is the same as the name of the type.
     ''' Joins or transactions are not allowed for.
+    ''' Prefer using equivalent in iNovation.Code.SequelOrm.*
     ''' </summary>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="Entity"></param>
@@ -398,6 +401,7 @@ Public Class Sequel
     ''' Deletes a record, directly from the type.
     ''' Assumes the name of the table is the same as the name of the type.
     ''' Joins or transactions are not allowed for.
+    ''' Prefer using equivalent in iNovation.Code.SequelOrm.*
     ''' </summary>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="Entity"></param>
@@ -418,6 +422,7 @@ Public Class Sequel
     ''' <summary>
     ''' Ensures the database exists beforehand.
     ''' Transactions are not allowed for.
+    ''' Prefer using equivalent in iNovation.Code.SequelOrm.*
     ''' </summary>
     ''' <param name="database_name"></param>
     ''' <param name="connection_string"></param>
@@ -445,7 +450,14 @@ Public Class Sequel
             End If
         End Using
     End Sub
-
+    ''' <summary>
+    ''' Prefer using equivalent in iNovation.Code.SequelOrm.*
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="Entity"></param>
+    ''' <param name="idPropertyName"></param>
+    ''' <param name="stringTargetType"></param>
+    ''' <returns></returns>
     Public Shared Function CreateTableQuery(Of T As Class)(ByVal Entity As T,
                                                       Optional ByVal idPropertyName As String = "Id",
                                                       Optional stringTargetType As String = "NVARCHAR(MAX)") As String
@@ -502,6 +514,7 @@ Public Class Sequel
     ''' <summary>
     ''' Ensures the table is in the database beforehand. You can call this before any CRUD operation.
     ''' Transactions are not allowed for.
+    ''' Prefer using equivalent in iNovation.Code.SequelOrm.*
     ''' </summary>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="Entity"></param>
@@ -543,6 +556,7 @@ Public Class Sequel
     ''' Returns type directly from the value obtained from calling Sequel.QRow()
     ''' Assumes the name of the type is the same as the name of the type.
     ''' Joins or transactions are not allowed for.
+    ''' Prefer using equivalent in iNovation.Code.SequelOrm.*
     ''' </summary>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="dictionary">Value from calling QRow</param>

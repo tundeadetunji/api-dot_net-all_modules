@@ -5,6 +5,9 @@ Imports System.Data.SqlClient
 Imports System.Reflection
 
 Public Class SequelOrm
+
+#Region "props, fields and initialization"
+
     Private Shared _instance As SequelOrm
     Private Shared ReadOnly _lock As New Object()
     Private ReadOnly _connectionString As String
@@ -16,9 +19,14 @@ Public Class SequelOrm
         _databaseName = databaseName
     End Sub
 
+#End Region
+
+#Region "exported"
+
     ''' <summary>
-    ''' For use in any other than .Net Framework, you may need to install
-    ''' System.Data.SqlClient from Nuget.
+    ''' Lightweight ORM.
+    ''' Picks up only non read-only properties, may throw exception if any property is read-only.
+    ''' You may need to install System.Data.SqlClient from Nuget if using >=.Net 5.
     ''' </summary>
     ''' <param name="connectionString"></param>
     ''' <param name="databaseName"></param>
@@ -34,6 +42,13 @@ Public Class SequelOrm
         Return _instance
     End Function
 
+    ''' <summary>
+    ''' Use this if the name of the class is the same as the name of the table.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="id"></param>
+    ''' <param name="idColumn"></param>
+    ''' <returns></returns>
     Public Function FindById(Of T)(id As Object, Optional idColumn As String = Id) As T
         ' Ensure that the id is not null
         If id Is Nothing Then
@@ -60,6 +75,14 @@ Public Class SequelOrm
         Return Nothing
     End Function
 
+    ''' <summary>
+    ''' Use this if the name of the class is not the same as the name of the table.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="id"></param>
+    ''' <param name="tableName"></param>
+    ''' <param name="idColumn"></param>
+    ''' <returns></returns>
     Public Function FindByIdInTable(Of T)(id As Object, tableName As String, Optional idColumn As String = Id) As T
         ' Ensure that the id is not null
         If id Is Nothing Then
@@ -86,6 +109,13 @@ Public Class SequelOrm
         Return Nothing
     End Function
 
+    ''' <summary>
+    ''' Use this if the name of the class is not the same as the name of the table.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="conditions"></param>
+    ''' <param name="tableName"></param>
+    ''' <returns></returns>
     Public Function FindByInTable(Of T)(conditions As Dictionary(Of String, Object), tableName As String) As List(Of T)
         Dim whereClause As String = String.Join(" AND ", conditions.Keys)
         Dim query As String = $"SELECT * FROM {tableName} WHERE {whereClause}"
@@ -106,6 +136,12 @@ Public Class SequelOrm
         Return results
     End Function
 
+    ''' <summary>
+    ''' Use this if the name of the class is the same as the name of the table.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="conditions"></param>
+    ''' <returns></returns>
     Public Function FindBy(Of T)(conditions As Dictionary(Of String, Object)) As List(Of T)
         Dim whereClause As String = String.Join(" AND ", conditions.Keys)
         Dim query As String = $"SELECT * FROM {GetType(T).Name} WHERE {whereClause}"
@@ -126,6 +162,15 @@ Public Class SequelOrm
         Return results
     End Function
 
+    ''' <summary>
+    ''' Use this if the name of the class is the same as the name of the table.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="obj"></param>
+    ''' <param name="tableName"></param>
+    ''' <param name="idColumn"></param>
+    ''' <param name="IdWillAutoIncrement"></param>
+    ''' <returns></returns>
     Public Function CreateInTable(Of T)(obj As T, tableName As String, Optional idColumn As String = Id, Optional IdWillAutoIncrement As Boolean = True) As T
         Dim properties = GetType(T).GetProperties(BindingFlags.Public Or BindingFlags.Instance)
         Dim columns As New List(Of String)()
@@ -178,7 +223,15 @@ Public Class SequelOrm
         Return GetRecordById(Of T)(idValue, idColumn, tableName)
     End Function
 
-    Public Function Create(Of T)(obj As T,  Optional idColumn As String = Id, Optional IdWillAutoIncrement As Boolean = True) As T
+    ''' <summary>
+    ''' Use this if the name of the class is the same as the name of the table.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="obj"></param>
+    ''' <param name="idColumn"></param>
+    ''' <param name="IdWillAutoIncrement"></param>
+    ''' <returns></returns>
+    Public Function Create(Of T)(obj As T, Optional idColumn As String = Id, Optional IdWillAutoIncrement As Boolean = True) As T
         Dim properties = GetType(T).GetProperties(BindingFlags.Public Or BindingFlags.Instance)
         Dim columns As New List(Of String)()
         Dim values As New List(Of String)()
@@ -230,6 +283,14 @@ Public Class SequelOrm
         Return GetRecordById(Of T)(idValue, idColumn, GetType(T).Name)
     End Function
 
+    ''' <summary>
+    ''' Use this if the name of the class is not the same as the name of the table.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="obj"></param>
+    ''' <param name="tableName"></param>
+    ''' <param name="idColumn"></param>
+    ''' <returns></returns>
     Public Function UpdateInTable(Of T)(obj As T, tableName As String, Optional idColumn As String = Id) As T
         Dim properties = GetType(T).GetProperties(BindingFlags.Public Or BindingFlags.Instance)
         Dim columns As New List(Of String)()
@@ -278,6 +339,13 @@ Public Class SequelOrm
         Return Nothing
     End Function
 
+    ''' <summary>
+    ''' Use this if the name of the class is the same as the name of the table.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="obj"></param>
+    ''' <param name="idColumn"></param>
+    ''' <returns></returns>
     Public Function Update(Of T)(obj As T, Optional idColumn As String = Id) As T
         Dim properties = GetType(T).GetProperties(BindingFlags.Public Or BindingFlags.Instance)
         Dim columns As New List(Of String)()
@@ -326,6 +394,29 @@ Public Class SequelOrm
         Return Nothing
     End Function
 
+    Public Function Exists(id As Object, Optional idColumn As String = Id) As Boolean
+        s
+    End Function
+
+    Public Function existsintable(id As Object, tableName As String, Optional idColumn As String = Id) As Boolean
+        e
+    End Function
+
+    Public Function CreateOrUpdate(Of T)(obj As T, Optional idColumn As String = Id, Optional IdWillAutoIncrement As Boolean = True) As T
+        dfs
+    End Function
+
+    Public Function CreateOrUpdateInTable(Of T)(obj As T, tableName As String, Optional idColumn As String = Id, Optional IdWillAutoIncrement As Boolean = True) As T
+        dfs
+    End Function
+
+
+    ''' <summary>
+    ''' Use this if the name of the class is not the same as the name of the table.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="tableName"></param>
+    ''' <returns></returns>
     Public Function FindAllInTable(Of T)(tableName As String) As List(Of T)
         Dim query As String = $"SELECT * FROM {tableName}"
         Dim results As New List(Of T)()
@@ -343,6 +434,11 @@ Public Class SequelOrm
         Return results
     End Function
 
+    ''' <summary>
+    ''' Use this if the name of the class is the same as the name of the table.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <returns></returns>
     Public Function FindAll(Of T)() As List(Of T)
         Dim query As String = $"SELECT * FROM {GetType(T).Name}"
         Dim results As New List(Of T)()
@@ -359,6 +455,19 @@ Public Class SequelOrm
         End Using
         Return results
     End Function
+
+
+    Public Function Delete()
+        dfs
+    End Function
+
+    ''' <summary>
+    ''' Use this if the name of the class is not the same as the name of the table.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="id"></param>
+    ''' <param name="tableName"></param>
+    ''' <param name="idColumn"></param>
     Public Sub DeleteWhereIdInTable(Of T)(id As Object, tableName As String, Optional idColumn As String = Id)
         ' Ensure that the id is not null
         If id Is Nothing Then
@@ -375,7 +484,14 @@ Public Class SequelOrm
             End Using
         End Using
     End Sub
-    Public Sub DeleteWhereId(Of T)(id As Object, idColumn As String)
+
+    ''' <summary>
+    ''' Use this if the name of the class is the same as the name of the table.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="id"></param>
+    ''' <param name="idColumn"></param>
+    Public Sub DeleteWhereId(Of T)(id As Object, Optional idColumn As String = Id)
         ' Ensure that the id is not null
         If id Is Nothing Then
             Throw New ArgumentNullException(NameOf(id), "ID cannot be null.")
@@ -391,6 +507,12 @@ Public Class SequelOrm
             End Using
         End Using
     End Sub
+
+    ''' <summary>
+    ''' Use this if the name of the class is not the same as the name of the table.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="tableName"></param>
     Public Sub DeleteAllInTable(Of T)(tableName As String)
 
         Dim query As String = $"DELETE FROM {tableName}"
@@ -402,6 +524,11 @@ Public Class SequelOrm
             End Using
         End Using
     End Sub
+
+    ''' <summary>
+    ''' Use this if the name of the class is the same as the name of the table.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
     Public Sub DeleteAll(Of T)()
 
         Dim query As String = $"DELETE FROM {GetType(T).Name}"
@@ -413,6 +540,11 @@ Public Class SequelOrm
             End Using
         End Using
     End Sub
+
+#End Region
+
+#Region "support"
+
 
     Private Function MapToObject(Of T)(reader As SqlDataReader) As T
         Dim obj As T = Activator.CreateInstance(Of T)()
@@ -458,4 +590,7 @@ Public Class SequelOrm
         ' Return default value if no record is found
         Return Nothing
     End Function
+
+#End Region
+
 End Class
