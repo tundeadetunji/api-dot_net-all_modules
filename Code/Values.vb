@@ -1,4 +1,11 @@
-﻿Public Class Values
+﻿''' <summary>
+''' This class contains some locale-specific information.
+''' </summary>
+''' <remarks>
+''' Author: Tunde Adetunji (tundeadetunji2017@gmail.com)
+''' Date: October 24, 2024
+''' </remarks>
+Public Class Values
 #Region "LGAsOfNigeriaList"
     Public Shared ReadOnly Property abia_ As Array = {"Aba North", "Aba South", "Arochukwu", "Bende", "Isiala Ngwa South", "Ikwuano", "Isiala", "Ngwa North", "Isukwuato", "Ukwa West", "Ukwa East", "Umuahia", "Umuahia South"}
     Public Shared ReadOnly Property adamawa_ As Array = {"Demsa", "Fufore", "Ganye", "Girei", "Gombi", "Jada", "Yola North", "Lamurde", "Madagali", "Maiha", "Mayo-Belwa", "Michika", "Mubi South", "Numna", "Shelleng", "Song", "Toungo", "Jimeta", "Yola South", "Hung"}

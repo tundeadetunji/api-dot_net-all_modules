@@ -1,6 +1,11 @@
 ﻿Imports System.Drawing
 Imports System.Windows.Forms
 
+''' <remarks>
+''' Author: Tunde Adetunji (tundeadetunji2017@gmail.com)
+''' Date: October 24, 2024
+''' </remarks>
+
 Public Class Media
     ''' <summary>
     ''' ToDo: Clean up resources afterward to free up memory, like dispose/using threw OutOfMemory error

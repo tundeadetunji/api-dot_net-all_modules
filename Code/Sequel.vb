@@ -7,6 +7,13 @@ Imports System.Data.SqlClient
 Imports System.Reflection
 Imports System.Text
 
+''' <summary>
+''' This class contains methods for database access.
+''' </summary>
+''' <remarks>
+''' Author: Tunde Adetunji (tundeadetunji2017@gmail.com)
+''' Date: October 24, 2024
+''' </remarks>
 Public Class Sequel
     ''' <summary>
     ''' Commits record to MS Access database or Excel database.

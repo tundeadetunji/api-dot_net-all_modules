@@ -10,6 +10,13 @@ Imports Newtonsoft.Json.Linq
 Imports System.Data.OleDb
 Imports System.Collections.ObjectModel
 
+''' <summary>
+''' This class contains methods for general purposes.
+''' </summary>
+''' <remarks>
+''' Author: Tunde Adetunji (tundeadetunji2017@gmail.com)
+''' Date: October 24, 2024
+''' </remarks>
 Public Class General
 
 #Region "misc"

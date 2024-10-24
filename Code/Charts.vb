@@ -8,6 +8,10 @@ Imports System.Web.UI.HtmlControls
 ''' https://w3layouts.com/template/shoppy-e-commerce-admin-panel-responsive-web-template/
 ''' https://creativecommons.org/licenses/by/3.0/
 ''' </summary>
+''' <remarks>
+''' Author: Tunde Adetunji (tundeadetunji2017@gmail.com)
+''' Date: October 24, 2024
+''' </remarks>
 Public Class Charts
 
 #Region "Pie"

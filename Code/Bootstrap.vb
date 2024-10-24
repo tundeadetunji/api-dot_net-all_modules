@@ -8,7 +8,11 @@ Public Class Bootstrap
     ''' <summary>
     ''' Based mostly on Boostrap 4.1.
     ''' </summary>
-    Class Four
+    ''' <remarks>
+    ''' Author: Tunde Adetunji (tundeadetunji2017@gmail.com)
+    ''' Date: October 24, 2024
+    ''' </remarks>
+    Public Class Four
 
 #Region "Enums"
 

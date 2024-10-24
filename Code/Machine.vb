@@ -6,6 +6,13 @@ Imports System.Threading.Tasks
 Imports System.Runtime
 Imports System.Runtime.InteropServices
 
+''' <summary>
+''' This class contains methods geared towards dealing with the machine directly.
+''' </summary>
+''' <remarks>
+''' Author: Tunde Adetunji (tundeadetunji2017@gmail.com)
+''' Date: October 24, 2024
+''' </remarks>
 Public Class Machine
     <DllImport("wininet.dll")>
     Private Shared Function InternetGetConnectedState(<Out> ByRef Description As Integer, ByVal ReservedValue As Integer) As Boolean

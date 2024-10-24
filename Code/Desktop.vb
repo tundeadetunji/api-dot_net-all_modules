@@ -16,6 +16,14 @@ Imports Microsoft.Win32
 Imports System.Runtime.InteropServices
 Imports System.Windows.Forms.VisualStyles
 
+''' <summary>
+''' This class contains methods geared mainly towards desktop development.
+''' Reference to System.Windows.Forms may be required.
+''' </summary>
+''' <remarks>
+''' Author: Tunde Adetunji (tundeadetunji2017@gmail.com)
+''' Date: October 24, 2024
+''' </remarks>
 Public Class Desktop
 
 #Region "Desktop"

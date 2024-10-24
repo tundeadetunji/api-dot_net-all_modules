@@ -1,6 +1,14 @@
 ﻿Imports System.Drawing
 Imports System.Windows.Forms
 
+''' <summary>
+''' This class contains methods geared towards desktop development, particularly, styling the Form.
+''' Reference to System.Windows.Forms may be required.
+''' </summary>
+''' <remarks>
+''' Author: Tunde Adetunji (tundeadetunji2017@gmail.com)
+''' Date: October 24, 2024
+''' </remarks>
 Public Class Styler
 
 #Region "OS Functions Variables"

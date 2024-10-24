@@ -1,6 +1,13 @@
 ﻿Imports System.Collections.ObjectModel
 Imports iNovation.Code.General
 
+''' <summary>
+''' This class is no longer maintained.
+''' </summary>
+''' <remarks>
+''' Author: Tunde Adetunji (tundeadetunji2017@gmail.com)
+''' Date: October 24, 2024
+''' </remarks>
 Public Class SearchEngineQueryString
 
     Public Class TermWithVariations

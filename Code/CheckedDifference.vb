@@ -17,7 +17,12 @@ Imports iNovation.Code.General
 ''' start typing checked.a will generate (by intellisense) all methods with and
 ''' likewise checked.b will generate all methods with but
 ''' </para>
+''' This class is no longer maintained.
 ''' </summary>
+''' <remarks>
+''' Author: Tunde Adetunji (tundeadetunji2017@gmail.com)
+''' Date: October 24, 2024
+''' </remarks>
 Public NotInheritable Class CheckedDifference
     Private ReadOnly first As String
     Private ReadOnly second As String

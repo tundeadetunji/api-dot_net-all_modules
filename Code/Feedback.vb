@@ -1,5 +1,12 @@
 ﻿Imports System.Speech.Synthesis
 
+''' <summary>
+''' This class contains methods geared to Text-To-Speech, or otherwise, giving feedback.
+''' </summary>
+''' <remarks>
+''' Author: Tunde Adetunji (tundeadetunji2017@gmail.com)
+''' Date: October 24, 2024
+''' </remarks>
 Public Class Feedback
 
 #Region "init"
@@ -48,7 +55,7 @@ Public Class Feedback
     Private Sub MessageUser()
         _timer.Enabled = False
         For i = 1 To _how_many_times_
-            Say(_message, _async)
+            say(_message, _async)
         Next
     End Sub
 

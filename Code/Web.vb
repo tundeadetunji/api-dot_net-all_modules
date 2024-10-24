@@ -12,6 +12,13 @@ Imports System.Web.UI.WebControls
 Imports System.Net
 Imports System.IO
 
+''' <summary>
+''' This class contains methods geared toward web components in ASP.NET. It is equivalent to Desktop.
+''' </summary>
+''' <remarks>
+''' Author: Tunde Adetunji (tundeadetunji2017@gmail.com)
+''' Date: October 24, 2024
+''' </remarks>
 Public Class Web
 
 #Region "Web"
