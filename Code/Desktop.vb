@@ -17,7 +17,7 @@ Imports System.Runtime.InteropServices
 Imports System.Windows.Forms.VisualStyles
 
 ''' <summary>
-''' This class contains methods geared mainly towards desktop development.
+''' This class contains methods geared mainly towards desktop development, the part the end-user interacts with directly.
 ''' Reference to System.Windows.Forms may be required.
 ''' </summary>
 ''' <remarks>
@@ -204,7 +204,7 @@ Public Class Desktop
 
         Return If(return_control_not_list, BindProperty(drop, l, InitialSelectedIndexIsNegativeOne), l)
     End Function
-    Public Shared Function ListsToKeyValueAray(listK As ListBox, listV As ListBox) As List(Of String)
+    Public Shared Function ListsToKeyValueArray(listK As ListBox, listV As ListBox) As List(Of String)
         Dim s As String = ""
         If IsEmpty({listK, listV}, ControlsToCheck.Any) = True Then
             Return Nothing
@@ -532,7 +532,6 @@ Public Class Desktop
     Public Shared Function messageFeedback(message_box_message As String, Optional voice_feedback_message As String = "", Optional MessageBoxStyle As MsgBoxStyle = MsgBoxStyle.Information + MsgBoxStyle.OkOnly, Optional title As String = "", Optional voice_feedback_is_async As Boolean = True) As MsgBoxResult
         Return mFeedback(message_box_message, voice_feedback_message, MessageBoxStyle, title, voice_feedback_is_async)
     End Function
-
     Public Shared Sub StatusDrop(d_ As ComboBox, Optional IsUpdate As Boolean = False, Optional FirstIsEmpty As Boolean = False, Optional sort_ As Boolean = True)
         If d_.Items.Count > 0 Then Exit Sub
 
@@ -4204,7 +4203,6 @@ Public Class Desktop
         End Try
 
     End Sub
-
 
     Public Shared Function ListsItemsToList(TheListBox As ListBox) As List(Of String)
         Dim result As New List(Of String)

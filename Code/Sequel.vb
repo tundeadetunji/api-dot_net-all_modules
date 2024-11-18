@@ -791,7 +791,7 @@ Public Class Sequel
 
 #Region "Entity ORM related"
 
-    Public Structure PropContainer
+    Private Structure PropContainer
         Public Property Collection As Dictionary(Of String, Object)
         Public Property NonCollection As Dictionary(Of String, Object)
     End Structure

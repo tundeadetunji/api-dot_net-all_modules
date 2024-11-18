@@ -1,7 +1,7 @@
 ﻿Imports System.Speech.Synthesis
 
 ''' <summary>
-''' This class contains methods geared to Text-To-Speech, or otherwise, giving feedback.
+''' This class contains methods geared to Text-To-Speech, or otherwise, giving feedback. A good accompaniment to the UI directly viewed by the end-user.
 ''' </summary>
 ''' <remarks>
 ''' Author: Tunde Adetunji (tundeadetunji2017@gmail.com)
@@ -130,7 +130,7 @@ Public Class Feedback
     Private ReadOnly Property MorningDateString As String = "12:00 am"
     Private ReadOnly Property AfternoonDateString As String = "12:00 pm"
     Private ReadOnly Property EveningDateString As String = "6:00 pm"
-    Private ReadOnly Property MidnightDateString As String = "11:59 pm"
+    Private ReadOnly Property MidnightDateString As String = "12:00 am"
     Private ReadOnly Property Morning As DateTime = DateTime.ParseExact(MorningDateString, TimeFormat, Nothing)
     Private ReadOnly Property Afternoon As DateTime = DateTime.ParseExact(AfternoonDateString, TimeFormat, Nothing)
     Private ReadOnly Property Evening As DateTime = DateTime.ParseExact(EveningDateString, TimeFormat, Nothing)
@@ -165,7 +165,7 @@ Public Class Feedback
     ''' <param name="whatElse"></param>
     Public Sub Greeting(Optional name As String = Nothing, Optional whatElse As String = Nothing)
         Dim f As Feedback = New Feedback
-        f.say(Greetings.Item(TheTimeOfDay) & If(name IsNot Nothing, " " & name, "") & vbCrLf & If(whatElse IsNot Nothing, whatElse, ""))
+        f.say(Greetings.Item(TheTimeOfDay) & If(name IsNot Nothing, " " & name, "") & If(whatElse IsNot Nothing, vbCrLf & whatElse, ""))
     End Sub
     ''' <summary>
     ''' Text to speech as Greeting (Supply your own word/phrase)
@@ -177,7 +177,7 @@ Public Class Feedback
     ''' <param name="whatElse"></param>
     Public Sub GreetingNative(_morning As String, _afternoon As String, _evening As String, Optional name As String = Nothing, Optional whatElse As String = Nothing)
         Dim f As Feedback = New Feedback
-        f.say(If(TheTimeOfDay() = TimeOfDay.Morning, _morning, If(TheTimeOfDay() = TimeOfDay.Afternoon, _afternoon, _evening)) & If(name IsNot Nothing, " " & name, "") & vbCrLf & If(whatElse IsNot Nothing, whatElse, ""))
+        f.say(If(TheTimeOfDay() = TimeOfDay.Morning, _morning, If(TheTimeOfDay() = TimeOfDay.Afternoon, _afternoon, _evening)) & If(name IsNot Nothing, " " & name, "") & If(whatElse IsNot Nothing, vbCrLf & whatElse, ""))
     End Sub
 
 #End Region
@@ -185,14 +185,16 @@ Public Class Feedback
 #Region "Utility"
 
     Private Function TheTimeOfDay() As TimeOfDay
-        Dim now As DateTime = DateTime.Now
+        Dim now As DateTime = DateTime.ParseExact(DateTime.Now.ToShortTimeString, TimeFormat, Nothing)
 
-        If now >= Morning AndAlso now < Afternoon Then
+        If now >= Morning And now < Afternoon Then
             Return TimeOfDay.Morning
-        ElseIf now >= Afternoon AndAlso now < Evening Then
+        ElseIf now >= Afternoon And now < Evening Then
             Return TimeOfDay.Afternoon
-        ElseIf now >= Evening AndAlso now < Midnight Then
+        ElseIf now >= Evening And now < Midnight Then
             Return TimeOfDay.Evening
+            'ElseIf now >= Midnight And now < Afternoon Then
+            '    Return TimeOfDay.Morning
         Else
             Return TimeOfDay.Morning
         End If

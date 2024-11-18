@@ -4,7 +4,7 @@ Imports iNovation.Code.Sequel
 Imports System.Web.UI.HtmlControls
 
 ''' <summary>
-''' Uses shoppy's CSS/JS
+''' Uses shoppy's CSS/JS. Use to style the dashboard UI viewed directly by the end-user.
 ''' https://w3layouts.com/template/shoppy-e-commerce-admin-panel-responsive-web-template/
 ''' https://creativecommons.org/licenses/by/3.0/
 ''' </summary>

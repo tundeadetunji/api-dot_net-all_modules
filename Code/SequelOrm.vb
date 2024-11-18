@@ -10,7 +10,7 @@ Imports Microsoft.VisualBasic.Devices
 ''' Lightweight ORM. Joins are coming in subsequent versions.
 ''' <br />
 ''' Picks up only non read-only, non Collection-type properties, may throw exception if any property is read-only or is IEnumerable/Collection/List/Enum.
-''' The methods in this class are not asynchronous, do not employ locking mechanisms, and not covering transactions.
+''' The methods in this class are not asynchronous, do not employ locking mechanisms (except GetInstance()), and not covering transactions.
 ''' Joins are on the roadmap.
 ''' <br />
 ''' You may need to install System.Data.SqlClient from Nuget if using >=.Net 5.

@@ -98,6 +98,7 @@
     <Compile Include="Charts.vb" />
     <Compile Include="CheckedDifference.vb" />
     <Compile Include="Desktop.vb" />
+    <Compile Include="DesktopExtensions.vb" />
     <Compile Include="Encryption.vb" />
     <Compile Include="SequelOrm.vb" />
     <Compile Include="Feedback.vb" />
@@ -147,6 +148,7 @@
     </None>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

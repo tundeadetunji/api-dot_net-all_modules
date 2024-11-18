@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>inovationware.code</id>
-    <version>3.6.7</version>
+    <version>3.6.8</version>
     <title>inovationware.code</title>
     <authors>inovationware</authors>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -13,6 +13,6 @@
     </description>
     <releaseNotes></releaseNotes>
     <copyright>©2022 - 2024 inovationware (tundeadetunji2017@gmail.com)</copyright>
-    <tags>code inovationware request post bootstrap encrypt encryption speech power image sql entity orm admin chart dashboard sequel styling</tags>
+    <tags>code inovationware request post bootstrap encrypt encryption speech power image sql entity orm admin chart dashboard sequel styling crud database server database tts</tags>
   </metadata>
 </package>
