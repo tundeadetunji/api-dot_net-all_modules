@@ -8,6 +8,18 @@ A programmer's toolkit - contains handy functions for daily use, typically impor
 
 <p>Compatible with .Net Framework 4.6 and greater.</p>
 
+<p>
+    Spots 
+    <ul>
+        <li>Lightweight ORM (SequelORM)</li>
+        <li>Encryption/Decryption (Encryption)</li>
+        <li>DB CRUD (Sequel)</li>
+        <li>Text to Speech (Feedback)</li>
+        <li>Bootstrap Snippets - Cards, Charts, Dashboard, Toast etc. (Bootstrap)</li>
+        <li>etc., etc.</li>
+    </ul>     
+</p>
+
 <br />
 <br />
 
