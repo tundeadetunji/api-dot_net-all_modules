@@ -100,6 +100,10 @@
     <Compile Include="Desktop.vb" />
     <Compile Include="DesktopExtensions.vb" />
     <Compile Include="Encryption.vb" />
+    <Compile Include="EncryptionExtensions.vb" />
+    <Compile Include="FeedbackExtensions.vb" />
+    <Compile Include="GeneralExtensions.vb" />
+    <Compile Include="LoggingExtensions.vb" />
     <Compile Include="SequelOrm.vb" />
     <Compile Include="Feedback.vb" />
     <Compile Include="General.vb" />

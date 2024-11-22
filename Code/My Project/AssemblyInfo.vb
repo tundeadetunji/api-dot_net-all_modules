@@ -10,9 +10,9 @@ Imports System.Runtime.InteropServices
 
 <Assembly: AssemblyTitle("Code Repertoire")>
 <Assembly: AssemblyDescription("")>
-<Assembly: AssemblyCompany("iNovation Digital Works, Nigeria")>
+<Assembly: AssemblyCompany("")>
 <Assembly: AssemblyProduct("Code Repertoire")>
-<Assembly: AssemblyCopyright("© 2022 iNovation Digital Works, Nigeria.")>
+<Assembly: AssemblyCopyright("©2022-2024 tundeadetunji2017@gmail.com")>
 <Assembly: AssemblyTrademark("")> 
 
 <Assembly: ComVisible(False)>
@@ -31,5 +31,5 @@ Imports System.Runtime.InteropServices
 ' by using the '*' as shown below:
 ' <Assembly: AssemblyVersion("1.0.*")> 
 
-<Assembly: AssemblyVersion("3.6.8.0")>
-<Assembly: AssemblyFileVersion("3.6.8.0")>
+<Assembly: AssemblyVersion("3.7.0.0")>
+<Assembly: AssemblyFileVersion("3.7.0.0")>

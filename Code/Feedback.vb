@@ -114,7 +114,7 @@ Public Class Feedback
     ''' <param name="number_of_times"></param>
     ''' <param name="async"></param>
     Public Sub Stress(messages As List(Of String), number_of_times As Byte, Optional async As Boolean = True)
-        stress(messages(General.Random_(0, messages.Count)), number_of_times, async)
+        Stress(messages(General.Random_(0, messages.Count)), number_of_times, async)
     End Sub
 
 #End Region
@@ -242,7 +242,7 @@ Public Class Feedback
         End Try
     End Sub
 
-    Public Sub stress(message As String, Optional howManyTimes As Byte = 3, Optional async As Boolean = True)
+    Public Sub Stress(message As String, Optional howManyTimes As Byte = 3, Optional async As Boolean = True)
         For i = 1 To howManyTimes
             Try
                 If async = True Then
@@ -277,7 +277,7 @@ Public Class Feedback
     Private async__ As Boolean
     Private Sub remind()
         t__.Enabled = False
-        stress(message__, howManyTimes__, async__)
+        Stress(message__, howManyTimes__, async__)
         t__.Enabled = True
     End Sub
 

@@ -4849,11 +4849,11 @@ Public Class General
     ''' Splits string into tokens and returns an array or list of these.
     ''' </summary>
     ''' <param name="delimited_string">The text to split</param>
-    ''' <param name="delimeter">The delimiter</param>
+    ''' <param name="delimiter">The delimiter</param>
     ''' <param name="return_">Array or List</param>
     ''' <returns>List(Of String) of splits (or array, if so specified)</returns>
-    Public Shared Function StringToList(delimited_string As String, Optional delimeter As String = vbCrLf, Optional return_ As SideToReturn = SideToReturn.AsListOfString) As Object
-        Return SplitTextInSplits(delimited_string, delimeter, return_)
+    Public Shared Function StringToList(delimited_string As String, Optional delimiter As String = vbCrLf, Optional return_ As SideToReturn = SideToReturn.AsListOfString) As Object
+        Return SplitTextInSplits(delimited_string, delimiter, return_)
     End Function
 
 #End Region

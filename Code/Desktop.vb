@@ -561,7 +561,7 @@ Public Class Desktop
 
     End Sub
 
-    Public Shared Sub DisableControl(control As Control)
+    Public Shared Sub DisableControl(control As Object)
         EnableControl(control, False)
 
     End Sub
@@ -629,6 +629,8 @@ Public Class Desktop
 
     ''' <summary>
     ''' Determines if control or file does not have text (or items, if it's listbox, array, list of string or object or integer or double, collection).
+    ''' If c_ is ComboBox, it evaluates instead if it has text (not if it has items) If you want the same functionality, prefer the DesktopExtensions method of the same name.
+    ''' If c_ is NumericUpDown, it evaluates if value is 0.
     ''' </summary>
     ''' <param name="c_">File path or ComboBox or TextBox or PictureBox or NumericUpDown</param>
     ''' <param name="use_trim">Should content be trimmed before check?</param>
