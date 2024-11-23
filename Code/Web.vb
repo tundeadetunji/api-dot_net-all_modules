@@ -13,7 +13,7 @@ Imports System.Net
 Imports System.IO
 
 ''' <summary>
-''' This class contains methods geared toward web components in ASP.NET. It is equivalent to Desktop.
+''' This class contains methods for web components in ASP.NET. It is equivalent to Desktop.
 ''' </summary>
 ''' <remarks>
 ''' Author: Tunde Adetunji (tundeadetunji2017@gmail.com)

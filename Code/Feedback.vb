@@ -1,7 +1,7 @@
 ﻿Imports System.Speech.Synthesis
 
 ''' <summary>
-''' This class contains methods geared to Text-To-Speech, or otherwise, giving feedback. A good accompaniment to the UI directly viewed by the end-user.
+''' This class contains methods for Text-To-Speech, or otherwise, giving feedback. A good accompaniment to the UI directly viewed by the end-user.
 ''' </summary>
 ''' <remarks>
 ''' Author: Tunde Adetunji (tundeadetunji2017@gmail.com)

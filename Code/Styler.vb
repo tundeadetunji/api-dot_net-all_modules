@@ -2,7 +2,7 @@
 Imports System.Windows.Forms
 
 ''' <summary>
-''' This class contains methods geared towards desktop development, particularly, styling the Form.
+''' This class contains methods for desktop development, particularly, styling the Form.
 ''' Reference to System.Windows.Forms may be required.
 ''' </summary>
 ''' <remarks>

@@ -7,7 +7,7 @@ Imports System.Security.Cryptography
 Imports System.Text
 
 ''' <summary>
-''' Ligthweight Encryption/Decryption.
+''' Encryption/Decryption.
 ''' </summary>
 ''' <remarks>
 ''' Author: Tunde Adetunji (tundeadetunji2017@gmail.com)

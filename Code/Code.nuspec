@@ -2,17 +2,23 @@
 <package >
   <metadata>
     <id>inovationware.code</id>
-    <version>3.6.8</version>
-    <title>inovationware.code</title>
-    <authors>inovationware</authors>
+    <version>3.7.0</version>
+    <title>Code Repertoire</title>
+    <authors>Tunde Adetunji</authors>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <license type="expression">MIT</license>
     <!-- <icon>icon.png</icon> -->
     <projectUrl>https://github.com/tundeadetunji/api-dot_net-all_modules</projectUrl>
-    <description>Handy Features for .Net, including Encrypt/Decrypt, Lightweight ORM, Db CRUD operations, Text to speech, Bootstrap/Chart/Dashboard e.t.c.
+    <description>Handy Features for .Net, includes Encryption, Lightweight ORM, Db CRUD operations, Text to speech, Bootstrap/Chart/Dashboard, Extension Methods e.t.c.
     </description>
-    <releaseNotes></releaseNotes>
-    <copyright>©2022 - 2024 inovationware (tundeadetunji2017@gmail.com)</copyright>
-    <tags>code inovationware request post bootstrap encrypt encryption speech power image sql entity orm admin chart dashboard sequel styling crud database server database tts</tags>
+    <releaseNotes>
+	### New Features
+	- Added Extension Methods
+	### Breaking Changes
+	- Desktop.ListToAray renamed to ListToArray
+	- Feedback.stress renamed to Stress
+    </releaseNotes>
+    <copyright>©2022 - 2024 tundeadetunji2017@gmail.com</copyright>
+    <tags>code inovationware request post bootstrap encrypt encryption speech power image sql entity orm admin chart dashboard sequel styling crud database server database tts extension</tags>
   </metadata>
 </package>

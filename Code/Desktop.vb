@@ -7,6 +7,7 @@ Imports iNovation.Code.Values
 Imports System.Windows.Forms
 Imports System.Data.OleDb
 Imports System.Data.SqlClient
+
 Imports System.Drawing
 Imports System.Net
 Imports System.Collections.ObjectModel
@@ -17,7 +18,7 @@ Imports System.Runtime.InteropServices
 Imports System.Windows.Forms.VisualStyles
 
 ''' <summary>
-''' This class contains methods geared mainly towards desktop development, the part the end-user interacts with directly.
+''' This class contains methods for desktop development, the part the end-user interacts with directly.
 ''' Reference to System.Windows.Forms may be required.
 ''' </summary>
 ''' <remarks>
@@ -988,11 +989,6 @@ Public Class Desktop
     ''' <param name="d_">ComboBox to fill</param>
     ''' <param name="firstItemIsEmpty">Should 's first item be empty?</param>
     ''' <param name="pattern_">always/never (default) OR a/n OR a, yes/no OR y/n OR y, on/off OR o/f OR o, 1/0, true/false OR t/f OR t, if/not OR i/n OR i</param>
-    'Public Shared Sub BooleanDrop(d_ As ComboBox, Optional pattern_ As String = "always/never", Optional firstItemIsEmpty As Boolean = False)
-    '    BooleanDrop(d_, pattern_, firstItemIsEmpty)
-
-    'End Sub
-
     Public Shared Sub BooleanDrop(d_ As ComboBox, Optional pattern_ As DropTextPattern = DropTextPattern.AlwaysNever, Optional firstItemIsEmpty As Boolean = False)
         With d_
             If .Items.Count > 0 Then Exit Sub
@@ -1048,7 +1044,7 @@ Public Class Desktop
     End Sub
 
     Public Function Toboolean(str_)
-        Convert.ToBoolean(Convert.ToInt32(str_))
+        Return Convert.ToBoolean(Convert.ToInt32(str_))
     End Function
 
     Public Shared Function AddCells(grid_with_quantity_price_IF_POSSIBLE As DataGridView, Optional isCart As Boolean = False, Optional quantity_i As Integer = Nothing, Optional price_i As Integer = Nothing)
@@ -1155,62 +1151,6 @@ Public Class Desktop
             End If
         Next
     End Sub
-
-    ''' <summary>
-    ''' Commits record to SQL Server database by default, or to MS Access database if DB_Is_SQL_ is set to false.
-    ''' </summary>
-    ''' <param name="query">The SQL query.</param>
-    ''' <param name="connection_string">The server connection string.</param>
-    ''' <param name="parameters_keys_values_">Values to put in table.</param>
-    ''' <returns>True if successful, False if not.</returns>
-    'Private Function CommitRecord(query As String, connection_string As String, Optional parameters_keys_values_ As Array = Nothing, Optional DB_Is_SQL_ As Boolean = True) As Boolean
-    '    Dim select_parameter_keys_values() = {}
-    '    select_parameter_keys_values = parameters_keys_values_
-
-    '    If DB_Is_SQL_ = True Then
-    '        CommitSQLRecord(query, connection_string, select_parameter_keys_values)
-    '        Return True
-    '        Exit Function
-    '    End If
-
-    '    Try
-    '        Dim insert_query As String = query
-    '        Using insert_conn As New OleDbConnection(connection_string)
-    '            Using insert_comm As New OleDbCommand()
-    '                With insert_comm
-    '                    .Connection = insert_conn
-    '                    .CommandText = insert_query
-    '                    If select_parameter_keys_values IsNot Nothing Then
-    '                        For i As Integer = 0 To select_parameter_keys_values.Length - 1 Step 2
-    '                            .Parameters.AddWithValue(select_parameter_keys_values(i), select_parameter_keys_values(i + 1))
-    '                        Next
-    '                    End If
-    '                End With
-    '                Try
-    '                    insert_conn.Open()
-    '                    insert_comm.ExecuteNonQuery()
-    '                Catch ex As Exception
-    '                End Try
-    '            End Using
-    '        End Using
-    '        Return True
-    '    Catch ex As Exception
-    '    End Try
-
-    '    '		Dim Insert_String As String = "INSERT INTO [iNUsers] (LastName, FirstName, MiddleName, Gender, Title, BusinessEmail, Department, JobTitle, Phone, PrimaryEmail, FacebookID, WhatsAppID, Birthday, Nationality, StateOfOrigin, LGA, ContactAddress, Religion, BloodType, UserGroup, Allergies, Picture, Username, UserPassword, NetSub, iNInfo, NetHelpline, IsEnabled, DateAdded, DateAddedD, SessionID, NetManager, DateLastModified, DateLastModifiedD) VALUES (@LastName, @FirstName, @MiddleName, @Gender, @Title, @BusinessEmail, @Department, @JobTitle, @Phone, @PrimaryEmail, @FacebookID, @WhatsAppID, @Birthday, @Nationality, @StateOfOrigin, @LGA, @ContactAddress, @Religion, @BloodType, @UserGroup, @Allergies, @Picture, @Username, @UserPassword, @NetSub, @iNInfo, @NetHelpline, @IsEnabled, @DateAdded, @DateAddedD, @SessionID, @NetManager, @DateLastModified, @DateLastModifiedD)"
-    '    '		Dim parameters_() = {}
-    '    '		parameters_ = {"LastName", LastName.Text.Trim, "FirstName", FirstName.Text.Trim, "MiddleName", OtherNames.Text.Trim, "Gender", Gender.Text.Trim, "Title", TitleOfCourtesy.Text.Trim, "BusinessEmail", BusinessEmail.Text.Trim, "Department", Department.Text.Trim, "JobTitle", JobTitle.Text.Trim, "Phone", Phone.Text.Trim, "PrimaryEmail", PersonalEmail.Text.Trim, "FacebookID", Facebook.Text.Trim, "WhatsAppID", WhatsApp.Text.Trim, "Birthday", Birthday.Value.ToShortDateString, "Nationality", Nationality.Text.Trim, "StateOfOrigin", StateOfOrigin.Text.Trim, "LGA", LGA.Text.Trim, "ContactAddress", ContactAddress.Text.Trim, "Religion", Religion.Text.Trim, "BloodType", KinName.Text.Trim, "UserGroup", KinEmail.Text.Trim, "Allergies", KinPhone.Text.Trim, "Picture", d.PictureFromStream(UserPicture__, PicturePath.Text), "Username", Username.Text.Trim, "UserPassword", Password.Text, "NetSub", NetSub.Checked, "iNInfo", LookOut.Checked, "NetHelpline", ChatBox.Checked, "IsEnabled", IsEnabled.Checked, "DateAdded", Now.ToShortDateString, "DateAddedD", Date.Parse(Now.ToShortDateString), "SessionID", session_id, "NetManager", SysPicture.Checked, "DateLastModified", Now.ToShortDateString, "DateLastModifiedD", Date.Parse(Now.ToShortDateString)}
-    '    '		d.CommitRecord(Insert_String, con_string, parameters_)
-
-
-    '    '		Dim Insert_String As String = "UPDATE [] SET LastAppLoginDateD=@LastAppLoginDateD, LastAppLoginDate=@LastAppLoginDate, LastAppLoginTimeD=@LastAppLoginTimeD, LastAppLoginTime=@LastAppLoginTime, LastAppLogin=@LastAppLogin WHERE (AccountID=@AccountID)"
-    '    '		Dim parameters_() = {}
-    '    '		parameters_ = {"LastAppLoginDateD", Date.Parse(Now.ToShortDateString), "LastAppLoginDate", Now.ToLongDateString, "LastAppLoginTimeD", Date.Parse(Now.ToLongTimeString), "LastAppLoginTime", Now.ToLongTimeString, "LastAppLogin", g.FullDateAsLong, "AccountID", a.id}
-    '    '		d.CommitRecord(Insert_String, con_string_, parameters_)
-
-
-    'End Function
-
 
     Private Function CommitSQLRecords(query As String, connection_string As String, Optional select_parameter_keys_values As Array = Nothing) As Boolean
 

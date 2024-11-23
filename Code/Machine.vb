@@ -7,7 +7,7 @@ Imports System.Runtime
 Imports System.Runtime.InteropServices
 
 ''' <summary>
-''' This class contains methods geared towards dealing with the machine directly.
+''' This class contains methods for dealing with the machine directly.
 ''' </summary>
 ''' <remarks>
 ''' Author: Tunde Adetunji (tundeadetunji2017@gmail.com)
