@@ -3786,26 +3786,37 @@ Public Class Desktop
             If (e.Data.GetDataPresent(DataFormats.Text)) Then
                 ' If the Ctrl key was pressed during the drag operation then perform
                 ' a Copy. If not, perform a Move.
-                '               If (e.KeyState And CtrlMask) = CtrlMask Then
-                '                    e.Effect = DragDropEffects.Copy
-                '          Else
-                e.Effect = DragDropEffects.Copy
-                '                    e.Effect = DragDropEffects.Move
-                '             End If
+                If (e.KeyState And Control.ModifierKeys) = Control.ModifierKeys.Control Then
+                    e.Effect = DragDropEffects.Copy
+                Else
+                    e.Effect = DragDropEffects.Move
+                End If
             Else
                 e.Effect = DragDropEffects.None
             End If
-        Catch
+        Catch ex As Exception
+            ' Handle exceptions if necessary
         End Try
-
     End Sub
     Public Shared Sub TextDragDrop(sender As Object, e As DragEventArgs)
-        Dim str_ As String = e.Data.GetData(DataFormats.Text).ToString
-        Dim t As TextBox = sender
-        If t.Text.Length < 1 Then
-            t.Text = str_
-        Else
-            t.Text &= vbCrLf & vbCrLf & str_
+        Dim str_ As String = e.Data.GetData(DataFormats.Text).ToString()
+        Dim t As TextBox = CType(sender, TextBox)
+
+        ' Get the current caret position
+        Dim caretPosition As Integer = t.SelectionStart
+
+        ' If the Ctrl key was pressed, we perform a copy
+        If (e.Effect And DragDropEffects.Copy) = DragDropEffects.Copy Then
+            ' Insert the text at the current caret position
+            t.Text = t.Text.Insert(caretPosition, str_)
+            ' Move the caret to the end of the inserted text
+            t.SelectionStart = caretPosition + str_.Length
+        ElseIf (e.Effect And DragDropEffects.Move) = DragDropEffects.Move Then
+            ' Insert the text at the current caret position
+            t.Text = t.Text.Insert(caretPosition, str_)
+            ' Move the caret to the end of the inserted text
+            t.SelectionStart = caretPosition + str_.Length
+            ' Optionally, you can implement logic to remove the original text if needed
         End If
     End Sub
 #End Region
