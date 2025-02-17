@@ -3,7 +3,16 @@
 <br>
 A programmer's toolkit - Code Repertoire is multi-purpose for everyday use in .Net, bring it in via <a href="https://www.nuget.org/packages/inovationware.code/#versions-body-tab" target="_blank">Nuget</a>.
 
+<br>
+<br>
+The Java version is <a href="https://github.com/tundeadetunji/api-java-code">here</a>.
+
+<br>
+<br>
+The Android version is <a href="https://github.com/tundeadetunji/api-android-general_module">here</a>.
+
 <br/>
+<br>
 <br/>
 Following are usage examples.
 
