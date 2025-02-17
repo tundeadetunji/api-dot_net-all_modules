@@ -5395,7 +5395,7 @@ Public Class General
             Case SideToReturn.AsArray
                 Return If(string_to_split.Length < 1, {}, string_to_split.Split(separator))
             Case SideToReturn.AsListOfString
-                Return If(string_to_split.Length < 1, New List(Of String), string_to_split.Split(separator).ToList)
+                Return If(string_to_split.Length < 1, New List(Of String), New List(Of String)(string_to_split.Split(New String() {separator}, StringSplitOptions.RemoveEmptyEntries)))
             Case SideToReturn.AsListToString
                 Return ListToString(string_to_split)
         End Select

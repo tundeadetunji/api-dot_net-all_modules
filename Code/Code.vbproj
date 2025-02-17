@@ -10,7 +10,7 @@
     <AssemblyName>Code</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <MyType>Windows</MyType>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -104,6 +104,7 @@
     <Compile Include="FeedbackExtensions.vb" />
     <Compile Include="GeneralExtensions.vb" />
     <Compile Include="LoggingExtensions.vb" />
+    <Compile Include="ProgramRunner.vb" />
     <Compile Include="SequelOrm.vb" />
     <Compile Include="Feedback.vb" />
     <Compile Include="General.vb" />
