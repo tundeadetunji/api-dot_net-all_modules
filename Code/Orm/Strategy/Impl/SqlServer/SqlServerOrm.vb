@@ -1,5 +1,4 @@
-﻿Imports System.Reflection
-Imports System.Threading
+﻿Imports System.Threading
 Imports iNovation.Code.OrmUtils
 Friend Class SqlServerOrm
     Implements IOrm
@@ -189,135 +188,6 @@ Friend Class SqlServerOrm
 
         Return obj
     End Function
-
-    'restore this if RowVersion doesn't pan out
-    'Public Function Update(Of T)(obj As T, Optional idColumn As String = Id) As T Implements IOrm.Update
-    '    Dim typeT = GetType(T)
-    '    Dim tableName = typeT.Name
-    '    Dim parameterPrefix = _provider.GetParameterPrefix()
-
-    '    Dim properties = typeT.GetProperties().
-    '    Where(Function(p) p.CanRead AndAlso p.CanWrite).ToList()
-
-    '    Dim idProp = properties.FirstOrDefault(Function(p) p.Name = idColumn)
-    '    If idProp Is Nothing Then
-    '        Throw New InvalidOperationException($"The specified id column '{idColumn}' was not found on type '{typeT.Name}'.")
-    '    End If
-
-    '    Dim idValue = idProp.GetValue(obj)
-
-    '    Using connection = _provider.CreateConnection()
-    '        connection.Open()
-    '        Using transaction = connection.BeginTransaction()
-
-    '            ' Update the parent row
-    '            Dim setClauses = New List(Of String)
-    '            Dim parameters = New List(Of IDataParameter)
-
-    '            For Each prop In properties
-    '                If IsGenericList(prop.PropertyType) OrElse prop.Name = idColumn Then Continue For
-
-    '                Dim paramName = $"{parameterPrefix}{prop.Name}"
-    '                setClauses.Add($"[{prop.Name}] = {paramName}")
-    '                parameters.Add(_provider.CreateParameter(paramName, prop.GetValue(obj)))
-    '            Next
-
-    '            parameters.Add(_provider.CreateParameter($"{parameterPrefix}id", idValue))
-    '            Dim whereClause = $"[{idColumn}] = {parameterPrefix}id"
-    '            Dim sql = $"UPDATE [{tableName}] SET {String.Join(", ", setClauses)} WHERE {whereClause}"
-
-    '            Using command = _provider.CreateCommand(sql, connection)
-    '                command.Transaction = transaction
-    '                For Each param In parameters
-    '                    command.Parameters.Add(param)
-    '                Next
-    '                Dim affected = command.ExecuteNonQuery()
-    '                If affected <> 1 Then
-    '                    Throw New Exception($"Update affected {affected} rows; expected exactly 1.")
-    '                End If
-    '            End Using
-
-    '            ' Update or insert child collections
-    '            For Each prop In properties.Where(Function(p) IsGenericList(p.PropertyType))
-    '                Dim childList = CType(prop.GetValue(obj), IEnumerable)
-    '                If childList Is Nothing Then Continue For
-
-    '                Dim childType = prop.PropertyType.GetGenericArguments()(0)
-    '                Dim childTable = childType.Name
-    '                Dim childProps = childType.GetProperties().
-    '                Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso Not IsGenericList(p.PropertyType)).ToList()
-
-    '                Dim fkColumn = $"{tableName}_{idColumn}"
-
-    '                For Each child In childList
-    '                    Dim childIdProp = childProps.FirstOrDefault(Function(p) p.Name = Id)
-    '                    Dim childIdValue = If(childIdProp IsNot Nothing, childIdProp.GetValue(child), Nothing)
-    '                    Dim isNew = (childIdValue Is Nothing) OrElse Convert.ToInt64(childIdValue) = 0
-
-    '                    If isNew Then
-    '                        ' INSERT child (skip identity column)
-    '                        Dim insertCols = New List(Of String)
-    '                        Dim insertVals = New List(Of String)
-    '                        Dim insertParams = New List(Of IDataParameter)
-
-    '                        For Each cp In childProps
-    '                            If cp.Name = Id Then Continue For
-
-    '                            Dim cpName = cp.Name
-    '                            Dim value = If(cpName = fkColumn, idValue, cp.GetValue(child))
-
-    '                            insertCols.Add($"[{cpName}]")
-    '                            insertVals.Add($"{parameterPrefix}{cpName}")
-    '                            insertParams.Add(_provider.CreateParameter($"{parameterPrefix}{cpName}", value))
-    '                        Next
-
-    '                        Dim insertSql = $"INSERT INTO [{childTable}] ({String.Join(", ", insertCols)}) VALUES ({String.Join(", ", insertVals)}); SELECT SCOPE_IDENTITY();"
-    '                        Using cmd = _provider.CreateCommand(insertSql, connection)
-    '                            cmd.Transaction = transaction
-    '                            For Each p In insertParams
-    '                                cmd.Parameters.Add(p)
-    '                            Next
-
-    '                            Dim newId = Convert.ToInt32(cmd.ExecuteScalar())
-    '                            If childIdProp IsNot Nothing AndAlso childIdProp.CanWrite Then
-    '                                childIdProp.SetValue(child, newId)
-    '                            End If
-    '                        End Using
-    '                    Else
-    '                        ' UPDATE child
-    '                        Dim updateCols = New List(Of String)
-    '                        Dim updateParams = New List(Of IDataParameter)
-
-    '                        For Each cp In childProps
-    '                            If cp.Name = Id Then Continue For
-
-    '                            Dim cpName = cp.Name
-    '                            Dim value = If(cpName = fkColumn, idValue, cp.GetValue(child))
-
-    '                            updateCols.Add($"[{cpName}] = {parameterPrefix}{cpName}")
-    '                            updateParams.Add(_provider.CreateParameter($"{parameterPrefix}{cpName}", value))
-    '                        Next
-
-    '                        updateParams.Add(_provider.CreateParameter($"{parameterPrefix}id", childIdValue))
-    '                        Dim updateSql = $"UPDATE [{childTable}] SET {String.Join(", ", updateCols)} WHERE [{Id}] = {parameterPrefix}id"
-
-    '                        Using cmd = _provider.CreateCommand(updateSql, connection)
-    '                            cmd.Transaction = transaction
-    '                            For Each p In updateParams
-    '                                cmd.Parameters.Add(p)
-    '                            Next
-    '                            cmd.ExecuteNonQuery()
-    '                        End Using
-    '                    End If
-    '                Next
-    '            Next
-
-    '            transaction.Commit()
-    '        End Using
-    '    End Using
-
-    '    Return obj
-    'End Function
 
     Public Function UpdateInTable(Of T)(obj As T, tableName As String, Optional idColumn As String = Id) As T Implements IOrm.UpdateInTable
         If String.IsNullOrEmpty(tableName) Then Throw New ArgumentException("Table Name cannot be null.")
@@ -923,53 +793,6 @@ Friend Class SqlServerOrm
             End Using
         End Using
     End Sub
-
-    'Public Sub DeleteWhereId(Of T)(id As Object, Optional idColumn As String = Id, Optional cascade As Boolean = True) Implements IOrm.DeleteWhereId
-    '    Dim typeT = GetType(T)
-    '    Dim tableName = typeT.Name
-    '    Dim parameterPrefix = _provider.GetParameterPrefix()
-
-    '    Using connection = _provider.CreateConnection()
-    '        connection.Open()
-    '        Using transaction = connection.BeginTransaction()
-
-    '            ' Enforce rule: don't allow silent cascade from DB if user passed cascade:=False
-    '            If Not cascade AndAlso HasCascadeDeleteConstraint(tableName, connection, transaction) Then
-    '                Throw New InvalidOperationException(
-    '                $"The database has ON DELETE CASCADE constraint(s) on table '{tableName}', but you passed cascade:=False. This would silently delete child records."
-    '            )
-    '            End If
-
-    '            If cascade Then
-    '                Dim listProps = typeT.GetProperties().
-    '                Where(Function(p) IsGenericList(p.PropertyType) AndAlso p.CanRead).ToList()
-
-    '                For Each listProp In listProps
-    '                    Dim childType = listProp.PropertyType.GetGenericArguments()(0)
-    '                    Dim childTable = childType.Name
-    '                    Dim fkColumn = $"{tableName}_{idColumn}"
-
-    '                    Dim childSql = $"DELETE FROM [{childTable}] WHERE [{fkColumn}] = {parameterPrefix}ParentId"
-    '                    Using childCmd = _provider.CreateCommand(childSql, connection)
-    '                        childCmd.Transaction = transaction
-    '                        childCmd.Parameters.Add(_provider.CreateParameter($"{parameterPrefix}ParentId", id))
-    '                        childCmd.ExecuteNonQuery()
-    '                    End Using
-    '                Next
-    '            End If
-
-    '            ' Delete parent
-    '            Dim sql = $"DELETE FROM [{tableName}] WHERE [{idColumn}] = {parameterPrefix}Id"
-    '            Using cmd = _provider.CreateCommand(sql, connection)
-    '                cmd.Transaction = transaction
-    '                cmd.Parameters.Add(_provider.CreateParameter($"{parameterPrefix}Id", id))
-    '                cmd.ExecuteNonQuery()
-    '            End Using
-
-    '            transaction.Commit()
-    '        End Using
-    '    End Using
-    'End Sub
 
     Public Sub DeleteWhereIdInTable(Of T)(id As Object, tableName As String, Optional idColumn As String = Id, Optional cascade As Boolean = True) Implements IOrm.DeleteWhereIdInTable
         If String.IsNullOrEmpty(tableName) Then Throw New ArgumentException("Table Name cannot be null.")
@@ -1582,6 +1405,12 @@ Friend Class SqlServerOrm
 #Region "FindBy"
 
     Public Function FindBy(Of T)(conditions As List(Of Condition)) As List(Of T) Implements IOrm.FindBy
+
+        If conditions Is Nothing OrElse conditions.Count = 0 Then
+            Throw New ArgumentException("Conditions cannot be null or empty.")
+        End If
+
+
         Dim results As New List(Of T)
         Dim typeT = GetType(T)
         Dim tableName = typeT.Name
@@ -1670,6 +1499,13 @@ Friend Class SqlServerOrm
     End Function
 
     Public Function FindByInTable(Of T)(conditions As List(Of Condition), tableName As String) As List(Of T) Implements IOrm.FindByInTable
+
+
+        If conditions Is Nothing OrElse conditions.Count = 0 Then
+            Throw New ArgumentException("Conditions cannot be null or empty.")
+        End If
+
+
         If String.IsNullOrEmpty(tableName) Then Throw New ArgumentException("Table Name cannot be null.")
         Dim results As New List(Of T)
         Dim typeT = GetType(T)
@@ -1761,6 +1597,13 @@ Friend Class SqlServerOrm
 
 #Region "FindByPaged"
     Public Function FindByPagedInTable(Of T)(conditions As List(Of Condition), tableName As String, pageNumber As Integer, maxPerPage As Integer) As Page(Of T) Implements IOrm.FindByPagedInTable
+
+
+        If conditions Is Nothing OrElse conditions.Count = 0 Then
+            Throw New ArgumentException("Conditions cannot be null or empty.")
+        End If
+
+
         If String.IsNullOrEmpty(tableName) Then Throw New ArgumentException("Table Name cannot be null.")
         Dim typeT = GetType(T)
         Dim parameterPrefix = _provider.GetParameterPrefix()
@@ -1879,6 +1722,10 @@ Friend Class SqlServerOrm
     End Function
 
     Public Function FindByPaged(Of T)(conditions As List(Of Condition), pageNumber As Integer, maxPerPage As Integer) As Page(Of T) Implements IOrm.FindByPaged
+
+        If conditions Is Nothing OrElse conditions.Count = 0 Then
+            Throw New ArgumentException("Conditions cannot be null or empty.")
+        End If
         Dim typeT = GetType(T)
         Dim tableName = typeT.Name
         Dim parameterPrefix = _provider.GetParameterPrefix()
@@ -2000,6 +1847,10 @@ Friend Class SqlServerOrm
 
 #Region "ExistsBy"
     Public Function ExistsBy(Of T)(conditions As List(Of Condition)) As Boolean Implements IOrm.ExistsBy
+
+        If conditions Is Nothing OrElse conditions.Count = 0 Then
+            Throw New ArgumentException("Conditions cannot be null or empty.")
+        End If
         Dim tableName As String = GetType(T).Name
         Dim paramPrefix As String = _provider.GetParameterPrefix()
         Dim whereClauses As New List(Of String)
@@ -2029,6 +1880,10 @@ Friend Class SqlServerOrm
     End Function
 
     Public Function ExistsByInTable(Of T)(conditions As List(Of Condition), tableName As String) As Boolean Implements IOrm.ExistsByInTable
+
+        If conditions Is Nothing OrElse conditions.Count = 0 Then
+            Throw New ArgumentException("Conditions cannot be null or empty.")
+        End If
         If String.IsNullOrEmpty(tableName) Then Throw New ArgumentException("Table Name cannot be null.")
         Dim paramPrefix As String = _provider.GetParameterPrefix()
         Dim whereClauses As New List(Of String)
@@ -2061,6 +1916,10 @@ Friend Class SqlServerOrm
 
 #Region "CountBy"
     Public Function CountBy(Of T)(conditions As List(Of Condition)) As Long Implements IOrm.CountBy
+
+        If conditions Is Nothing OrElse conditions.Count = 0 Then
+            Throw New ArgumentException("Conditions cannot be null or empty.")
+        End If
         Dim tableName As String = GetType(T).Name
         Dim paramPrefix As String = _provider.GetParameterPrefix()
         Dim whereClauses As New List(Of String)
@@ -2089,6 +1948,10 @@ Friend Class SqlServerOrm
     End Function
 
     Public Function CountByInTable(Of T)(conditions As List(Of Condition), tableName As String) As Long Implements IOrm.CountByInTable
+
+        If conditions Is Nothing OrElse conditions.Count = 0 Then
+            Throw New ArgumentException("Conditions cannot be null or empty.")
+        End If
         If String.IsNullOrEmpty(tableName) Then Throw New ArgumentException("Table Name cannot be null.")
         Dim paramPrefix As String = _provider.GetParameterPrefix()
         Dim whereClauses As New List(Of String)
@@ -2121,6 +1984,10 @@ Friend Class SqlServerOrm
 #Region "DeleteBy"
 
     Public Sub DeleteBy(Of T)(conditions As List(Of Condition), Optional cascade As Boolean = True) Implements IOrm.DeleteBy
+
+        If conditions Is Nothing OrElse conditions.Count = 0 Then
+            Throw New ArgumentException("Conditions cannot be null or empty.")
+        End If
         Dim typeT = GetType(T)
         Dim tableName = typeT.Name
         Dim parameterPrefix = _provider.GetParameterPrefix()
@@ -2191,6 +2058,10 @@ Friend Class SqlServerOrm
     End Sub
 
     Public Sub DeleteByInTable(Of T)(conditions As List(Of Condition), tableName As String, Optional cascade As Boolean = True) Implements IOrm.DeleteByInTable
+
+        If conditions Is Nothing OrElse conditions.Count = 0 Then
+            Throw New ArgumentException("Conditions cannot be null or empty.")
+        End If
         If String.IsNullOrEmpty(tableName) Then Throw New ArgumentException("Table Name cannot be null.")
         Dim typeT = GetType(T)
         Dim parameterPrefix = _provider.GetParameterPrefix()

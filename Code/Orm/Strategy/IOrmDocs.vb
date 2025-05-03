@@ -1,7 +1,11 @@
 ﻿
 ''' <summary>
-''' Object Relational Mapping. Joins and concurrency supported.
-''' SqlServer is the only supported database provider, support for PostgreSql and MySql is actively WIP.
+''' Object Relational Mapping. Joins and transactions supported.
+''' Uses Lazy Intialization for Singletons.
+''' SqlServer is currently the only supported database provider.
+''' Support for PostgreSql and MySql, as well as Logging and Transaction Isolation Levels, is actively <b>WIP</b>>.
+''' Parent-to-child foreign key convention is {ParentTypeName}_{idColumn} (e.g. Person {Id, Name, List(Of Phone)} => Phone {Id, Person_Id, PhoneNumber}).
+''' Supports 1 : many (e.g. 1 Person can have many Phones).
 ''' <br />
 ''' Picks up only non read-only properties only, and ignores RowVersion property if it doesnt exist.
 ''' <br />

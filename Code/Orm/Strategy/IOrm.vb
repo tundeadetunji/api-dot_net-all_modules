@@ -4,6 +4,7 @@
 #Region "PrepareDatabase"
     ''' <summary>
     ''' Initializes the database.
+    ''' Uses Transaction.
     ''' </summary>
     ''' <param name="mode"></param>
     ''' <param name="entities"></param>
@@ -262,6 +263,7 @@
     ''' <summary>
     ''' Use this if the name of the class is the same as the name of the table.
     ''' Creates record if it doesn't exist, Updates otherwise.
+    ''' Uses Transaction.
     ''' </summary>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="obj"></param>
@@ -272,6 +274,7 @@
     ''' <summary>
     ''' Use this if the name of the class is not the same as the name of the table.
     ''' Creates record if it doesn't exist, Updates otherwise.
+    ''' Uses Transaction.
     ''' </summary>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="obj"></param>
@@ -287,7 +290,6 @@
     ''' Use this if the name of the class is the same as the name of the table.
     ''' </summary>
     ''' <typeparam name="T"></typeparam>
-    ''' <param name="conditions"></param>
     ''' <param name="idColumn"></param>
     ''' <param name="ascending"></param>
     ''' <returns></returns>

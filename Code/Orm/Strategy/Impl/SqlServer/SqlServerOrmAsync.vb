@@ -307,6 +307,10 @@ Friend Class SqlServerOrmAsync
     End Sub
 
     Public Async Sub DeleteByAsync(Of T)(conditions As List(Of Condition), Optional cascade As Boolean = True) Implements IOrmAsync.DeleteByAsync
+
+        If conditions Is Nothing OrElse conditions.Count = 0 Then
+            Throw New ArgumentException("Conditions cannot be null or empty.")
+        End If
         Dim typeT = GetType(T)
         Dim tableName = typeT.Name
         Dim parameterPrefix = _provider.GetParameterPrefix()
@@ -383,6 +387,10 @@ Friend Class SqlServerOrmAsync
     End Sub
 
     Public Async Sub DeleteByInTableAsync(Of T)(conditions As List(Of Condition), tableName As String, Optional cascade As Boolean = True) Implements IOrmAsync.DeleteByInTableAsync
+
+        If conditions Is Nothing OrElse conditions.Count = 0 Then
+            Throw New ArgumentException("Conditions cannot be null or empty.")
+        End If
         If String.IsNullOrEmpty(tableName) Then Throw New ArgumentException("Table Name cannot be null.")
         Dim typeT = GetType(T)
         Dim parameterPrefix = _provider.GetParameterPrefix()
@@ -459,6 +467,10 @@ Friend Class SqlServerOrmAsync
     End Sub
 
     Public Async Function CountByAsync(Of T)(conditions As List(Of Condition)) As Task(Of Long) Implements IOrmAsync.CountByAsync
+
+        If conditions Is Nothing OrElse conditions.Count = 0 Then
+            Throw New ArgumentException("Conditions cannot be null or empty.")
+        End If
         Dim tableName As String = GetType(T).Name
         Dim paramPrefix As String = _provider.GetParameterPrefix()
         Dim whereClauses As New List(Of String)
@@ -489,6 +501,10 @@ Friend Class SqlServerOrmAsync
         End Using
     End Function
     Public Async Function CountByInTableAsync(Of T)(conditions As List(Of Condition), tableName As String) As Task(Of Long) Implements IOrmAsync.CountByInTableAsync
+
+        If conditions Is Nothing OrElse conditions.Count = 0 Then
+            Throw New ArgumentException("Conditions cannot be null or empty.")
+        End If
         If String.IsNullOrEmpty(tableName) Then Throw New ArgumentException("Table Name cannot be null.")
         Dim paramPrefix As String = _provider.GetParameterPrefix()
         Dim whereClauses As New List(Of String)
@@ -1052,6 +1068,10 @@ Friend Class SqlServerOrmAsync
     End Function
 
     Public Async Function ExistsByAsync(Of T)(conditions As List(Of Condition)) As Task(Of Boolean) Implements IOrmAsync.ExistsByAsync
+
+        If conditions Is Nothing OrElse conditions.Count = 0 Then
+            Throw New ArgumentException("Conditions cannot be null or empty.")
+        End If
         Dim tableName As String = GetType(T).Name
         Dim paramPrefix As String = _provider.GetParameterPrefix()
         Dim whereClauses As New List(Of String)
@@ -1082,6 +1102,10 @@ Friend Class SqlServerOrmAsync
     End Function
 
     Public Async Function ExistsByInTableAsync(Of T)(conditions As List(Of Condition), tableName As String) As Task(Of Boolean) Implements IOrmAsync.ExistsByInTableAsync
+
+        If conditions Is Nothing OrElse conditions.Count = 0 Then
+            Throw New ArgumentException("Conditions cannot be null or empty.")
+        End If
         If String.IsNullOrEmpty(tableName) Then Throw New ArgumentException("Table Name cannot be null.")
         Dim paramPrefix As String = _provider.GetParameterPrefix()
         Dim whereClauses As New List(Of String)
@@ -1572,6 +1596,10 @@ Friend Class SqlServerOrmAsync
     End Function
 
     Public Async Function FindByAsync(Of T)(conditions As List(Of Condition)) As Task(Of List(Of T)) Implements IOrmAsync.FindByAsync
+
+        If conditions Is Nothing OrElse conditions.Count = 0 Then
+            Throw New ArgumentException("Conditions cannot be null or empty.")
+        End If
         Dim results As New List(Of T)
         Dim typeT = GetType(T)
         Dim tableName = typeT.Name
@@ -1660,6 +1688,10 @@ Friend Class SqlServerOrmAsync
     End Function
 
     Public Async Function FindByInTableAsync(Of T)(conditions As List(Of Condition), tableName As String) As Task(Of List(Of T)) Implements IOrmAsync.FindByInTableAsync
+
+        If conditions Is Nothing OrElse conditions.Count = 0 Then
+            Throw New ArgumentException("Conditions cannot be null or empty.")
+        End If
         If String.IsNullOrEmpty(tableName) Then Throw New ArgumentException("Table Name cannot be null.")
         Dim results As New List(Of T)
         Dim typeT = GetType(T)
@@ -1748,6 +1780,10 @@ Friend Class SqlServerOrmAsync
     End Function
 
     Public Async Function FindByPagedAsync(Of T)(conditions As List(Of Condition), pageNumber As Integer, maxPerPage As Integer) As Task(Of Page(Of T)) Implements IOrmAsync.FindByPagedAsync
+
+        If conditions Is Nothing OrElse conditions.Count = 0 Then
+            Throw New ArgumentException("Conditions cannot be null or empty.")
+        End If
         Dim typeT = GetType(T)
         Dim tableName = typeT.Name
         Dim parameterPrefix = _provider.GetParameterPrefix()
@@ -1867,6 +1903,10 @@ Friend Class SqlServerOrmAsync
     End Function
 
     Public Async Function FindByPagedInTableAsync(Of T)(conditions As List(Of Condition), tableName As String, pageNumber As Integer, maxPerPage As Integer) As Task(Of Page(Of T)) Implements IOrmAsync.FindByPagedInTableAsync
+
+        If conditions Is Nothing OrElse conditions.Count = 0 Then
+            Throw New ArgumentException("Conditions cannot be null or empty.")
+        End If
         If String.IsNullOrEmpty(tableName) Then Throw New ArgumentException("Table Name cannot be null.")
         Dim typeT = GetType(T)
         Dim parameterPrefix = _provider.GetParameterPrefix()

@@ -9,36 +9,46 @@ Friend Class OrmUtils
 #End Region
 
 #Region "sync"
-    'Friend Shared Function MapToSqlServerType(prop As PropertyInfo) As String
-    '    Dim attr = prop.GetCustomAttribute(Of SqlTypeAttribute)()
-    '    If attr IsNot Nothing Then Return attr.SqlType
 
-    '    Dim type = prop.PropertyType
-    '    If type = GetType(Integer) OrElse type = GetType(Int32) Then Return "INT"
-    '    If type = GetType(Int64) OrElse type = GetType(Long) Then Return "BIGINT"
-    '    If type = GetType(Int16) OrElse type = GetType(Short) Then Return "SMALLINT"
-    '    If type = GetType(Byte) Then Return "TINYINT"
-    '    If type = GetType(Boolean) Then Return "BIT"
-    '    If type = GetType(DateTime) Then Return "DATETIME"
-    '    If type = GetType(DateTimeOffset) Then Return "DATETIMEOFFSET"
-    '    If type = GetType(TimeSpan) Then Return "TIME"
-    '    If type = GetType(Decimal) OrElse type = GetType(Double) OrElse type = GetType(Single) Then Return "DECIMAL(18,2)"
-    '    If type = GetType(Guid) Then Return "UNIQUEIDENTIFIER"
-    '    If type = GetType(Byte()) Then Return "VARBINARY(MAX)"
-    '    If type = GetType(String) Then Return "NVARCHAR(MAX)"
-    '    Return "NVARCHAR(MAX)" ' Fallback
-    'End Function
+    Friend Shared Function MapToSqlType(prop As PropertyInfo) As String
+        ' Check for SqlType attribute override
+        Dim attr = prop.GetCustomAttribute(Of SqlTypeAttribute)()
+        If attr IsNot Nothing Then Return attr.SqlType
 
+        ' Handle nullable types
+        Dim type = Nullable.GetUnderlyingType(prop.PropertyType)
+        If type Is Nothing Then type = prop.PropertyType
 
-    Friend Shared Function MapToSqlType(type As Type) As String
-        If type = GetType(Integer) OrElse type = GetType(Int32) Then Return "INT"
-        If type = GetType(Long) Then Return "BIGINT"
-        If type = GetType(String) Then Return "NVARCHAR(MAX)"
-        If type = GetType(DateTime) Then Return "DATETIME"
+        ' Map known types
+        If type = GetType(Int16) Then Return "SMALLINT"
+        If type = GetType(Int32) Then Return "INT"
+        If type = GetType(Int64) Then Return "BIGINT"
+        If type = GetType(Byte) Then Return "TINYINT"
         If type = GetType(Boolean) Then Return "BIT"
+        If type = GetType(Decimal) Then Return "DECIMAL(18, 2)"
+        If type = GetType(Double) Then Return "FLOAT"
+        If type = GetType(Single) Then Return "REAL"
+        If type = GetType(DateTime) Then Return "DATETIME"
+        If type = GetType(DateTimeOffset) Then Return "DATETIMEOFFSET"
+        If type = GetType(TimeSpan) Then Return "TIME"
+        If type = GetType(Guid) Then Return "UNIQUEIDENTIFIER"
         If type = GetType(Byte()) Then Return "VARBINARY(MAX)"
-        Return "NVARCHAR(MAX)" ' Default fallback
+        If type = GetType(Char) Then Return "NCHAR(1)"
+        If type = GetType(String) Then Return "NVARCHAR(255)" ' Reasonable default
+
+        ' Fallback
+        Return "NVARCHAR(MAX)"
     End Function
+
+    'Friend Shared Function MapToSqlType(type As Type) As String
+    '    If type = GetType(Integer) OrElse type = GetType(Int32) Then Return "INT"
+    '    If type = GetType(Long) Then Return "BIGINT"
+    '    If type = GetType(String) Then Return "NVARCHAR(MAX)"
+    '    If type = GetType(DateTime) Then Return "DATETIME"
+    '    If type = GetType(Boolean) Then Return "BIT"
+    '    If type = GetType(Byte()) Then Return "VARBINARY(MAX)"
+    '    Return "NVARCHAR(MAX)" ' Default fallback
+    'End Function
     Friend Shared Sub CreateOrUpdateTableRecursive(entityType As Type, idColumn As String, mode As DbPrepMode, connection As IDbConnection, transaction As IDbTransaction, executedTables As HashSet(Of String))
         Dim tableName = entityType.Name
         If executedTables.Contains(tableName) Then Return ' Already processed
@@ -68,7 +78,7 @@ Friend Class OrmUtils
             If IsGenericList(prop.PropertyType) Then Continue For
 
             Dim columnName = prop.Name
-            Dim dbType = MapToSqlType(prop.PropertyType)
+            Dim dbType = MapToSqlType(prop)
 
             If columnName = idColumn Then
                 columnDefs.Add($"[{columnName}] INT IDENTITY(1,1) PRIMARY KEY")
@@ -342,7 +352,7 @@ Friend Class OrmUtils
             End If
 
             Dim columnName = prop.Name
-            Dim sqlType = MapToSqlType(prop.PropertyType)
+            Dim sqlType = MapToSqlType(prop)
 
             If columnName.Equals(idColumn, StringComparison.OrdinalIgnoreCase) Then
                 columns.Add($"{columnName} {sqlType} PRIMARY KEY IDENTITY(1,1)")
@@ -382,7 +392,7 @@ Friend Class OrmUtils
             Dim columnName = prop.Name
 
             If Not existingColumns.Contains(columnName) Then
-                Dim sqlType = MapToSqlType(prop.PropertyType)
+                Dim sqlType = MapToSqlType(prop)
 
                 If columnName.Equals(idColumn, StringComparison.OrdinalIgnoreCase) Then
                     ' ID column already exists most likely, skip

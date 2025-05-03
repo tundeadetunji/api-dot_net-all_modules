@@ -12,10 +12,6 @@ Public Class SequelOrm
         Select Case provider
             Case SupportedDbProvider.SqlServer
                 strategy = SqlServerOrm.Instance(connectionString)
-                'Case SupportedDbProvider.MySQL
-                '    strategy = MySqlOrm.Instance(connectionString)
-                'Case SupportedDbProvider.PostgreSQL
-                '    strategy = PostgreSqlOrm.Instance(connectionString)
             Case Else
                 Throw New NotSupportedException($"Provider '{provider}' is not supported.")
         End Select
