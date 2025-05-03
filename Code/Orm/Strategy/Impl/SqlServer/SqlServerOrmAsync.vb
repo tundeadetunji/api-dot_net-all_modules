@@ -813,7 +813,14 @@ Friend Class SqlServerOrmAsync
                     Dim paramName = $"{parameterPrefix}{prop.Name}"
                     insertCols.Add($"[{prop.Name}]")
                     insertVals.Add(paramName)
+
                     parameters.Add(Await _provider.CreateParameterAsync(paramName, prop.GetValue(obj)))
+                    'Dim value = prop.GetValue(obj)
+                    'If prop.PropertyType.IsEnum Then
+                    '    value = Convert.ToInt32(value) ' or value.ToString() if you want to store enum names
+                    'End If
+                    'parameters.Add(Await _provider.CreateParameterAsync(paramName, value))
+
                 Next
 
                 Dim sql = $"INSERT INTO [{tableName}] ({String.Join(", ", insertCols)}) VALUES ({String.Join(", ", insertVals)})"
@@ -921,7 +928,13 @@ Friend Class SqlServerOrmAsync
                     Dim paramName = $"{parameterPrefix}{prop.Name}"
                     insertCols.Add($"[{prop.Name}]")
                     insertVals.Add(paramName)
+
                     parameters.Add(Await _provider.CreateParameterAsync(paramName, prop.GetValue(obj)))
+                    'Dim value = prop.GetValue(obj)
+                    'If prop.PropertyType.IsEnum Then
+                    '    value = Convert.ToInt32(value) ' or value.ToString() if you want to store enum names
+                    'End If
+                    'parameters.Add(Await _provider.CreateParameterAsync(paramName, value))
                 Next
 
                 Dim sql = $"INSERT INTO [{tableName}] ({String.Join(", ", insertCols)}) VALUES ({String.Join(", ", insertVals)})"
@@ -2054,6 +2067,11 @@ Friend Class SqlServerOrmAsync
                     Dim paramName = $"{parameterPrefix}{prop.Name}"
                     setClauses.Add($"[{prop.Name}] = {paramName}")
                     parameters.Add(Await _provider.CreateParameterAsync(paramName, prop.GetValue(obj)))
+                    'Dim value = prop.GetValue(obj)
+                    'If prop.PropertyType.IsEnum Then
+                    '    value = Convert.ToInt32(value) ' or value.ToString() if you want to store enum names
+                    'End If
+                    'parameters.Add(Await _provider.CreateParameterAsync(paramName, value))
                 Next
 
                 parameters.Add(Await _provider.CreateParameterAsync($"{parameterPrefix}id", idValue))
@@ -2117,6 +2135,11 @@ Friend Class SqlServerOrmAsync
                     Dim paramName = $"{parameterPrefix}{prop.Name}"
                     setClauses.Add($"[{prop.Name}] = {paramName}")
                     parameters.Add(Await _provider.CreateParameterAsync(paramName, prop.GetValue(obj)))
+                    'Dim value = prop.GetValue(obj)
+                    'If prop.PropertyType.IsEnum Then
+                    '    value = Convert.ToInt32(value) ' or value.ToString() if you want to store enum names
+                    'End If
+                    'parameters.Add(Await _provider.CreateParameterAsync(paramName, value))
                 Next
 
                 parameters.Add(Await _provider.CreateParameterAsync($"{parameterPrefix}id", idValue))

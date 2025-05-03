@@ -1,11 +1,19 @@
 ﻿
 ''' <summary>
 ''' Object Relational Mapping. Joins and transactions supported.
+''' <br />
 ''' Uses Lazy Intialization for Singletons.
+''' <br />
 ''' SqlServer is currently the only supported database provider.
+''' <br />
 ''' Support for PostgreSql and MySql, as well as Logging and Transaction Isolation Levels, is actively <b>WIP</b>>.
+''' <br />
 ''' Parent-to-child foreign key convention is {ParentTypeName}_{idColumn} (e.g. Person {Id, Name, List(Of Phone)} => Phone {Id, Person_Id, PhoneNumber}).
-''' Supports 1 : many (e.g. 1 Person can have many Phones).
+''' <br />
+''' Supports 1 : many (e.g. 1 Person can have many Phones); the rest are actively <b>WIP</b>.
+''' <br />
+''' Direct support for Enum types is actively <b>WIP</b>. Workaround is to explicitly use Integer instead of the enum property (or an appropriate string type, if not using the numeric/ordinal value),
+''' for instance, if your class contains an enum of AccountType, use <b><i>Public Property Account As Integer</i></b>, <b>not</b> <i>Public Property Account As AccountType</i>, 
 ''' <br />
 ''' Picks up only non read-only properties only, and ignores RowVersion property if it doesnt exist.
 ''' <br />
