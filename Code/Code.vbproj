@@ -113,6 +113,12 @@
     <Compile Include="Orm\Model\Page.vb" />
     <Compile Include="Orm\Model\SqlComparisonOperator.vb" />
     <Compile Include="Orm\Model\SupportedDbProvider.vb" />
+    <Compile Include="Orm\Strategy\Impl\SqlServer\SqlServerOrm.vb" />
+    <Compile Include="Orm\Strategy\Impl\SqlServer\SqlServerOrmAsync.vb" />
+    <Compile Include="Orm\Strategy\IOrm.vb" />
+    <Compile Include="Orm\Strategy\IOrmAsync.vb" />
+    <Compile Include="Orm\Strategy\IOrmDocs.vb" />
+    <Compile Include="Orm\Utility\OrmUtils.vb" />
     <Compile Include="ProgramRunner.vb" />
     <Compile Include="SequelOrm.vb" />
     <Compile Include="Feedback.vb" />
@@ -137,6 +143,7 @@
     </Compile>
     <Compile Include="SearchEngineQueryString.vb" />
     <Compile Include="Sequel.vb" />
+    <Compile Include="SequelOrmAsync.vb" />
     <Compile Include="Styler.vb" />
     <Compile Include="Values.vb" />
     <Compile Include="Web.vb" />
