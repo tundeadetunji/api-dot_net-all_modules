@@ -1,5 +1,7 @@
 ﻿Imports System.Drawing
 Imports System.Windows.Forms
+Imports System.Runtime.InteropServices
+Imports System.Drawing.Drawing2D
 
 ''' <summary>
 ''' This class contains methods for desktop development, particularly, styling the Form.
@@ -11,11 +13,42 @@ Imports System.Windows.Forms
 ''' </remarks>
 Public Class Styler
 
-#Region "OS Functions Variables"
+#Region "init"
+
+    Private Shared Property Instance As Styler
+    Private Property borderColor As Color
+    Private Property dialogWidth As Integer
+    Private Property dialogHeight As Integer
+    Private Sub New(borderColor As Color, dialogWidth As Integer, dialogHeight As Integer)
+        Me.borderColor = borderColor
+        Me.dialogHeight = dialogHeight
+        Me.dialogWidth = dialogWidth
+    End Sub
+
+#End Region
+
+#Region "OS API related"
     Private Declare Function SendMessage Lib "User32" Alias "SendMessageA" (ByVal hWnd As Integer, ByVal wMsg As Integer, ByVal wParam As Integer, ByRef lParam As Integer) As Integer
     Private Declare Sub ReleaseCapture Lib "User32" ()
     Const WM_NCLBUTTONDOWN As Short = &HA1S
     Const HTCAPTION As Short = 2
+
+    <DllImport("Gdi32.dll", EntryPoint:="CreateRoundRectRgn")>
+    Private Shared Function CreateRoundRectRgn(ByVal nLeftRect As Integer, ByVal nTopRect As Integer, ByVal nRightRect As Integer, ByVal nBottomRect As Integer, ByVal nWidthEllipse As Integer, ByVal nHeightEllipse As Integer) As IntPtr
+    End Function
+
+    Private Shared Sub DialogMouseMove(sender As Object, e As MouseEventArgs)
+        Dim Button As Short = e.Button \ &H100000
+        Dim Shift As Short = System.Windows.Forms.Control.ModifierKeys \ &H10000
+        Dim X As Single = (e.X)
+        Dim Y As Single = (e.Y)
+        Dim lngReturnValue As Integer
+        If Button = 1 Then
+            Call ReleaseCapture()
+            lngReturnValue = SendMessage(sender.Handle.ToInt32, WM_NCLBUTTONDOWN, HTCAPTION, 0)
+        End If
+
+    End Sub
 
 #End Region
 
@@ -243,10 +276,46 @@ Public Class Styler
         Public close_button_should As WhatCloseButtonDoes
         Public read_this_loud_on_exit As String
     End Structure
+    Public Structure ButtonInfo
+        Public theLabel As Label
+        Public showIt As Boolean
+        Public inThisColor As Color
+        Public withThisCallback As EventHandler
+    End Structure
+
+    Public Structure DialogInfo
+        Public titleLabel As Label
+        Public title As String
+        Public titleColor As Color
+        Public dialog As Form
+        Public backgroundImage As Image
+        Public backgroundImageLayout As ImageLayout
+        Public backgroundColor As Color
+        Public borderColor As Color
+    End Structure
+#End Region
+
+#Region "Support"
+
+    Private Shared Sub Dialog_Paint(ByVal sender As Object, ByVal e As PaintEventArgs)
+        If Instance Is Nothing Then Return
+        Using pen As New Pen(Instance.borderColor, 2)
+            e.Graphics.DrawPath(pen, GetRoundedRectPath(New Rectangle(0, 0, Instance.dialogWidth - 1, Instance.dialogHeight - 1), 20))
+        End Using
+    End Sub
+    Private Shared Function GetRoundedRectPath(ByVal rect As Rectangle, ByVal radius As Integer) As GraphicsPath
+        Dim path As New GraphicsPath()
+        path.AddArc(rect.X, rect.Y, radius, radius, 180, 90) ' Top-left corner
+        path.AddArc(rect.Right - radius, rect.Y, radius, radius, 270, 90) ' Top-right corner
+        path.AddArc(rect.Right - radius, rect.Bottom - radius, radius, radius, 0, 90) ' Bottom-right corner
+        path.AddArc(rect.X, rect.Bottom - radius, radius, radius, 90, 90) ' Bottom-left corner
+        path.CloseFigure() ' Close the path
+        Return path
+    End Function
 
 #End Region
 
-#Region "Dialog"
+#Region "Exported"
     Public Shared Sub Style(dialog As Form, LabelHasThisForeColor As Color, Optional ListBoxHasBothScrollBars As Boolean = True)
         AddHandler dialog.MouseMove, New MouseEventHandler(AddressOf MouseMove)
 
@@ -486,7 +555,71 @@ Public Class Styler
 
     End Sub
 
+    ''' <summary>
+    ''' If titleLabel, minimizeButton or maximizeButton is present, then the top of the topmost control on the form should be at least 54.
+    ''' </summary>
+    Public Shared Sub Style(dialogProperties As DialogInfo, minimizeButton As ButtonInfo, closeButton As ButtonInfo)
+        Dim dialog As Form = dialogProperties.dialog
+        If dialog Is Nothing Then Return
+        If Not dialogProperties.Equals(Nothing) Then
+            If Not dialogProperties.backgroundImage Is Nothing Then
+                dialog.BackgroundImage = dialogProperties.backgroundImage
+                dialog.BackgroundImageLayout = dialogProperties.backgroundImageLayout
+            End If
+            dialog.BackColor = dialogProperties.backgroundColor
 
+            If Not dialogProperties.titleLabel Is Nothing And Not String.IsNullOrEmpty(dialogProperties.title) Then
+                dialogProperties.titleLabel.Left = 16
+                dialogProperties.titleLabel.Top = 20
+                dialogProperties.titleLabel.BackColor = Color.Transparent
+                dialogProperties.titleLabel.Text = dialogProperties.title
+                dialogProperties.titleLabel.ForeColor = dialogProperties.titleColor
+            End If
+        End If
+
+        dialog.FormBorderStyle = FormBorderStyle.None
+        ' Create a rounded rectangle region
+        Dim roundedRegion As IntPtr = CreateRoundRectRgn(0, 0, dialog.Width, dialog.Height, 20, 20)
+        ' Set the Region property of the dialog
+        dialog.Region = System.Drawing.Region.FromHrgn(roundedRegion)
+        dialog.AllowTransparency = True
+        dialog.Invalidate()
+
+        AddHandler dialog.MouseMove, New MouseEventHandler(AddressOf DialogMouseMove)
+        Instance = New Styler(dialogProperties.borderColor, dialog.Width, dialog.Height)
+        AddHandler dialog.Paint, New PaintEventHandler(AddressOf Dialog_Paint)
+
+        If Not minimizeButton.Equals(Nothing) Then
+            If minimizeButton.showIt Then
+                Dim MinimizeDialoglabel As Label = minimizeButton.theLabel
+                MinimizeDialoglabel.Text = ChrW(800)
+                MinimizeDialoglabel.Font = New Font("Microsoft Sans Serif", 14, FontStyle.Bold)
+                MinimizeDialoglabel.Left = dialog.Width - 68
+                MinimizeDialoglabel.Top = 8
+                MinimizeDialoglabel.ForeColor = minimizeButton.inThisColor
+                MinimizeDialoglabel.Visible = minimizeButton.showIt
+                MinimizeDialoglabel.BringToFront()
+                MinimizeDialoglabel.BackColor = Color.Transparent
+                AddHandler MinimizeDialoglabel.Click, minimizeButton.withThisCallback
+            End If
+        End If
+
+        If Not closeButton.Equals(Nothing) Then
+            If closeButton.showIt Then
+                Dim CloseDialoglabel As Label = closeButton.theLabel
+                CloseDialoglabel.Text = ChrW(10539)
+                CloseDialoglabel.Font = New Font("Microsoft Sans Serif", 14, FontStyle.Bold)
+                CloseDialoglabel.Left = dialog.Width - 38
+                CloseDialoglabel.Top = 15
+                CloseDialoglabel.ForeColor = closeButton.inThisColor
+                CloseDialoglabel.Visible = closeButton.showIt
+                CloseDialoglabel.BringToFront()
+                CloseDialoglabel.BackColor = Color.Transparent
+                AddHandler CloseDialoglabel.Click, closeButton.withThisCallback
+            End If
+        End If
+
+    End Sub
 #End Region
 
 #Region "Methods"

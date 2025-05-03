@@ -40,6 +40,7 @@ Public Class Feedback
     ''' <param name="message_"></param>
     ''' <param name="how_many_times_">how many times to say the message</param>
     Public Sub MessageUser(message_ As String, Optional how_many_times_ As Byte = 3, Optional async As Boolean = True)
+        If String.IsNullOrEmpty(message_) Then Return
         _message = message_
         _how_many_times_ = how_many_times_
         _async = async
@@ -68,7 +69,9 @@ Public Class Feedback
     ''' <param name="message"></param>
     ''' <param name="async"></param>
     Public Sub Inform(message As String, Optional async As Boolean = True)
-        say(message, async)
+        If Not String.IsNullOrEmpty(message) Then
+            say(message, async)
+        End If
     End Sub
 
     ''' <summary>
@@ -82,7 +85,7 @@ Public Class Feedback
     ''' <returns></returns>
     Public Function Inform(message As String, voice_message As String, Optional title As String = "", Optional style As MsgBoxStyle = MsgBoxStyle.YesNo + MsgBoxStyle.Question, Optional async As Boolean = True) As MsgBoxResult
         Inform(voice_message, async)
-        Dim msg = MsgBox(message, style, title)
+        Dim msg = MsgBox(If(String.IsNullOrEmpty(message), "", message), style, title)
         Return msg
     End Function
     ''' <summary>
@@ -96,7 +99,7 @@ Public Class Feedback
     ''' <returns></returns>
     Public Function Inform(message As String, voice_messages As List(Of String), Optional title As String = "", Optional style As MsgBoxStyle = MsgBoxStyle.YesNo + MsgBoxStyle.Question, Optional async As Boolean = True) As MsgBoxResult
         Inform(voice_messages(General.Random_(0, voice_messages.Count)), async)
-        Dim msg = MsgBox(message, style, title)
+        Dim msg = MsgBox(If(String.IsNullOrEmpty(message), "", message), style, title)
         Return msg
     End Function
     ''' <summary>
@@ -185,21 +188,17 @@ Public Class Feedback
 #Region "Utility"
 
     Private Function TheTimeOfDay() As TimeOfDay
-        Dim now As DateTime = DateTime.ParseExact(DateTime.Now.ToShortTimeString, TimeFormat, Nothing)
+        Dim now As DateTime = DateTime.Now
 
-        If now >= Morning And now < Afternoon Then
+        If now >= Morning AndAlso now < Afternoon Then
             Return TimeOfDay.Morning
-        ElseIf now >= Afternoon And now < Evening Then
+        ElseIf now >= Afternoon AndAlso now < Evening Then
             Return TimeOfDay.Afternoon
-        ElseIf now >= Evening And now < Midnight Then
-            Return TimeOfDay.Evening
-            'ElseIf now >= Midnight And now < Afternoon Then
-            '    Return TimeOfDay.Morning
         Else
-            Return TimeOfDay.Morning
+            ' This covers now >= Evening OR now < Morning (after midnight before morning)
+            Return TimeOfDay.Evening
         End If
     End Function
-
 #End Region
 
 #End Region
@@ -207,6 +206,7 @@ Public Class Feedback
 
 #Region "Core"
     Public Sub say(message As String, Optional async As Boolean = True)
+        If String.IsNullOrEmpty(message) Then Return
         Try
             If async = True Then
                 s.SpeakAsync(message)
@@ -243,6 +243,7 @@ Public Class Feedback
     End Sub
 
     Public Sub Stress(message As String, Optional howManyTimes As Byte = 3, Optional async As Boolean = True)
+        If String.IsNullOrEmpty(message) Then Return
         For i = 1 To howManyTimes
             Try
                 If async = True Then
@@ -257,6 +258,7 @@ Public Class Feedback
         Next
     End Sub
     Public Sub createReminder(message As String, interval_in_ms As Integer, Optional howManyTimes As Byte = 3, Optional async As Boolean = False)
+        If String.IsNullOrEmpty(message) Then Return
 
         message__ = message
         howManyTimes__ = howManyTimes

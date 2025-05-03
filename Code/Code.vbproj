@@ -104,6 +104,15 @@
     <Compile Include="FeedbackExtensions.vb" />
     <Compile Include="GeneralExtensions.vb" />
     <Compile Include="LoggingExtensions.vb" />
+    <Compile Include="Orm\DbProvider\IDbProvider.vb" />
+    <Compile Include="Orm\DbProvider\IDbProviderAsync.vb" />
+    <Compile Include="Orm\DbProvider\Impl\SqlServer\SqlServerProvider.vb" />
+    <Compile Include="Orm\DbProvider\Impl\SqlServer\SqlServerProviderAsync.vb" />
+    <Compile Include="Orm\Model\Condition.vb" />
+    <Compile Include="Orm\Model\DbPrepMode.vb" />
+    <Compile Include="Orm\Model\Page.vb" />
+    <Compile Include="Orm\Model\SqlComparisonOperator.vb" />
+    <Compile Include="Orm\Model\SupportedDbProvider.vb" />
     <Compile Include="ProgramRunner.vb" />
     <Compile Include="SequelOrm.vb" />
     <Compile Include="Feedback.vb" />
