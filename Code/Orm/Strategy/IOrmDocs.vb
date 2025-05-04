@@ -1,10 +1,8 @@
-﻿
-''' <summary>
-''' Object Relational Mapping. Joins and transactions supported.
+﻿''' <summary>
+''' Object Relational Mapping.
+''' SqlServer is currently the only supported database provider; this implementation was tested on it.
 ''' <br />
 ''' Uses Lazy Intialization for Singletons.
-''' <br />
-''' SqlServer is currently the only supported database provider.
 ''' <br />
 ''' Support for PostgreSql and MySql, as well as Logging and Transaction Isolation Levels, is actively <b>WIP</b>>.
 ''' <br />
@@ -15,7 +13,7 @@
 ''' Direct support for Enum types is actively <b>WIP</b>. Workaround is to explicitly use Integer instead of the enum property (or an appropriate string type, if not using the numeric/ordinal value),
 ''' for instance, if your class contains an enum of AccountType, use <b><i>Public Property Account As Integer</i></b>, <b>not</b> <i>Public Property Account As AccountType</i>, 
 ''' <br />
-''' Picks up only non read-only properties only, and ignores RowVersion property if it doesnt exist.
+''' Picks up non read-only properties only, and ignores RowVersion property if it doesnt exist.
 ''' <br />
 ''' You may need to install appropriate Sql Clients or Providers from nuget.org, e.g. System.Data.SqlClient.
 ''' </summary>

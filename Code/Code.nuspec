@@ -2,14 +2,14 @@
 <package >
   <metadata>
     <id>inovationware.code</id>
-    <version>3.8.0</version>
+    <version>3.8.9</version>
     <title>Code Repertoire</title>
     <authors>Tunde Adetunji</authors>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <license type="expression">MIT</license>
     <!-- <icon>icon.png</icon> -->
     <projectUrl>https://github.com/tundeadetunji/api-dot_net-all_modules</projectUrl>
-    <description>Handy Features for .Net, includes Encryption, Lightweight ORM, Db CRUD operations, Text to speech, Bootstrap/Chart/Dashboard, Extension Methods e.t.c.
+    <description>Handy Features for .Net, includes Encryption, Lightweight ORM for SqlServer, Db CRUD operations, Text to speech, Bootstrap/Chart/Dashboard, Extension Methods e.t.c.
     </description>
     <releaseNotes>Code is now running .Net Framework 4.7.2</releaseNotes>
     <copyright>©2018 - 2025 tundeadetunji2017@gmail.com</copyright>
