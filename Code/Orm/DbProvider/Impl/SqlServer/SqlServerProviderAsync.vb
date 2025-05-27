@@ -1,5 +1,4 @@
 ﻿Imports System.Data.SqlClient
-
 Public Class SqlServerProviderAsync
     Implements IDbProviderAsync
 
