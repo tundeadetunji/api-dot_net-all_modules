@@ -1,5 +1,5 @@
-﻿Imports System.Threading
-Imports iNovation.Code.OrmUtils
+﻿Imports iNovation.Code.OrmUtils
+Imports System.Threading
 Friend Class SqlServerOrm
     Implements IOrm
 
@@ -62,7 +62,9 @@ Friend Class SqlServerOrm
                         obj = Activator.CreateInstance(Of T)()
                         For Each prop In typeT.GetProperties().Where(Function(p) p.CanWrite AndAlso Not IsGenericList(p.PropertyType))
                             If Not reader.IsDBNull(reader.GetOrdinal(prop.Name)) Then
-                                prop.SetValue(obj, Convert.ChangeType(reader(prop.Name), prop.PropertyType))
+                                Dim rawValue = reader(prop.Name)
+                                Dim safeValue = GetSafeEnumValue(prop.PropertyType, rawValue)
+                                prop.SetValue(obj, safeValue)
                             End If
                         Next
                     End If
@@ -102,7 +104,9 @@ Friend Class SqlServerOrm
                         obj = Activator.CreateInstance(Of T)()
                         For Each prop In typeT.GetProperties().Where(Function(p) p.CanWrite AndAlso Not IsGenericList(p.PropertyType))
                             If Not reader.IsDBNull(reader.GetOrdinal(prop.Name)) Then
-                                prop.SetValue(obj, Convert.ChangeType(reader(prop.Name), prop.PropertyType))
+                                Dim rawValue = reader(prop.Name)
+                                Dim safeValue = GetSafeEnumValue(prop.PropertyType, rawValue)
+                                prop.SetValue(obj, safeValue)
                             End If
                         Next
                     End If
@@ -499,12 +503,15 @@ Friend Class SqlServerOrm
 
                         columns.Add($"[{prop.Name}]")
                         values.Add($"{parameterPrefix}{prop.Name}")
-                        parameters.Add(_provider.CreateParameter($"{parameterPrefix}{prop.Name}", prop.GetValue(obj)))
+
+                        Dim rawValue = prop.GetValue(obj)
+                        Dim dbValue = GetEnumDbValue(prop, rawValue)
+                        parameters.Add(_provider.CreateParameter($"{parameterPrefix}{prop.Name}", dbValue))
                     Next
 
-                    Dim insertSql = $"INSERT INTO [{tableName}] ({String.Join(", ", columns)}) VALUES ({String.Join(", ", values)});"
+                    Dim insertSql = $"INSERT INTO [{tableName}] ({String.Join(", ", columns)}) VALUES ({String.Join(", ", values)})"
                     If IdWillAutoIncrement Then
-                        insertSql &= " SELECT SCOPE_IDENTITY();"
+                        insertSql &= "; SELECT CAST(SCOPE_IDENTITY() AS BIGINT);"
                     End If
 
                     Using command = _provider.CreateCommand(insertSql, connection)
@@ -545,21 +552,20 @@ Friend Class SqlServerOrm
                                 Dim value As Object
                                 If cp.Name = fkColumn Then
                                     value = parentId
-                                    If cp.CanWrite Then
-                                        cp.SetValue(child, parentId)
-                                    End If
+                                    If cp.CanWrite Then cp.SetValue(child, parentId)
                                 Else
                                     value = cp.GetValue(child)
                                 End If
 
+                                Dim dbValue = GetEnumDbValue(cp, value)
                                 insertCols.Add($"[{cp.Name}]")
                                 insertVals.Add($"{parameterPrefix}{cp.Name}")
-                                insertParams.Add(_provider.CreateParameter($"{parameterPrefix}{cp.Name}", value))
+                                insertParams.Add(_provider.CreateParameter($"{parameterPrefix}{cp.Name}", dbValue))
                             Next
 
-                            Dim insertChildSql = $"INSERT INTO [{childTable}] ({String.Join(", ", insertCols)}) VALUES ({String.Join(", ", insertVals)});"
+                            Dim insertChildSql = $"INSERT INTO [{childTable}] ({String.Join(", ", insertCols)}) VALUES ({String.Join(", ", insertVals)})"
                             If IdWillAutoIncrement Then
-                                insertChildSql &= " SELECT SCOPE_IDENTITY();"
+                                insertChildSql &= "; SELECT CAST(SCOPE_IDENTITY() AS BIGINT);"
                             End If
 
                             Using cmd = _provider.CreateCommand(insertChildSql, connection)
@@ -610,12 +616,15 @@ Friend Class SqlServerOrm
 
                         columns.Add($"[{prop.Name}]")
                         values.Add($"{parameterPrefix}{prop.Name}")
-                        parameters.Add(_provider.CreateParameter($"{parameterPrefix}{prop.Name}", prop.GetValue(obj)))
+
+                        Dim rawValue = prop.GetValue(obj)
+                        Dim dbValue = GetEnumDbValue(prop, rawValue)
+                        parameters.Add(_provider.CreateParameter($"{parameterPrefix}{prop.Name}", dbValue))
                     Next
 
-                    Dim insertSql = $"INSERT INTO [{tableName}] ({String.Join(", ", columns)}) VALUES ({String.Join(", ", values)});"
+                    Dim insertSql = $"INSERT INTO [{tableName}] ({String.Join(", ", columns)}) VALUES ({String.Join(", ", values)})"
                     If IdWillAutoIncrement Then
-                        insertSql &= " SELECT SCOPE_IDENTITY();"
+                        insertSql &= "; SELECT CAST(SCOPE_IDENTITY() AS BIGINT);"
                     End If
 
                     Using command = _provider.CreateCommand(insertSql, connection)
@@ -656,21 +665,20 @@ Friend Class SqlServerOrm
                                 Dim value As Object
                                 If cp.Name = fkColumn Then
                                     value = parentId
-                                    If cp.CanWrite Then
-                                        cp.SetValue(child, parentId)
-                                    End If
+                                    If cp.CanWrite Then cp.SetValue(child, parentId)
                                 Else
                                     value = cp.GetValue(child)
                                 End If
 
+                                Dim dbValue = GetEnumDbValue(cp, value)
                                 insertCols.Add($"[{cp.Name}]")
                                 insertVals.Add($"{parameterPrefix}{cp.Name}")
-                                insertParams.Add(_provider.CreateParameter($"{parameterPrefix}{cp.Name}", value))
+                                insertParams.Add(_provider.CreateParameter($"{parameterPrefix}{cp.Name}", dbValue))
                             Next
 
-                            Dim insertChildSql = $"INSERT INTO [{childTable}] ({String.Join(", ", insertCols)}) VALUES ({String.Join(", ", insertVals)});"
+                            Dim insertChildSql = $"INSERT INTO [{childTable}] ({String.Join(", ", insertCols)}) VALUES ({String.Join(", ", insertVals)})"
                             If IdWillAutoIncrement Then
-                                insertChildSql &= " SELECT SCOPE_IDENTITY();"
+                                insertChildSql &= "; SELECT CAST(SCOPE_IDENTITY() AS BIGINT);"
                             End If
 
                             Using cmd = _provider.CreateCommand(insertChildSql, connection)
@@ -1060,7 +1068,8 @@ Friend Class SqlServerOrm
 
                             Dim val = reader(prop.Name)
                             If val IsNot DBNull.Value Then
-                                prop.SetValue(obj, Convert.ChangeType(val, prop.PropertyType))
+                                Dim safeValue = GetSafeEnumValue(prop.PropertyType, val)
+                                prop.SetValue(obj, safeValue)
                             End If
                         Next
 
@@ -1145,7 +1154,8 @@ Friend Class SqlServerOrm
 
                             Dim val = reader(prop.Name)
                             If val IsNot DBNull.Value Then
-                                prop.SetValue(obj, Convert.ChangeType(val, prop.PropertyType))
+                                Dim safeValue = GetSafeEnumValue(prop.PropertyType, val)
+                                prop.SetValue(obj, safeValue)
                             End If
                         Next
 

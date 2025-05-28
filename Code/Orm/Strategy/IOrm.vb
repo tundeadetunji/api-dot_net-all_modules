@@ -234,57 +234,6 @@
 
 #End Region
 
-#Region "Update"
-
-    ''' <summary>
-    ''' Use this if the name of the class is the same as the name of the table.
-    ''' Uses Transaction.
-    ''' </summary>
-    ''' <typeparam name="T"></typeparam>
-    ''' <param name="obj"></param>
-    ''' <param name="idColumn"></param>
-    ''' <returns></returns>
-    Function Update(Of T)(obj As T, Optional idColumn As String = "Id") As T
-
-    ''' <summary>
-    ''' Use this if the name of the class is not the same as the name of the table.
-    ''' Uses Transaction.
-    ''' </summary>
-    ''' <typeparam name="T"></typeparam>
-    ''' <param name="obj"></param>
-    ''' <param name="tableName"></param>
-    ''' <param name="idColumn"></param>
-    ''' <returns></returns>
-    Function UpdateInTable(Of T)(obj As T, tableName As String, Optional idColumn As String = "Id") As T
-#End Region
-
-#Region "CreateOrUpdate"
-
-    ''' <summary>
-    ''' Use this if the name of the class is the same as the name of the table.
-    ''' Creates record if it doesn't exist, Updates otherwise.
-    ''' Uses Transaction.
-    ''' </summary>
-    ''' <typeparam name="T"></typeparam>
-    ''' <param name="obj"></param>
-    ''' <param name="idColumn"></param>
-    ''' <param name="IdWillAutoIncrement"></param>
-    ''' <returns></returns>
-    Function CreateOrUpdate(Of T)(obj As T, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True) As T
-    ''' <summary>
-    ''' Use this if the name of the class is not the same as the name of the table.
-    ''' Creates record if it doesn't exist, Updates otherwise.
-    ''' Uses Transaction.
-    ''' </summary>
-    ''' <typeparam name="T"></typeparam>
-    ''' <param name="obj"></param>
-    ''' <param name="tableName"></param>
-    ''' <param name="idColumn"></param>
-    ''' <param name="IdWillAutoIncrement"></param>
-    ''' <returns></returns>
-    Function CreateOrUpdateInTable(Of T)(obj As T, tableName As String, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True) As T
-#End Region
-
 #Region "FindAll"
     ''' <summary>
     ''' Use this if the name of the class is the same as the name of the table.
@@ -375,4 +324,56 @@
     ''' <returns></returns>
     Function FindByPagedInTable(Of T)(conditions As List(Of Condition), tableName As String, pageNumber As Integer, maxPerPage As Integer) As Page(Of T)
 #End Region
+
+#Region "Update"
+
+    ''' <summary>
+    ''' Use this if the name of the class is the same as the name of the table.
+    ''' Uses Transaction.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="obj"></param>
+    ''' <param name="idColumn"></param>
+    ''' <returns></returns>
+    Function Update(Of T)(obj As T, Optional idColumn As String = "Id") As T
+
+    ''' <summary>
+    ''' Use this if the name of the class is not the same as the name of the table.
+    ''' Uses Transaction.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="obj"></param>
+    ''' <param name="tableName"></param>
+    ''' <param name="idColumn"></param>
+    ''' <returns></returns>
+    Function UpdateInTable(Of T)(obj As T, tableName As String, Optional idColumn As String = "Id") As T
+#End Region
+
+#Region "CreateOrUpdate"
+
+    ''' <summary>
+    ''' Use this if the name of the class is the same as the name of the table.
+    ''' Creates record if it doesn't exist, Updates otherwise.
+    ''' Uses Transaction.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="obj"></param>
+    ''' <param name="idColumn"></param>
+    ''' <param name="IdWillAutoIncrement"></param>
+    ''' <returns></returns>
+    Function CreateOrUpdate(Of T)(obj As T, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True) As T
+    ''' <summary>
+    ''' Use this if the name of the class is not the same as the name of the table.
+    ''' Creates record if it doesn't exist, Updates otherwise.
+    ''' Uses Transaction.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="obj"></param>
+    ''' <param name="tableName"></param>
+    ''' <param name="idColumn"></param>
+    ''' <param name="IdWillAutoIncrement"></param>
+    ''' <returns></returns>
+    Function CreateOrUpdateInTable(Of T)(obj As T, tableName As String, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True) As T
+#End Region
+
 End Interface

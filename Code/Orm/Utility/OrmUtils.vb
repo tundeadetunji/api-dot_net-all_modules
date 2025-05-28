@@ -248,7 +248,9 @@ Friend Class OrmUtils
                     Dim child = Activator.CreateInstance(childType)
                     For Each prop In childType.GetProperties().Where(Function(p) p.CanWrite)
                         If Not reader.IsDBNull(reader.GetOrdinal(prop.Name)) Then
-                            prop.SetValue(child, Convert.ChangeType(reader(prop.Name), prop.PropertyType))
+                            Dim rawValue = reader(prop.Name)
+                            Dim safeValue = GetSafeEnumValue(prop.PropertyType, rawValue)
+                            prop.SetValue(child, safeValue)
                         End If
                     Next
                     listType.GetMethod("Add").Invoke(list, {child})
@@ -262,6 +264,37 @@ Friend Class OrmUtils
     Friend Shared Function IsGenericList(type As Type) As Boolean
         Return type.IsGenericType AndAlso type.GetGenericTypeDefinition() = GetType(List(Of ))
     End Function
+
+    Friend Shared Function GetSafeEnumValue(targetType As Type, rawValue As Object) As Object
+        If rawValue Is Nothing OrElse rawValue Is DBNull.Value Then
+            Return Nothing
+        End If
+
+        If targetType.IsEnum Then
+            Dim enumUnderlyingType = [Enum].GetUnderlyingType(targetType)
+
+            Try
+                ' Handle numeric types stored as strings or numbers
+                Dim numericValue = Convert.ChangeType(rawValue, enumUnderlyingType)
+                Return [Enum].ToObject(targetType, numericValue)
+            Catch ex1 As Exception
+                ' If the value is a string enum name like "Active"
+                If TypeOf rawValue Is String Then
+                    Try
+                        Return [Enum].Parse(targetType, rawValue.ToString(), ignoreCase:=True)
+                    Catch ex2 As Exception
+                        Throw New ArgumentException($"Could not parse enum value '{rawValue}' for enum type '{targetType.Name}'", ex2)
+                    End Try
+                End If
+
+                Throw New ArgumentException($"Cannot convert '{rawValue}' to enum '{targetType.Name}'", ex1)
+            End Try
+        End If
+
+        ' Not an enum, do regular conversion
+        Return Convert.ChangeType(rawValue, targetType)
+    End Function
+
     Friend Shared Function GetEnumDbValue(prop As PropertyInfo, value As Object) As Object
         If value Is Nothing Then Return DBNull.Value
 
