@@ -80,6 +80,15 @@ Friend Class OrmUtils
 
 #Region "sync"
 
+    Friend Shared Function GetEnumStorageType(prop As PropertyInfo) As EnumStorageType
+        Dim attr = prop.GetCustomAttribute(Of EnumStorageAttribute)()
+        If attr IsNot Nothing Then
+            Return attr.StorageType
+        End If
+        Return EnumStorageType.Ordinal ' default
+    End Function
+
+
     Friend Shared Function MapToSqlType(prop As PropertyInfo) As String
         ' Check for SqlType attribute override
         Dim attr = prop.GetCustomAttribute(Of SqlTypeAttribute)()
@@ -105,6 +114,16 @@ Friend Class OrmUtils
         If type = GetType(Byte()) Then Return "VARBINARY(MAX)"
         If type = GetType(Char) Then Return "NCHAR(1)"
         If type = GetType(String) Then Return "NVARCHAR(255)" ' Reasonable default
+
+        ' Handle Enums
+        If type.IsEnum Then
+            Dim storageType = GetEnumStorageType(prop)
+            If storageType = EnumStorageType.String Then
+                Return "NVARCHAR(100)"
+            Else
+                Return "INT"
+            End If
+        End If
 
         ' Fallback
         Return "NVARCHAR(MAX)"
@@ -242,6 +261,21 @@ Friend Class OrmUtils
 
     Friend Shared Function IsGenericList(type As Type) As Boolean
         Return type.IsGenericType AndAlso type.GetGenericTypeDefinition() = GetType(List(Of ))
+    End Function
+    Friend Shared Function GetEnumDbValue(prop As PropertyInfo, value As Object) As Object
+        If value Is Nothing Then Return DBNull.Value
+
+        Dim type = Nullable.GetUnderlyingType(prop.PropertyType)
+        If type Is Nothing Then type = prop.PropertyType
+
+        If type.IsEnum Then
+            Dim attr = prop.GetCustomAttribute(Of EnumStorageAttribute)()
+            If attr IsNot Nothing AndAlso attr.StorageType = EnumStorageType.String Then
+                Return value.ToString()
+            End If
+        End If
+
+        Return value
     End Function
 
     Friend Shared Function GetIdValue(obj As Object, idColumn As String) As Object

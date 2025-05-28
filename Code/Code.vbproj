@@ -101,6 +101,7 @@
     <Compile Include="DesktopExtensions.vb" />
     <Compile Include="Encryption.vb" />
     <Compile Include="EncryptionExtensions.vb" />
+    <Compile Include="EnumStorageAttribute.vb" />
     <Compile Include="FeedbackExtensions.vb" />
     <Compile Include="GeneralExtensions.vb" />
     <Compile Include="LoggingExtensions.vb" />
@@ -110,6 +111,7 @@
     <Compile Include="Orm\DbProvider\Impl\SqlServer\SqlServerProviderAsync.vb" />
     <Compile Include="Orm\Model\Condition.vb" />
     <Compile Include="Orm\Model\DbPrepMode.vb" />
+    <Compile Include="Orm\Model\EnumStorageType.vb" />
     <Compile Include="Orm\Model\Page.vb" />
     <Compile Include="Orm\Model\SqlComparisonOperator.vb" />
     <Compile Include="Orm\Model\SupportedDbProvider.vb" />
