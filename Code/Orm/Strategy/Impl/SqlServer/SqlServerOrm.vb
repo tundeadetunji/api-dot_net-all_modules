@@ -1230,10 +1230,8 @@ Friend Class SqlServerOrm
         Dim tableName = typeT.Name
         Dim parameterPrefix = _provider.GetParameterPrefix()
         Dim offset = (pageNumber - 1) * maxPerPage
-
         Dim totalSql = $"SELECT COUNT(1) FROM [{tableName}]"
         Dim totalRecords As Long
-
         Dim records = New List(Of T)
 
         Using connection = _provider.CreateConnection()
@@ -1247,7 +1245,6 @@ Friend Class SqlServerOrm
                 Return New Page(Of T)(New List(Of T), pageNumber, maxPerPage, 0, 0)
             End If
 
-            ' SQL paging query (unordered)
             Dim sql = $"
             SELECT * FROM (
                 SELECT *, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS RowNum
@@ -1261,8 +1258,10 @@ Friend Class SqlServerOrm
                     While reader.Read()
                         Dim obj = Activator.CreateInstance(Of T)()
                         For Each prop In typeT.GetProperties().Where(Function(p) p.CanWrite AndAlso Not IsGenericList(p.PropertyType))
-                            If Not reader.IsDBNull(reader.GetOrdinal(prop.Name)) Then
-                                prop.SetValue(obj, Convert.ChangeType(reader(prop.Name), prop.PropertyType))
+                            If ColumnExists(reader, prop.Name) AndAlso Not reader.IsDBNull(reader.GetOrdinal(prop.Name)) Then
+                                Dim rawVal = reader(prop.Name)
+                                Dim safeVal = GetSafeEnumValue(prop.PropertyType, rawVal)
+                                prop.SetValue(obj, safeVal)
                             End If
                         Next
                         records.Add(obj)
@@ -1270,7 +1269,7 @@ Friend Class SqlServerOrm
                 End Using
             End Using
 
-            ' Load child collections for each parent
+            ' Load child collections
             For Each obj In records
                 For Each prop In typeT.GetProperties().Where(Function(p) IsGenericList(p.PropertyType) AndAlso p.CanWrite)
                     Dim childType = prop.PropertyType.GetGenericArguments()(0)
@@ -1286,8 +1285,10 @@ Friend Class SqlServerOrm
                             While reader.Read()
                                 Dim childObj = Activator.CreateInstance(childType)
                                 For Each cp In childType.GetProperties().Where(Function(p) p.CanWrite AndAlso Not IsGenericList(p.PropertyType))
-                                    If Not reader.IsDBNull(reader.GetOrdinal(cp.Name)) Then
-                                        cp.SetValue(childObj, Convert.ChangeType(reader(cp.Name), cp.PropertyType))
+                                    If ColumnExists(reader, cp.Name) AndAlso Not reader.IsDBNull(reader.GetOrdinal(cp.Name)) Then
+                                        Dim rawVal = reader(cp.Name)
+                                        Dim safeVal = GetSafeEnumValue(cp.PropertyType, rawVal)
+                                        cp.SetValue(childObj, safeVal)
                                     End If
                                 Next
                                 childList.Add(childObj)
@@ -1299,15 +1300,16 @@ Friend Class SqlServerOrm
             Next
         End Using
 
-        ' 🔁 Sort the in-memory results AFTER paging
-        Dim sortedRecords = If(ascending,
-        records.OrderBy(Function(r) typeT.GetProperty(idColumn).GetValue(r)).ToList(),
-        records.OrderByDescending(Function(r) typeT.GetProperty(idColumn).GetValue(r)).ToList()
-    )
+        ' Sort records in-memory after paging
+        Dim idProp = typeT.GetProperty(idColumn)
+        If idProp IsNot Nothing Then
+            records = If(ascending,
+                     records.OrderBy(Function(x) idProp.GetValue(x)).ToList(),
+                     records.OrderByDescending(Function(x) idProp.GetValue(x)).ToList())
+        End If
 
         Dim pageCount = CInt(Math.Ceiling(totalRecords / CDbl(maxPerPage)))
-
-        Return New Page(Of T)(sortedRecords, pageNumber, maxPerPage, totalRecords, pageCount)
+        Return New Page(Of T)(records, pageNumber, maxPerPage, totalRecords, pageCount)
     End Function
     Public Function FindAllPagedInTable(Of T)(tableName As String, pageNumber As Integer, maxPerPage As Integer, Optional idColumn As String = Id, Optional ascending As Boolean = True) As Page(Of T) Implements IOrm.FindAllPagedInTable
         If String.IsNullOrEmpty(tableName) Then Throw New ArgumentException("Table Name cannot be null.")
@@ -1317,10 +1319,8 @@ Friend Class SqlServerOrm
         Dim typeT = GetType(T)
         Dim parameterPrefix = _provider.GetParameterPrefix()
         Dim offset = (pageNumber - 1) * maxPerPage
-
         Dim totalSql = $"SELECT COUNT(1) FROM [{tableName}]"
         Dim totalRecords As Long
-
         Dim records = New List(Of T)
 
         Using connection = _provider.CreateConnection()
@@ -1334,7 +1334,6 @@ Friend Class SqlServerOrm
                 Return New Page(Of T)(New List(Of T), pageNumber, maxPerPage, 0, 0)
             End If
 
-            ' SQL paging query (unordered)
             Dim sql = $"
             SELECT * FROM (
                 SELECT *, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS RowNum
@@ -1348,8 +1347,10 @@ Friend Class SqlServerOrm
                     While reader.Read()
                         Dim obj = Activator.CreateInstance(Of T)()
                         For Each prop In typeT.GetProperties().Where(Function(p) p.CanWrite AndAlso Not IsGenericList(p.PropertyType))
-                            If Not reader.IsDBNull(reader.GetOrdinal(prop.Name)) Then
-                                prop.SetValue(obj, Convert.ChangeType(reader(prop.Name), prop.PropertyType))
+                            If ColumnExists(reader, prop.Name) AndAlso Not reader.IsDBNull(reader.GetOrdinal(prop.Name)) Then
+                                Dim rawVal = reader(prop.Name)
+                                Dim safeVal = GetSafeEnumValue(prop.PropertyType, rawVal)
+                                prop.SetValue(obj, safeVal)
                             End If
                         Next
                         records.Add(obj)
@@ -1357,7 +1358,7 @@ Friend Class SqlServerOrm
                 End Using
             End Using
 
-            ' Load child collections for each parent
+            ' Load child collections
             For Each obj In records
                 For Each prop In typeT.GetProperties().Where(Function(p) IsGenericList(p.PropertyType) AndAlso p.CanWrite)
                     Dim childType = prop.PropertyType.GetGenericArguments()(0)
@@ -1373,8 +1374,10 @@ Friend Class SqlServerOrm
                             While reader.Read()
                                 Dim childObj = Activator.CreateInstance(childType)
                                 For Each cp In childType.GetProperties().Where(Function(p) p.CanWrite AndAlso Not IsGenericList(p.PropertyType))
-                                    If Not reader.IsDBNull(reader.GetOrdinal(cp.Name)) Then
-                                        cp.SetValue(childObj, Convert.ChangeType(reader(cp.Name), cp.PropertyType))
+                                    If ColumnExists(reader, cp.Name) AndAlso Not reader.IsDBNull(reader.GetOrdinal(cp.Name)) Then
+                                        Dim rawVal = reader(cp.Name)
+                                        Dim safeVal = GetSafeEnumValue(cp.PropertyType, rawVal)
+                                        cp.SetValue(childObj, safeVal)
                                     End If
                                 Next
                                 childList.Add(childObj)
@@ -1386,15 +1389,17 @@ Friend Class SqlServerOrm
             Next
         End Using
 
-        ' 🔁 Sort the in-memory results AFTER paging
-        Dim sortedRecords = If(ascending,
-        records.OrderBy(Function(r) typeT.GetProperty(idColumn).GetValue(r)).ToList(),
-        records.OrderByDescending(Function(r) typeT.GetProperty(idColumn).GetValue(r)).ToList()
-    )
+        ' Sort records in-memory after paging
+        Dim idProp = typeT.GetProperty(idColumn)
+        If idProp IsNot Nothing Then
+            records = If(ascending,
+                     records.OrderBy(Function(x) idProp.GetValue(x)).ToList(),
+                     records.OrderByDescending(Function(x) idProp.GetValue(x)).ToList())
+        End If
 
         Dim pageCount = CInt(Math.Ceiling(totalRecords / CDbl(maxPerPage)))
+        Return New Page(Of T)(records, pageNumber, maxPerPage, totalRecords, pageCount)
 
-        Return New Page(Of T)(sortedRecords, pageNumber, maxPerPage, totalRecords, pageCount)
     End Function
 
 #End Region
