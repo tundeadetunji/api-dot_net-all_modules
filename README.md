@@ -19,6 +19,144 @@ Following are usage examples.
 <br/>
 <br/>
 
+
+
+---
+
+## SequelOrm
+Lightweight ORM.
+- ﻿SqlServer is currently the only supported database provider; this implementation was tested on it.
+- Support for PostgreSql and MySql, as well as Logging and Transaction Isolation Levels, are actively WIP.
+- Parent-to-child foreign key convention is {ParentTypeName}_{idColumn} (e.g. Person {Id, Name, List(Of Phone)} => Phone {Id, Person_Id, PhoneNumber}).
+- Supports 1 : many (e.g. 1 Person can have many Phones); the rest are actively WIP and may not work as expected if implemented in this version.
+- Direct support for Enum types is actively WIP; workaround is to explicitly use Integer instead of the enum property (or an appropriate string type, if not using the numeric/ordinal value), for instance, if your class contains an enum of AccountType, use Public Property Account As Integer, not Public Property Account As AccountType
+- Picks up non read-only properties only, and ignores RowVersion property if it doesnt exist.
+- Finally, you may need to install appropriate Sql Clients or Providers from nuget.org, e.g. System.Data.SqlClient.
+
+C#:
+```csharp
+using iNovation.Code;
+
+// prerequisites
+SupportedDbProvider provider = SupportedDbProvider.SqlServer; // others are WIP
+string connectionString = "my connection string";
+
+// the sync version
+IOrm orm = SequelOrm.GetInstance(provider, connectionString);
+
+// create a Person object
+List<Phone> amyPhoneNumbers = new List<Phone> { new Phone { PhoneNumber = "01 001 AMY" } };
+Person amy = new Person { Name = "Amy", Phones = amyPhoneNumbers };
+
+// create a Person record
+Person created = orm.Create<Person>(amy);
+
+// find records of Person by sepcified conditions - the paged version
+Condition condition = new Condition { Column = "PhoneNumber", SqlComparison = SqlComparisonOperator.SqlEquals, Value = "01 001 AMY" };
+Page<Person> sought = orm.FindByPaged<Person>(new List<Condition> { condition }, 1, 10);
+// retrieve the results by
+List<Person> found = sought.Records;
+
+
+// for the async version
+IOrmAsync ormAsync = SequelOrmAsync.GetInstance(provider, connectionString);
+
+// just call the async version of the methods, e.g.
+Person createdByAsync = await ormAsync.CreateAsync<Person>(amy);
+
+
+// please read the individual classes' documentations for important information.
+
+// the above is based on these entities:
+
+using iNovation.Code;
+
+public class Person {
+public int Id { get; set; }
+
+[SqlType("NVARCHAR(100)")]
+public string Name { get; set; }
+public List<Phone> Phones { get; set; } = new List<Phone>();
+
+public override string ToString()
+{
+    return Name + " (Id: " + Id + ")";
+}
+
+public class Phone {
+    public int Id { get; set; }
+    public int Person_Id { get; set; }
+    public string PhoneNumber { get; set; }
+    public override string ToString()
+    {
+        return PhoneNumber;
+    }
+}
+```
+VB:
+```vbnet
+Imports iNovation.Code
+
+' prerequisites
+Dim provider As SupportedDbProvider = SupportedDbProvider.SqlServer ' other providers are WIP
+Dim connectionString As String = "my connection string"
+
+
+' the sync version
+Dim orm As IOrm = SequelOrm.GetInstance(provider, connectionString)
+
+' create a Person object
+Dim amyPhoneNumbers As New List(Of Phone) From {New Phone With {.PhoneNumber = "01 001 AMY"}}
+Dim amy As New Person With {.Name = "Amy", .Phones = amyPhoneNumbers}
+
+
+' create a Person record
+Dim created As Person = orm.Create(Of Person)(amy)
+
+' find records of Person by specified conditions - the paged version
+Dim conditions As New List(Of Condition) From {New Condition With {.Column = "PhoneNumber", .SqlComparison = SqlComparisonOperator.SqlEquals, .Value = "01 001 AMY"}}
+Dim sought As Page(Of Person) = orm.FindByPaged(Of Person)(conditions, 1, 10)
+' retrieve the results by
+Dim found As List(Of Person) = sought.Records
+
+
+' for the async version
+Dim ormAsync As IOrmAsync = SequelOrmAsync.GetInstance(provider, connectionString)
+
+' just call the async version of the methods, e.g.
+Dim personCreatedByAsync As Person = Await ormAsync.CreateAsync(Of Person)(amy)
+
+
+' please read the individual classes' documentations for important information.
+
+' the above is based on these entities:
+Imports iNovation.Code
+
+Public Class Person
+    Public Property Id As Integer
+
+    <SqlType("NVARCHAR(100)")>
+    Public Property Name As String
+    Public Property Phones As List(Of Phone) = New List(Of Phone)
+
+    Public Overrides Function ToString() As String
+        Return Name & " (Id: " & Id & ")"
+    End Function
+
+End Class
+
+Public Class Phone
+    Public Property Id As Integer
+    Public Property Person_Id As Integer
+    Public Property PhoneNumber As String
+    Public Overrides Function ToString() As String
+        Return PhoneNumber
+    End Function
+
+End Class
+```
+
+
 ## Bootstrap
 Contains methods based on Bootstrap, currently 4 but upgrades are WIP.
 
@@ -310,43 +448,6 @@ Dim query As String = iNovation.Code.General.BuildSelectString(table, fields, wh
 
 ' creates a DataTable
 Dim d As DataTable = QDataTable(query, connection_string, where_params_values)
-```
-
-
----
-## SequelOrm
-Lightweight ORM. Joins aren't supported yet, but is actively WIP.
-
-C#:
-```csharp
-using iNovation.Code.SequelOrm //not strictly needed
-
-class User
-{
-    public int id { get; set; }
-    public string username { get; set; }
-}
-
-string connection_string = "Connection_String";
-string database_name = "Database";
-SequelOrm orm = SequelOrm.GetInstance(connection_string, database_name);
-
-User sought = orm.FindById<User>(10);
-```
-VB:
-```vbnet
-Imports iNovation.Code.SequelOrm  rem not strictly needed
-
-Structure User
-    Public id As Integer
-    Public username As String
-End Structure
-
-Dim connection_string As String = "Connection_String"
-Dim database_name As String = "Database"
-Dim orm As SequelOrm = SequelOrm.GetInstance(connection_string, database_name)
-
-Dim sought As User = orm.FindById(Of User)(10)
 ```
 
 ---
