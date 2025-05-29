@@ -1641,6 +1641,7 @@ Friend Class SqlServerOrm
 
 
         If String.IsNullOrEmpty(tableName) Then Throw New ArgumentException("Table Name cannot be null.")
+
         Dim typeT = GetType(T)
         Dim parameterPrefix = _provider.GetParameterPrefix()
 
@@ -1705,7 +1706,9 @@ Friend Class SqlServerOrm
                         Dim instance = Activator.CreateInstance(Of T)()
                         For Each prop In typeT.GetProperties().Where(Function(p) p.CanWrite AndAlso Not IsGenericList(p.PropertyType))
                             If Not reader.IsDBNull(reader.GetOrdinal(prop.Name)) Then
-                                prop.SetValue(instance, reader(prop.Name))
+                                Dim rawValue = reader(prop.Name)
+                                Dim safeValue = GetSafeEnumValue(prop.PropertyType, rawValue)
+                                prop.SetValue(instance, safeValue)
                             End If
                         Next
                         results.Add(instance)
@@ -1827,7 +1830,9 @@ Friend Class SqlServerOrm
                         Dim instance = Activator.CreateInstance(Of T)()
                         For Each prop In typeT.GetProperties().Where(Function(p) p.CanWrite AndAlso Not IsGenericList(p.PropertyType))
                             If Not reader.IsDBNull(reader.GetOrdinal(prop.Name)) Then
-                                prop.SetValue(instance, reader(prop.Name))
+                                Dim rawValue = reader(prop.Name)
+                                Dim safeValue = GetSafeEnumValue(prop.PropertyType, rawValue)
+                                prop.SetValue(instance, safeValue)
                             End If
                         Next
                         results.Add(instance)

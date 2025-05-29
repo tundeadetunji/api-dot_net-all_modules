@@ -10,16 +10,13 @@
 ''' <br />
 ''' Supports 1 : many (e.g. 1 Person can have many Phones); the rest are actively <b>WIP</b>.
 ''' <br />
-''' Direct support for Enum types is actively <b>WIP</b>. Workaround is to explicitly use Integer instead of the enum property (or an appropriate string type, if not using the numeric/ordinal value),
-''' for instance, if your class contains an enum of AccountType, use <b><i>Public Property Account As Integer</i></b>, <b>not</b> <i>Public Property Account As AccountType</i>, 
-''' <br />
 ''' Picks up non read-only properties only, and ignores RowVersion property if it doesnt exist.
 ''' <br />
 ''' You may need to install appropriate Sql Clients or Providers from nuget.org, e.g. System.Data.SqlClient.
 ''' </summary>
 ''' <remarks>
 ''' Author: Tunde Adetunji (tundeadetunji2017@gmail.com)
-''' Date: May 3, 2025
+''' Date: May 30, 2025
 ''' </remarks>
 Public Interface IOrmDocs
 
