@@ -86,6 +86,48 @@ Public Interface IOrmAsync
     Function CreateInTableAsync(Of T)(objs As List(Of T), tableName As String, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True) As Task(Of List(Of T))
 #End Region
 
+#Region "Exists"
+
+    ''' <summary>
+    ''' Use this if the name of the class is the same as the name of the table.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="id"></param>
+    ''' <param name="idColumn"></param>
+    ''' <returns></returns>
+    Function ExistsByIdAsync(Of T)(id As Object, Optional idColumn As String = "Id") As Task(Of Boolean)
+
+    ''' <summary>
+    ''' Use this if the name of the class is not the same as the name of the table.
+    ''' </summary>
+    ''' <param name="id"></param>
+    ''' <param name="tableName"></param>
+    ''' <param name="idColumn"></param>
+    ''' <returns></returns>
+    Function ExistsByIdInTableAsync(id As Object, tableName As String, Optional idColumn As String = "Id") As Task(Of Boolean)
+
+#End Region
+
+#Region "ExistsBy"
+    ''' <summary>
+    ''' Use this if the name of the class is the same as the name of the table.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="conditions"></param>
+    ''' <returns></returns>
+
+    Function ExistsByAsync(Of T)(conditions As List(Of Condition)) As Task(Of Boolean)
+    ''' <summary>
+    ''' Use this if the name of the class is not the same as the name of the table.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="conditions"></param>
+    ''' <param name="tableName"></param>
+    ''' <returns></returns>
+    Function ExistsByInTableAsync(Of T)(conditions As List(Of Condition), tableName As String) As Task(Of Boolean)
+
+#End Region
+
 #Region "Delete"
 
     ''' <summary>
@@ -189,34 +231,8 @@ Public Interface IOrmAsync
 
 #End Region
 
-#Region "CreateOrUpdate"
+#Region "FindById"
 
-    ''' <summary>
-    ''' Use this if the name of the class is the same as the name of the table.
-    ''' Creates record if it doesn't exist, Updates otherwise.
-    ''' Uses Transaction.
-    ''' </summary>
-    ''' <typeparam name="T"></typeparam>
-    ''' <param name="obj"></param>
-    ''' <param name="idColumn"></param>
-    ''' <param name="IdWillAutoIncrement"></param>
-    ''' <returns></returns>
-    Function CreateOrUpdateAsync(Of T)(obj As T, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True) As Task(Of T)
-    ''' <summary>
-    ''' Use this if the name of the class is not the same as the name of the table.
-    ''' Creates record if it doesn't exist, Updates otherwise.
-    ''' Uses Transaction.
-    ''' </summary>
-    ''' <typeparam name="T"></typeparam>
-    ''' <param name="obj"></param>
-    ''' <param name="tableName"></param>
-    ''' <param name="idColumn"></param>
-    ''' <param name="IdWillAutoIncrement"></param>
-    ''' <returns></returns>
-    Function CreateOrUpdateInTableAsync(Of T)(obj As T, tableName As String, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True) As Task(Of T)
-#End Region
-
-#Region "Exists"
 
     ''' <summary>
     ''' Use this if the name of the class is the same as the name of the table.
@@ -225,36 +241,17 @@ Public Interface IOrmAsync
     ''' <param name="id"></param>
     ''' <param name="idColumn"></param>
     ''' <returns></returns>
-    Function ExistsByIdAsync(Of T)(id As Object, Optional idColumn As String = "Id") As Task(Of Boolean)
+    Function FindByIdAsync(Of T)(id As Object, Optional idColumn As String = "Id") As Task(Of T)
 
     ''' <summary>
     ''' Use this if the name of the class is not the same as the name of the table.
     ''' </summary>
+    ''' <typeparam name="T"></typeparam>
     ''' <param name="id"></param>
     ''' <param name="tableName"></param>
     ''' <param name="idColumn"></param>
     ''' <returns></returns>
-    Function ExistsByIdInTableAsync(id As Object, tableName As String, Optional idColumn As String = "Id") As Task(Of Boolean)
-
-#End Region
-
-#Region "ExistsBy"
-    ''' <summary>
-    ''' Use this if the name of the class is the same as the name of the table.
-    ''' </summary>
-    ''' <typeparam name="T"></typeparam>
-    ''' <param name="conditions"></param>
-    ''' <returns></returns>
-
-    Function ExistsByAsync(Of T)(conditions As List(Of Condition)) As Task(Of Boolean)
-    ''' <summary>
-    ''' Use this if the name of the class is not the same as the name of the table.
-    ''' </summary>
-    ''' <typeparam name="T"></typeparam>
-    ''' <param name="conditions"></param>
-    ''' <param name="tableName"></param>
-    ''' <returns></returns>
-    Function ExistsByInTableAsync(Of T)(conditions As List(Of Condition), tableName As String) As Task(Of Boolean)
+    Function FindByIdInTableAsync(Of T)(id As Object, tableName As String, Optional idColumn As String = "Id") As Task(Of T)
 
 #End Region
 
@@ -301,30 +298,6 @@ Public Interface IOrmAsync
     ''' <param name="ascending"></param>
     ''' <returns></returns>
     Function FindAllPagedInTableAsync(Of T)(tableName As String, pageNumber As Integer, maxPerPage As Integer, Optional idColumn As String = "Id", Optional ascending As Boolean = True) As Task(Of Page(Of T))
-
-#End Region
-
-#Region "FindById"
-
-
-    ''' <summary>
-    ''' Use this if the name of the class is the same as the name of the table.
-    ''' </summary>
-    ''' <typeparam name="T"></typeparam>
-    ''' <param name="id"></param>
-    ''' <param name="idColumn"></param>
-    ''' <returns></returns>
-    Function FindByIdAsync(Of T)(id As Object, Optional idColumn As String = "Id") As Task(Of T)
-
-    ''' <summary>
-    ''' Use this if the name of the class is not the same as the name of the table.
-    ''' </summary>
-    ''' <typeparam name="T"></typeparam>
-    ''' <param name="id"></param>
-    ''' <param name="tableName"></param>
-    ''' <param name="idColumn"></param>
-    ''' <returns></returns>
-    Function FindByIdInTableAsync(Of T)(id As Object, tableName As String, Optional idColumn As String = "Id") As Task(Of T)
 
 #End Region
 
@@ -395,6 +368,33 @@ Public Interface IOrmAsync
     ''' <param name="idColumn"></param>
     ''' <returns></returns>
     Function UpdateInTableAsync(Of T)(obj As T, tableName As String, Optional idColumn As String = "Id") As Task(Of T)
+#End Region
+
+#Region "CreateOrUpdate"
+
+    ''' <summary>
+    ''' Use this if the name of the class is the same as the name of the table.
+    ''' Creates record if it doesn't exist, Updates otherwise.
+    ''' Uses Transaction.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="obj"></param>
+    ''' <param name="idColumn"></param>
+    ''' <param name="IdWillAutoIncrement"></param>
+    ''' <returns></returns>
+    Function CreateOrUpdateAsync(Of T)(obj As T, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True) As Task(Of T)
+    ''' <summary>
+    ''' Use this if the name of the class is not the same as the name of the table.
+    ''' Creates record if it doesn't exist, Updates otherwise.
+    ''' Uses Transaction.
+    ''' </summary>
+    ''' <typeparam name="T"></typeparam>
+    ''' <param name="obj"></param>
+    ''' <param name="tableName"></param>
+    ''' <param name="idColumn"></param>
+    ''' <param name="IdWillAutoIncrement"></param>
+    ''' <returns></returns>
+    Function CreateOrUpdateInTableAsync(Of T)(obj As T, tableName As String, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True) As Task(Of T)
 #End Region
 
 End Interface

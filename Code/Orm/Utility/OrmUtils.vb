@@ -8,75 +8,6 @@ Friend Class OrmUtils
     Private Const Id As String = "Id"
 #End Region
 
-#Region "support"
-    Private Shared Function BuildCreateTableSql(entityType As Type, idColumn As String) As String
-        Dim tableName As String = entityType.Name
-        Dim columns As New List(Of String)
-
-        For Each prop In entityType.GetProperties()
-            ' Ignore child collections
-            If GetType(System.Collections.IEnumerable).IsAssignableFrom(prop.PropertyType) AndAlso prop.PropertyType IsNot GetType(String) Then
-                Continue For
-            End If
-
-            Dim columnName = prop.Name
-            Dim sqlType = MapToSqlType(prop)
-
-            If columnName.Equals(idColumn, StringComparison.OrdinalIgnoreCase) Then
-                columns.Add($"{columnName} {sqlType} PRIMARY KEY IDENTITY(1,1)")
-            ElseIf columnName.Equals("RowVersion", StringComparison.OrdinalIgnoreCase) Then
-                columns.Add($"{columnName} ROWVERSION")
-            Else
-                columns.Add($"{columnName} {sqlType}")
-            End If
-        Next
-
-        Dim columnsSql = String.Join(", ", columns)
-        Return $"CREATE TABLE [{tableName}] ({columnsSql});"
-    End Function
-    Private Shared Function BuildAlterTableSql(entityType As Type, idColumn As String, connection As IDbConnection, transaction As IDbTransaction) As String
-        Dim tableName As String = entityType.Name
-        Dim existingColumns As New HashSet(Of String)
-
-        ' Fetch current columns from database
-        Using cmd = connection.CreateCommand()
-            cmd.Transaction = transaction
-            cmd.CommandText = $"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{tableName}'"
-            Using reader = cmd.ExecuteReader()
-                While reader.Read()
-                    existingColumns.Add(reader.GetString(0))
-                End While
-            End Using
-        End Using
-
-        Dim alterStatements As New List(Of String)
-
-        For Each prop In entityType.GetProperties()
-            ' Ignore child collections
-            If GetType(System.Collections.IEnumerable).IsAssignableFrom(prop.PropertyType) AndAlso prop.PropertyType IsNot GetType(String) Then
-                Continue For
-            End If
-
-            Dim columnName = prop.Name
-
-            If Not existingColumns.Contains(columnName) Then
-                Dim sqlType = MapToSqlType(prop)
-
-                If columnName.Equals(idColumn, StringComparison.OrdinalIgnoreCase) Then
-                    ' ID column already exists most likely, skip
-                    Continue For
-                ElseIf columnName.Equals("RowVersion", StringComparison.OrdinalIgnoreCase) Then
-                    alterStatements.Add($"ALTER TABLE [{tableName}] ADD [{columnName}] ROWVERSION;")
-                Else
-                    alterStatements.Add($"ALTER TABLE [{tableName}] ADD [{columnName}] {sqlType};")
-                End If
-            End If
-        Next
-
-        Return String.Join(Environment.NewLine, alterStatements)
-    End Function
-
-#End Region
 
 #Region "sync"
 
@@ -412,41 +343,84 @@ Friend Class OrmUtils
         Return list
     End Function
 
-    Friend Shared Async Function CreateOrUpdateTableRecursiveAsync(entityType As Type, idColumn As String, mode As DbPrepMode, connection As IDbConnection, transaction As IDbTransaction, executedTables As HashSet(Of String)) As Task
+    Friend Shared Async Function CreateOrUpdateTableRecursiveAsync(entityType As Type, idColumn As String, mode As DbPrepMode, connection As DbConnection, transaction As DbTransaction, executedTables As HashSet(Of String)) As Task
         Dim tableName = entityType.Name
-
-        ' Prevent processing the same table multiple times (due to recursion)
-        If executedTables.Contains(tableName) Then
-            Return
-        End If
-
+        If executedTables.Contains(tableName) Then Return
         executedTables.Add(tableName)
 
-        ' Check for child collections first and recurse
-        For Each prop In entityType.GetProperties()
-            If GetType(System.Collections.IEnumerable).IsAssignableFrom(prop.PropertyType) AndAlso prop.PropertyType IsNot GetType(String) Then
-                Dim elementType As Type = If(prop.PropertyType.IsGenericType, prop.PropertyType.GetGenericArguments()(0), prop.PropertyType.GetElementType())
-                If elementType IsNot Nothing AndAlso elementType IsNot GetType(Byte) Then
-                    Await CreateOrUpdateTableRecursiveAsync(elementType, idColumn, mode, connection, transaction, executedTables)
-                End If
+        Dim properties = entityType.GetProperties().Where(Function(p) p.CanRead AndAlso p.CanWrite).ToList()
+
+        ' Recursively handle child collections first
+        For Each prop In properties.Where(Function(p) IsGenericList(p.PropertyType))
+            Dim childType = prop.PropertyType.GetGenericArguments()(0)
+            Await CreateOrUpdateTableRecursiveAsync(childType, idColumn, mode, connection, transaction, executedTables)
+        Next
+
+        If mode = DbPrepMode.Create Then
+            Dim dropSql = $"IF OBJECT_ID('[{tableName}]', 'U') IS NOT NULL DROP TABLE [{tableName}];"
+            Await ExecuteNonQueryAsync(dropSql, connection, transaction)
+        End If
+
+        ' Verify ID column exists
+        If Not properties.Any(Function(p) p.Name = idColumn) Then
+            Throw New InvalidOperationException($"Type {entityType.Name} must define a property named '{idColumn}' as primary key.")
+        End If
+
+        ' Build column definitions
+        Dim columnDefs As New List(Of String)
+        For Each prop In properties
+            If IsGenericList(prop.PropertyType) Then Continue For
+
+            Dim columnName = prop.Name
+            Dim dbType = MapToSqlType(prop)
+
+            If columnName = idColumn Then
+                columnDefs.Add($"[{columnName}] INT IDENTITY(1,1) PRIMARY KEY")
+            ElseIf columnName = "RowVersion" AndAlso prop.PropertyType = GetType(Byte()) Then
+                columnDefs.Add("[RowVersion] ROWVERSION")
+            Else
+                columnDefs.Add($"[{columnName}] {dbType}")
             End If
         Next
 
-        ' Build SQL
-        Dim sql As String = Nothing
-        Select Case mode
-            Case DbPrepMode.Create
-                sql = BuildCreateTableSql(entityType, idColumn)
-            Case DbPrepMode.Update
-                sql = BuildAlterTableSql(entityType, idColumn, connection, transaction)
-        End Select
+        ' Add foreign key columns for child types
+        For Each prop In properties
+            If IsGenericList(prop.PropertyType) Then
+                Dim childType = prop.PropertyType.GetGenericArguments()(0)
+                Dim childTable = childType.Name
+                Dim fkColumn = $"{tableName}_{idColumn}"
+                Dim alterSql = $"IF COL_LENGTH('[{childTable}]', '{fkColumn}') IS NULL BEGIN " &
+                           $"ALTER TABLE [{childTable}] ADD [{fkColumn}] INT; " &
+                           $"ALTER TABLE [{childTable}] ADD CONSTRAINT FK_{childTable}_{fkColumn} " &
+                           $"FOREIGN KEY([{fkColumn}]) REFERENCES [{tableName}]([{idColumn}]) ON DELETE CASCADE; END"
+                Await ExecuteNonQueryAsync(alterSql, connection, transaction)
+            End If
+        Next
 
-        If Not String.IsNullOrEmpty(sql) Then
-            Using command = connection.CreateCommand()
-                command.Transaction = transaction
-                command.CommandText = sql
-                Await CType(command, DbCommand).ExecuteNonQueryAsync()
+        ' Create or update table
+        If mode = DbPrepMode.Create Then
+            Dim createSql = $"CREATE TABLE [{tableName}] ({String.Join(", ", columnDefs)});"
+            Await ExecuteNonQueryAsync(createSql, connection, transaction)
+        ElseIf mode = DbPrepMode.Update Then
+            ' Get existing columns
+            Dim existingColumns As New HashSet(Of String)
+            Using cmd = connection.CreateCommand()
+                cmd.Transaction = transaction
+                cmd.CommandText = $"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{tableName}'"
+                Using reader = Await cmd.ExecuteReaderAsync()
+                    While Await reader.ReadAsync()
+                        existingColumns.Add(reader.GetString(0))
+                    End While
+                End Using
             End Using
+
+            For Each def In columnDefs
+                Dim columnName = def.Split(" "c)(0).Trim("["c, "]"c)
+                If columnName = idColumn OrElse existingColumns.Contains(columnName) Then Continue For
+
+                Dim alterSql = $"ALTER TABLE [{tableName}] ADD {def};"
+                Await ExecuteNonQueryAsync(alterSql, connection, transaction)
+            Next
         End If
     End Function
     Friend Shared Async Function HasCascadeDeleteConstraintAsync(tableName As String, connection As IDbConnection, transaction As IDbTransaction, _provider As IDbProvider) As Task(Of Boolean)
@@ -467,5 +441,88 @@ Friend Class OrmUtils
     End Function
 
 #End Region
+
+#Region "support async"
+    Private Shared Async Function ExecuteNonQueryAsync(sql As String, connection As DbConnection, transaction As DbTransaction) As Task
+        Using cmd = connection.CreateCommand()
+            cmd.Transaction = transaction
+            cmd.CommandText = sql
+            Await cmd.ExecuteNonQueryAsync()
+        End Using
+    End Function
+
+#End Region
+
+#Region "support sync"
+
+    Private Shared Function BuildCreateTableSql(entityType As Type, idColumn As String) As String
+        Dim tableName As String = entityType.Name
+        Dim columns As New List(Of String)
+
+        For Each prop In entityType.GetProperties()
+            ' Ignore child collections
+            If GetType(System.Collections.IEnumerable).IsAssignableFrom(prop.PropertyType) AndAlso prop.PropertyType IsNot GetType(String) Then
+                Continue For
+            End If
+
+            Dim columnName = prop.Name
+            Dim sqlType = MapToSqlType(prop)
+
+            If columnName.Equals(idColumn, StringComparison.OrdinalIgnoreCase) Then
+                columns.Add($"{columnName} {sqlType} PRIMARY KEY IDENTITY(1,1)")
+            ElseIf columnName.Equals("RowVersion", StringComparison.OrdinalIgnoreCase) Then
+                columns.Add($"{columnName} ROWVERSION")
+            Else
+                columns.Add($"{columnName} {sqlType}")
+            End If
+        Next
+
+        Dim columnsSql = String.Join(", ", columns)
+        Return $"CREATE TABLE [{tableName}] ({columnsSql});"
+    End Function
+    Private Shared Function BuildAlterTableSql(entityType As Type, idColumn As String, connection As IDbConnection, transaction As IDbTransaction) As String
+        Dim tableName As String = entityType.Name
+        Dim existingColumns As New HashSet(Of String)
+
+        ' Fetch current columns from database
+        Using cmd = connection.CreateCommand()
+            cmd.Transaction = transaction
+            cmd.CommandText = $"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{tableName}'"
+            Using reader = cmd.ExecuteReader()
+                While reader.Read()
+                    existingColumns.Add(reader.GetString(0))
+                End While
+            End Using
+        End Using
+
+        Dim alterStatements As New List(Of String)
+
+        For Each prop In entityType.GetProperties()
+            ' Ignore child collections
+            If GetType(System.Collections.IEnumerable).IsAssignableFrom(prop.PropertyType) AndAlso prop.PropertyType IsNot GetType(String) Then
+                Continue For
+            End If
+
+            Dim columnName = prop.Name
+
+            If Not existingColumns.Contains(columnName) Then
+                Dim sqlType = MapToSqlType(prop)
+
+                If columnName.Equals(idColumn, StringComparison.OrdinalIgnoreCase) Then
+                    ' ID column already exists most likely, skip
+                    Continue For
+                ElseIf columnName.Equals("RowVersion", StringComparison.OrdinalIgnoreCase) Then
+                    alterStatements.Add($"ALTER TABLE [{tableName}] ADD [{columnName}] ROWVERSION;")
+                Else
+                    alterStatements.Add($"ALTER TABLE [{tableName}] ADD [{columnName}] {sqlType};")
+                End If
+            End If
+        Next
+
+        Return String.Join(Environment.NewLine, alterStatements)
+    End Function
+
+#End Region
+
 
 End Class

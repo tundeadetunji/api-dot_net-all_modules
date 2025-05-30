@@ -1,7 +1,7 @@
-﻿Imports System.Data.Common
+﻿Imports iNovation.Code.OrmUtils
+Imports System.Data.Common
 Imports System.Data.SqlClient
 Imports System.Threading
-Imports iNovation.Code.OrmUtils
 
 Friend Class SqlServerOrmAsync
     Implements IOrmAsync
@@ -28,8 +28,8 @@ Friend Class SqlServerOrmAsync
 
 #Region "exported"
     Public Async Sub PrepareDatabaseAsync(mode As DbPrepMode, entities As List(Of Type), Optional idColumn As String = Id) Implements IOrmAsync.PrepareDatabaseAsync
-        Using connection = Await _provider.CreateConnectionAsync()
-            Await CType(connection, DbConnection).OpenAsync()
+        Using connection = CType(Await _provider.CreateConnectionAsync(), SqlConnection)
+            Await connection.OpenAsync()
             Using transaction = connection.BeginTransaction()
 
                 Dim executedTables As New HashSet(Of String)
