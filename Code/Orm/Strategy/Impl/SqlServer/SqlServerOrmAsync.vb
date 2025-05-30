@@ -1791,17 +1791,16 @@ Friend Class SqlServerOrmAsync
         If conditions Is Nothing OrElse conditions.Count = 0 Then
             Throw New ArgumentException("Conditions cannot be null or empty.")
         End If
+
         Dim typeT = GetType(T)
         Dim tableName = typeT.Name
         Dim parameterPrefix = _provider.GetParameterPrefix()
 
-        ' Validate page params
         If pageNumber < 1 Then pageNumber = 1
         If maxPerPage < 1 Then maxPerPage = 10
 
-        ' Build WHERE clause
         Dim whereClauses As New List(Of String)
-        Dim parameters As New List(Of SqlParameter)
+        Dim parameters As New List(Of IDataParameter)
 
         For i = 0 To conditions.Count - 1
             Dim c = conditions(i)
@@ -1813,10 +1812,10 @@ Friend Class SqlServerOrmAsync
                 Dim values = DirectCast(c.Value, IEnumerable)
                 Dim subParams As New List(Of String)
                 Dim idx = 0
-                For Each whatever In values
+                For Each value In values
                     Dim subParam = $"{paramName}_{idx}"
                     subParams.Add(subParam)
-                    parameters.Add(Await _provider.CreateParameterAsync(subParam, whatever))
+                    parameters.Add(Await _provider.CreateParameterAsync(subParam, value))
                     idx += 1
                 Next
                 clause = $"[{c.Column}] IN ({String.Join(", ", subParams)})"
@@ -1847,16 +1846,19 @@ Friend Class SqlServerOrmAsync
         Using connection = CType(Await _provider.CreateConnectionAsync(), SqlConnection)
             Await connection.OpenAsync()
 
-            ' Query main page results
             Using command = Await _provider.CreateCommandAsync(sql, connection)
-                command.Parameters.AddRange(parameters.ToArray())
+                For Each param In parameters
+                    command.Parameters.Add(param)
+                Next
 
                 Using reader = Await command.ExecuteReaderAsync()
                     While Await reader.ReadAsync()
                         Dim instance = Activator.CreateInstance(Of T)()
                         For Each prop In typeT.GetProperties().Where(Function(p) p.CanWrite AndAlso Not IsGenericList(p.PropertyType))
-                            If ColumnExists(reader, prop.Name) AndAlso Not Await reader.IsDBNullAsync(reader.GetOrdinal(prop.Name)) Then
-                                prop.SetValue(instance, reader(prop.Name))
+                            If Not Await reader.IsDBNullAsync(reader.GetOrdinal(prop.Name)) Then
+                                Dim rawValue = reader(prop.Name)
+                                Dim safeValue = GetSafeEnumValue(prop.PropertyType, rawValue)
+                                prop.SetValue(instance, safeValue)
                             End If
                         Next
                         results.Add(instance)
@@ -1864,15 +1866,15 @@ Friend Class SqlServerOrmAsync
                 End Using
             End Using
 
-            ' Load child collections
+            ' Load child collections asynchronously
             For Each parent In results
                 For Each prop In typeT.GetProperties().Where(Function(p) IsGenericList(p.PropertyType))
                     Dim childType = prop.PropertyType.GetGenericArguments()(0)
                     Dim childTable = childType.Name
                     Dim childFk = $"{tableName}_Id"
                     Dim parentId = typeT.GetProperty("Id")?.GetValue(parent)
-                    Dim childSql = $"SELECT * FROM [{childTable}] WHERE [{childFk}] = {parameterPrefix}parentId"
 
+                    Dim childSql = $"SELECT * FROM [{childTable}] WHERE [{childFk}] = {parameterPrefix}parentId"
                     Using childCmd = Await _provider.CreateCommandAsync(childSql, connection)
                         childCmd.Parameters.Add(Await _provider.CreateParameterAsync($"{parameterPrefix}parentId", parentId))
 
@@ -1881,8 +1883,9 @@ Friend Class SqlServerOrmAsync
                             While Await childReader.ReadAsync()
                                 Dim childInstance = Activator.CreateInstance(childType)
                                 For Each cp In childType.GetProperties().Where(Function(p) p.CanWrite AndAlso Not IsGenericList(p.PropertyType))
-                                    If ColumnExists(childReader, cp.Name) AndAlso Not Await childReader.IsDBNullAsync(childReader.GetOrdinal(cp.Name)) Then
-                                        cp.SetValue(childInstance, childReader(cp.Name))
+                                    If Not Await childReader.IsDBNullAsync(childReader.GetOrdinal(cp.Name)) Then
+                                        Dim rawVal = childReader(cp.Name)
+                                        cp.SetValue(childInstance, GetSafeEnumValue(cp.PropertyType, rawVal))
                                     End If
                                 Next
                                 DirectCast(childList, IList).Add(childInstance)
@@ -1893,19 +1896,19 @@ Friend Class SqlServerOrmAsync
                 Next
             Next
 
-            ' Count query
+            ' Get total count
             Dim countSql = $"SELECT COUNT(1) FROM [{tableName}] {whereSql}"
             Dim totalCount As Long
             Using countCmd = Await _provider.CreateCommandAsync(countSql, connection)
                 For Each param In parameters
                     countCmd.Parameters.Add(Await _provider.CloneParameterAsync(param))
                 Next
-                totalCount = Convert.ToInt64(Await countCmd.ExecuteScalarAsync())
+                Dim countResult = Await countCmd.ExecuteScalarAsync()
+                totalCount = Convert.ToInt64(countResult)
             End Using
 
-            Dim pageCount = Math.Ceiling(totalCount / maxPerPage)
-
-            Return New Page(Of T)(results, pageNumber, maxPerPage, totalCount, CInt(pageCount))
+            Dim pageCount = CInt(Math.Ceiling(totalCount / maxPerPage))
+            Return New Page(Of T)(results, pageNumber, maxPerPage, totalCount, pageCount)
         End Using
     End Function
 
@@ -1918,13 +1921,11 @@ Friend Class SqlServerOrmAsync
         Dim typeT = GetType(T)
         Dim parameterPrefix = _provider.GetParameterPrefix()
 
-        ' Validate page params
         If pageNumber < 1 Then pageNumber = 1
         If maxPerPage < 1 Then maxPerPage = 10
 
-        ' Build WHERE clause
         Dim whereClauses As New List(Of String)
-        Dim parameters As New List(Of SqlParameter)
+        Dim parameters As New List(Of IDataParameter)
 
         For i = 0 To conditions.Count - 1
             Dim c = conditions(i)
@@ -1936,10 +1937,10 @@ Friend Class SqlServerOrmAsync
                 Dim values = DirectCast(c.Value, IEnumerable)
                 Dim subParams As New List(Of String)
                 Dim idx = 0
-                For Each whatever In values
+                For Each value In values
                     Dim subParam = $"{paramName}_{idx}"
                     subParams.Add(subParam)
-                    parameters.Add(Await _provider.CreateParameterAsync(subParam, whatever))
+                    parameters.Add(Await _provider.CreateParameterAsync(subParam, value))
                     idx += 1
                 Next
                 clause = $"[{c.Column}] IN ({String.Join(", ", subParams)})"
@@ -1970,16 +1971,19 @@ Friend Class SqlServerOrmAsync
         Using connection = CType(Await _provider.CreateConnectionAsync(), SqlConnection)
             Await connection.OpenAsync()
 
-            ' Query main page results
             Using command = Await _provider.CreateCommandAsync(sql, connection)
-                command.Parameters.AddRange(parameters.ToArray())
+                For Each param In parameters
+                    command.Parameters.Add(param)
+                Next
 
                 Using reader = Await command.ExecuteReaderAsync()
                     While Await reader.ReadAsync()
                         Dim instance = Activator.CreateInstance(Of T)()
                         For Each prop In typeT.GetProperties().Where(Function(p) p.CanWrite AndAlso Not IsGenericList(p.PropertyType))
-                            If ColumnExists(reader, prop.Name) AndAlso Not Await reader.IsDBNullAsync(reader.GetOrdinal(prop.Name)) Then
-                                prop.SetValue(instance, reader(prop.Name))
+                            If Not Await reader.IsDBNullAsync(reader.GetOrdinal(prop.Name)) Then
+                                Dim rawValue = reader(prop.Name)
+                                Dim safeValue = GetSafeEnumValue(prop.PropertyType, rawValue)
+                                prop.SetValue(instance, safeValue)
                             End If
                         Next
                         results.Add(instance)
@@ -1987,15 +1991,15 @@ Friend Class SqlServerOrmAsync
                 End Using
             End Using
 
-            ' Load child collections
+            ' Load child collections asynchronously
             For Each parent In results
                 For Each prop In typeT.GetProperties().Where(Function(p) IsGenericList(p.PropertyType))
                     Dim childType = prop.PropertyType.GetGenericArguments()(0)
                     Dim childTable = childType.Name
                     Dim childFk = $"{tableName}_Id"
                     Dim parentId = typeT.GetProperty("Id")?.GetValue(parent)
-                    Dim childSql = $"SELECT * FROM [{childTable}] WHERE [{childFk}] = {parameterPrefix}parentId"
 
+                    Dim childSql = $"SELECT * FROM [{childTable}] WHERE [{childFk}] = {parameterPrefix}parentId"
                     Using childCmd = Await _provider.CreateCommandAsync(childSql, connection)
                         childCmd.Parameters.Add(Await _provider.CreateParameterAsync($"{parameterPrefix}parentId", parentId))
 
@@ -2004,8 +2008,9 @@ Friend Class SqlServerOrmAsync
                             While Await childReader.ReadAsync()
                                 Dim childInstance = Activator.CreateInstance(childType)
                                 For Each cp In childType.GetProperties().Where(Function(p) p.CanWrite AndAlso Not IsGenericList(p.PropertyType))
-                                    If ColumnExists(childReader, cp.Name) AndAlso Not Await childReader.IsDBNullAsync(childReader.GetOrdinal(cp.Name)) Then
-                                        cp.SetValue(childInstance, childReader(cp.Name))
+                                    If Not Await childReader.IsDBNullAsync(childReader.GetOrdinal(cp.Name)) Then
+                                        Dim rawVal = childReader(cp.Name)
+                                        cp.SetValue(childInstance, GetSafeEnumValue(cp.PropertyType, rawVal))
                                     End If
                                 Next
                                 DirectCast(childList, IList).Add(childInstance)
@@ -2016,19 +2021,19 @@ Friend Class SqlServerOrmAsync
                 Next
             Next
 
-            ' Count query
+            ' Get total count
             Dim countSql = $"SELECT COUNT(1) FROM [{tableName}] {whereSql}"
             Dim totalCount As Long
             Using countCmd = Await _provider.CreateCommandAsync(countSql, connection)
                 For Each param In parameters
                     countCmd.Parameters.Add(Await _provider.CloneParameterAsync(param))
                 Next
-                totalCount = Convert.ToInt64(Await countCmd.ExecuteScalarAsync())
+                Dim countResult = Await countCmd.ExecuteScalarAsync()
+                totalCount = Convert.ToInt64(countResult)
             End Using
 
-            Dim pageCount = Math.Ceiling(totalCount / maxPerPage)
-
-            Return New Page(Of T)(results, pageNumber, maxPerPage, totalCount, CInt(pageCount))
+            Dim pageCount = CInt(Math.Ceiling(totalCount / maxPerPage))
+            Return New Page(Of T)(results, pageNumber, maxPerPage, totalCount, pageCount)
         End Using
     End Function
 
