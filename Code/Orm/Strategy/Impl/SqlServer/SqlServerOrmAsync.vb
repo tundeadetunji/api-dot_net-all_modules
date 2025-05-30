@@ -1493,117 +1493,89 @@ Friend Class SqlServerOrmAsync
 
         Return New Page(Of T)(sortedRecords, pageNumber, maxPerPage, totalRecords, pageCount)
     End Function
+
     Public Async Function FindByIdAsync(Of T)(id As Object, Optional idColumn As String = "Id") As Task(Of T) Implements IOrmAsync.FindByIdAsync
         Dim typeT = GetType(T)
-        Dim tableName = typeT.Name
+        Dim tableName As String = typeT.Name
         Dim parameterPrefix = _provider.GetParameterPrefix()
-        Dim query = $"SELECT * FROM [{tableName}] WHERE [{idColumn}] = {parameterPrefix}id"
+        Dim query As String = $"SELECT * FROM [{tableName}] WHERE [{idColumn}] = {parameterPrefix}id"
 
         Dim obj As T = Nothing
 
-        Using connection = CType(Await _provider.CreateConnectionAsync(), SqlConnection)
-            Await connection.OpenAsync()
+        Using connection = Await _provider.CreateConnectionAsync()
+            Await DirectCast(connection, DbConnection).OpenAsync()
 
-            Using command = Await _provider.CreateCommandAsync(query, connection)
+            Using command = Await _provider.CreateCommandAsync(query, CType(connection, SqlConnection))
                 command.Parameters.Add(Await _provider.CreateParameterAsync($"{parameterPrefix}id", id))
 
-                Using reader = Await command.ExecuteReaderAsync()
+                Using reader = Await DirectCast(command, DbCommand).ExecuteReaderAsync()
                     If Await reader.ReadAsync() Then
                         obj = Activator.CreateInstance(Of T)()
+
                         For Each prop In typeT.GetProperties().Where(Function(p) p.CanWrite AndAlso Not IsGenericList(p.PropertyType))
                             If ColumnExists(reader, prop.Name) AndAlso Not Await reader.IsDBNullAsync(reader.GetOrdinal(prop.Name)) Then
-                                prop.SetValue(obj, Convert.ChangeType(reader(prop.Name), prop.PropertyType))
+                                Dim rawValue = reader(prop.Name)
+                                Dim safeValue = GetSafeEnumValue(prop.PropertyType, rawValue)
+                                prop.SetValue(obj, safeValue)
                             End If
                         Next
                     End If
-                End Using
-            End Using
+                End Using ' reader
+            End Using ' command
 
-            ' Now fetch child collections if any
+            ' Now fetch child collections
             If obj IsNot Nothing Then
-                For Each prop In typeT.GetProperties().Where(Function(p) IsGenericList(p.PropertyType) AndAlso p.CanWrite)
+                For Each prop In typeT.GetProperties().Where(Function(p) p.CanWrite AndAlso IsGenericList(p.PropertyType))
                     Dim childType = prop.PropertyType.GetGenericArguments()(0)
-                    Dim childTable = childType.Name
                     Dim foreignKey = $"{tableName}_{idColumn}"
-
-                    Dim childQuery = $"SELECT * FROM [{childTable}] WHERE [{foreignKey}] = {parameterPrefix}ParentId"
-                    Using childCmd = Await _provider.CreateCommandAsync(childQuery, connection)
-                        childCmd.Parameters.Add(Await _provider.CreateParameterAsync($"{parameterPrefix}ParentId", id))
-
-                        Using reader = Await childCmd.ExecuteReaderAsync()
-                            Dim childList = CType(Activator.CreateInstance(prop.PropertyType), IList)
-                            While Await reader.ReadAsync()
-                                Dim childObj = Activator.CreateInstance(childType)
-                                For Each cp In childType.GetProperties().Where(Function(p) p.CanWrite AndAlso Not IsGenericList(p.PropertyType))
-                                    If ColumnExists(reader, cp.Name) AndAlso Not Await reader.IsDBNullAsync(reader.GetOrdinal(cp.Name)) Then
-                                        cp.SetValue(childObj, Convert.ChangeType(reader(cp.Name), cp.PropertyType))
-                                    End If
-                                Next
-                                childList.Add(childObj)
-                            End While
-                            prop.SetValue(obj, childList)
-                        End Using
-                    End Using
+                    Dim childList = Await GetChildRecordsAsync(connection, id, tableName, idColumn, childType, foreignKey, _provider)
+                    prop.SetValue(obj, childList)
                 Next
             End If
-        End Using
+        End Using ' connection
 
         Return obj
     End Function
+
     Public Async Function FindByIdInTableAsync(Of T)(id As Object, tableName As String, Optional idColumn As String = "Id") As Task(Of T) Implements IOrmAsync.FindByIdInTableAsync
         If String.IsNullOrEmpty(tableName) Then Throw New ArgumentException("Table Name cannot be null.")
         Dim typeT = GetType(T)
         Dim parameterPrefix = _provider.GetParameterPrefix()
-        Dim query = $"SELECT * FROM [{tableName}] WHERE [{idColumn}] = {parameterPrefix}id"
+        Dim query As String = $"SELECT * FROM [{tableName}] WHERE [{idColumn}] = {parameterPrefix}id"
 
         Dim obj As T = Nothing
 
-        Using connection = CType(Await _provider.CreateConnectionAsync(), SqlConnection)
-            Await connection.OpenAsync()
+        Using connection = Await _provider.CreateConnectionAsync()
+            Await DirectCast(connection, DbConnection).OpenAsync()
 
-            Using command = Await _provider.CreateCommandAsync(query, connection)
+            Using command = Await _provider.CreateCommandAsync(query, CType(connection, SqlConnection))
                 command.Parameters.Add(Await _provider.CreateParameterAsync($"{parameterPrefix}id", id))
 
-                Using reader = Await command.ExecuteReaderAsync()
+                Using reader = Await DirectCast(command, DbCommand).ExecuteReaderAsync()
                     If Await reader.ReadAsync() Then
                         obj = Activator.CreateInstance(Of T)()
+
                         For Each prop In typeT.GetProperties().Where(Function(p) p.CanWrite AndAlso Not IsGenericList(p.PropertyType))
                             If ColumnExists(reader, prop.Name) AndAlso Not Await reader.IsDBNullAsync(reader.GetOrdinal(prop.Name)) Then
-                                prop.SetValue(obj, Convert.ChangeType(reader(prop.Name), prop.PropertyType))
+                                Dim rawValue = reader(prop.Name)
+                                Dim safeValue = GetSafeEnumValue(prop.PropertyType, rawValue)
+                                prop.SetValue(obj, safeValue)
                             End If
                         Next
                     End If
-                End Using
-            End Using
+                End Using ' reader
+            End Using ' command
 
-            ' Now fetch child collections if any
+            ' Now fetch child collections
             If obj IsNot Nothing Then
-                For Each prop In typeT.GetProperties().Where(Function(p) IsGenericList(p.PropertyType) AndAlso p.CanWrite)
+                For Each prop In typeT.GetProperties().Where(Function(p) p.CanWrite AndAlso IsGenericList(p.PropertyType))
                     Dim childType = prop.PropertyType.GetGenericArguments()(0)
-                    Dim childTable = childType.Name
                     Dim foreignKey = $"{tableName}_{idColumn}"
-
-                    Dim childQuery = $"SELECT * FROM [{childTable}] WHERE [{foreignKey}] = {parameterPrefix}ParentId"
-                    Using childCmd = Await _provider.CreateCommandAsync(childQuery, connection)
-                        childCmd.Parameters.Add(Await _provider.CreateParameterAsync($"{parameterPrefix}ParentId", id))
-
-                        Using reader = Await childCmd.ExecuteReaderAsync()
-                            Dim childList = CType(Activator.CreateInstance(prop.PropertyType), IList)
-                            While Await reader.ReadAsync()
-                                Dim childObj = Activator.CreateInstance(childType)
-                                For Each cp In childType.GetProperties().Where(Function(p) p.CanWrite AndAlso Not IsGenericList(p.PropertyType))
-                                    If ColumnExists(reader, cp.Name) AndAlso Not Await reader.IsDBNullAsync(reader.GetOrdinal(cp.Name)) Then
-                                        cp.SetValue(childObj, Convert.ChangeType(reader(cp.Name), cp.PropertyType))
-                                    End If
-                                Next
-                                childList.Add(childObj)
-                            End While
-                            prop.SetValue(obj, childList)
-                        End Using
-                    End Using
+                    Dim childList = Await GetChildRecordsAsync(connection, id, tableName, idColumn, childType, foreignKey, _provider)
+                    prop.SetValue(obj, childList)
                 Next
             End If
-        End Using
+        End Using ' connection
 
         Return obj
     End Function

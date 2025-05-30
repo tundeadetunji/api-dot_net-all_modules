@@ -316,15 +316,15 @@ Friend Class OrmUtils
 
 #Region "async"
 
-    Friend Shared Async Function GetChildRecordsAsync(connection As IDbConnection, parentId As Object, parentTable As String, parentIdColumn As String, childType As Type, foreignKey As String, provider As IDbProvider) As Task(Of IList)
+    Friend Shared Async Function GetChildRecordsAsync(connection As IDbConnection, parentId As Object, parentTable As String, parentIdColumn As String, childType As Type, foreignKey As String, provider As IDbProviderAsync) As Task(Of IList)
         Dim parameterPrefix = provider.GetParameterPrefix()
         Dim childTable = childType.Name
         Dim query = $"SELECT * FROM [{childTable}] WHERE [{foreignKey}] = {parameterPrefix}ParentId"
 
         Dim list = CType(Activator.CreateInstance(GetType(List(Of )).MakeGenericType(childType)), IList)
 
-        Using cmd = provider.CreateCommand(query, connection)
-            cmd.Parameters.Add(provider.CreateParameter($"{parameterPrefix}ParentId", parentId))
+        Using cmd = Await provider.CreateCommandAsync(query, connection)
+            cmd.Parameters.Add(Await provider.CreateParameterAsync($"{parameterPrefix}ParentId", parentId))
 
             ' 🔥 Here is the fix:
             Using reader = Await DirectCast(cmd, DbCommand).ExecuteReaderAsync()
@@ -342,6 +342,32 @@ Friend Class OrmUtils
 
         Return list
     End Function
+    'Friend Shared Async Function GetChildRecordsAsync(connection As IDbConnection, parentId As Object, parentTable As String, parentIdColumn As String, childType As Type, foreignKey As String, provider As IDbProvider) As Task(Of IList)
+    '    Dim parameterPrefix = provider.GetParameterPrefix()
+    '    Dim childTable = childType.Name
+    '    Dim query = $"SELECT * FROM [{childTable}] WHERE [{foreignKey}] = {parameterPrefix}ParentId"
+
+    '    Dim list = CType(Activator.CreateInstance(GetType(List(Of )).MakeGenericType(childType)), IList)
+
+    '    Using cmd = provider.CreateCommand(query, connection)
+    '        cmd.Parameters.Add(provider.CreateParameter($"{parameterPrefix}ParentId", parentId))
+
+    '        ' 🔥 Here is the fix:
+    '        Using reader = Await DirectCast(cmd, DbCommand).ExecuteReaderAsync()
+    '            While Await reader.ReadAsync()
+    '                Dim childObj = Activator.CreateInstance(childType)
+    '                For Each prop In childType.GetProperties().Where(Function(p) p.CanWrite AndAlso Not IsGenericList(p.PropertyType))
+    '                    If ColumnExists(reader, prop.Name) AndAlso Not Await reader.IsDBNullAsync(reader.GetOrdinal(prop.Name)) Then
+    '                        prop.SetValue(childObj, Convert.ChangeType(reader(prop.Name), prop.PropertyType))
+    '                    End If
+    '                Next
+    '                list.Add(childObj)
+    '            End While
+    '        End Using
+    '    End Using
+
+    '    Return list
+    'End Function
 
     Friend Shared Async Function CreateOrUpdateTableRecursiveAsync(entityType As Type, idColumn As String, mode As DbPrepMode, connection As DbConnection, transaction As DbTransaction, executedTables As HashSet(Of String)) As Task
         Dim tableName = entityType.Name
