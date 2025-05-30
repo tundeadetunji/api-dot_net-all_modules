@@ -797,9 +797,9 @@ Friend Class SqlServerOrmAsync
             Throw New InvalidOperationException($"The specified id column '{idColumn}' was not found on type '{typeT.Name}'.")
         End If
 
-        Using connection = Await _provider.CreateConnectionAsync()
-            Await CType(connection, DbConnection).OpenAsync()
-            Using transaction = CType(connection, DbConnection).BeginTransaction()
+        Using connection = CType(Await _provider.CreateConnectionAsync(), SqlConnection)
+            Await connection.OpenAsync()
+            Using transaction = connection.BeginTransaction() ' synchronous
 
                 ' Insert parent
                 Dim insertCols = New List(Of String)
@@ -813,14 +813,9 @@ Friend Class SqlServerOrmAsync
                     Dim paramName = $"{parameterPrefix}{prop.Name}"
                     insertCols.Add($"[{prop.Name}]")
                     insertVals.Add(paramName)
-
-                    parameters.Add(Await _provider.CreateParameterAsync(paramName, prop.GetValue(obj)))
-                    'Dim value = prop.GetValue(obj)
-                    'If prop.PropertyType.IsEnum Then
-                    '    value = Convert.ToInt32(value) ' or value.ToString() if you want to store enum names
-                    'End If
-                    'parameters.Add(Await _provider.CreateParameterAsync(paramName, value))
-
+                    Dim rawValue = prop.GetValue(obj)
+                    Dim dbValue = GetEnumDbValue(prop, rawValue)
+                    parameters.Add(Await _provider.CreateParameterAsync(paramName, dbValue))
                 Next
 
                 Dim sql = $"INSERT INTO [{tableName}] ({String.Join(", ", insertCols)}) VALUES ({String.Join(", ", insertVals)})"
@@ -835,10 +830,10 @@ Friend Class SqlServerOrmAsync
                     Next
 
                     If IdWillAutoIncrement Then
-                        Dim newId = Convert.ToInt64(Await CType(cmd, DbCommand).ExecuteScalarAsync())
+                        Dim newId = Convert.ToInt64(cmd.ExecuteScalar()) ' no async version in .NET Framework
                         idProp.SetValue(obj, Convert.ChangeType(newId, idProp.PropertyType))
                     Else
-                        Await CType(cmd, DbCommand).ExecuteNonQueryAsync()
+                        cmd.ExecuteNonQuery()
                     End If
                 End Using
 
@@ -869,11 +864,12 @@ Friend Class SqlServerOrmAsync
                             If cp.Name = idColumn AndAlso IdWillAutoIncrement Then Continue For
 
                             Dim cpName = cp.Name
-                            Dim cpValue = cp.GetValue(child)
+                            Dim rawValue = cp.GetValue(child)
+                            Dim dbValue = GetEnumDbValue(cp, rawValue)
 
                             cCols.Add($"[{cpName}]")
                             cVals.Add($"{parameterPrefix}{cpName}")
-                            cParams.Add(Await _provider.CreateParameterAsync($"{parameterPrefix}{cpName}", cpValue))
+                            cParams.Add(Await _provider.CreateParameterAsync($"{parameterPrefix}{cpName}", dbValue))
                         Next
 
                         Dim childSql = $"INSERT INTO [{childTable}] ({String.Join(", ", cCols)}) VALUES ({String.Join(", ", cVals)}); SELECT CAST(SCOPE_IDENTITY() AS BIGINT);"
@@ -884,7 +880,7 @@ Friend Class SqlServerOrmAsync
                                 cmd.Parameters.Add(p)
                             Next
 
-                            Dim newChildId = Convert.ToInt64(Await CType(cmd, DbCommand).ExecuteScalarAsync())
+                            Dim newChildId = Convert.ToInt64(cmd.ExecuteScalar()) ' sync
                             Dim childIdProp = childProps.FirstOrDefault(Function(p) p.Name = idColumn)
                             If childIdProp IsNot Nothing Then
                                 childIdProp.SetValue(child, Convert.ChangeType(newChildId, childIdProp.PropertyType))
@@ -893,7 +889,7 @@ Friend Class SqlServerOrmAsync
                     Next
                 Next
 
-                transaction.Commit()
+                transaction.Commit() ' sync
             End Using
         End Using
 
