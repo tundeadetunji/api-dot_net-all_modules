@@ -560,52 +560,56 @@ Friend Class SqlServerOrmAsync
         End Using
     End Function
 
-    Public Async Function CreateAsync(Of T)(objs As List(Of T), Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True) As Task(Of List(Of T)) Implements IOrmAsync.CreateAsync
+    Public Async Function CreateAsync(Of T)(objs As List(Of T),
+                                        Optional idColumn As String = "Id",
+                                        Optional IdWillAutoIncrement As Boolean = True) As Task(Of List(Of T)) Implements IOrmAsync.CreateAsync
         If objs Is Nothing OrElse objs.Count = 0 Then Return objs
 
         Dim typeT = GetType(T)
-        Dim parameterPrefix = _provider.GetParameterPrefix()
         Dim tableName = typeT.Name
+        Dim parameterPrefix = _provider.GetParameterPrefix()
         Dim props = typeT.GetProperties().Where(Function(p) p.CanRead AndAlso p.CanWrite).ToList()
 
-        Using connection = Await _provider.CreateConnectionAsync()
-            Await CType(connection, DbConnection).OpenAsync()
-            Using transaction = CType(connection, DbConnection).BeginTransaction()
+        Using connection = CType(Await _provider.CreateConnectionAsync(), SqlConnection)
+            Await connection.OpenAsync()
+
+            Using transaction = connection.BeginTransaction()
                 For Each obj In objs
-                    ' Insert parent
-                    Dim columns = New List(Of String)
-                    Dim values = New List(Of String)
+                    ' === Parent Insert ===
+                    Dim insertCols = New List(Of String)
+                    Dim insertVals = New List(Of String)
                     Dim parameters = New List(Of IDataParameter)
 
                     For Each prop In props
-                        If IsGenericList(prop.PropertyType) OrElse (prop.Name = idColumn AndAlso IdWillAutoIncrement) Then Continue For
+                        If IsGenericList(prop.PropertyType) Then Continue For
+                        If prop.Name = idColumn AndAlso IdWillAutoIncrement Then Continue For
 
-                        columns.Add($"[{prop.Name}]")
-                        values.Add($"{parameterPrefix}{prop.Name}")
-                        parameters.Add(Await _provider.CreateParameterAsync($"{parameterPrefix}{prop.Name}", prop.GetValue(obj)))
+                        insertCols.Add($"[{prop.Name}]")
+                        insertVals.Add($"{parameterPrefix}{prop.Name}")
+                        Dim rawValue = prop.GetValue(obj)
+                        Dim dbValue = GetEnumDbValue(prop, rawValue)
+                        parameters.Add(Await _provider.CreateParameterAsync($"{parameterPrefix}{prop.Name}", dbValue))
                     Next
 
-                    Dim insertSql = $"INSERT INTO [{tableName}] ({String.Join(", ", columns)}) VALUES ({String.Join(", ", values)});"
-                    If IdWillAutoIncrement Then
-                        insertSql &= " SELECT SCOPE_IDENTITY();"
-                    End If
+                    Dim insertSql = $"INSERT INTO [{tableName}] ({String.Join(", ", insertCols)}) VALUES ({String.Join(", ", insertVals)})"
+                    If IdWillAutoIncrement Then insertSql &= "; SELECT CAST(SCOPE_IDENTITY() AS BIGINT);"
 
-                    Using command = Await _provider.CreateCommandAsync(insertSql, connection)
-                        command.Transaction = transaction
+                    Using cmd = Await _provider.CreateCommandAsync(insertSql, connection)
+                        cmd.Transaction = transaction
                         For Each param In parameters
-                            command.Parameters.Add(param)
+                            cmd.Parameters.Add(param)
                         Next
 
                         If IdWillAutoIncrement Then
-                            Dim newId = Convert.ToInt64(Await CType(command, DbCommand).ExecuteScalarAsync())
+                            Dim newId = Convert.ToInt64(cmd.ExecuteScalar()) ' sync
                             Dim idProp = props.First(Function(p) p.Name = idColumn)
                             idProp.SetValue(obj, Convert.ChangeType(newId, idProp.PropertyType))
                         Else
-                            Await CType(command, DbCommand).ExecuteNonQueryAsync()
+                            cmd.ExecuteNonQuery()
                         End If
                     End Using
 
-                    ' Insert child collections
+                    ' === Child Insert ===
                     For Each prop In props.Where(Function(p) IsGenericList(p.PropertyType))
                         Dim childList = CType(prop.GetValue(obj), IEnumerable)
                         If childList Is Nothing Then Continue For
@@ -614,13 +618,13 @@ Friend Class SqlServerOrmAsync
                         Dim childTable = childType.Name
                         Dim childProps = childType.GetProperties().Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso Not IsGenericList(p.PropertyType)).ToList()
 
-                        Dim fkColumn = $"{tableName}_{idColumn}"
                         Dim parentId = props.First(Function(p) p.Name = idColumn).GetValue(obj)
+                        Dim fkColumn = $"{tableName}_{idColumn}"
 
                         For Each child In childList
-                            Dim insertCols = New List(Of String)
-                            Dim insertVals = New List(Of String)
-                            Dim insertParams = New List(Of IDataParameter)
+                            Dim cCols = New List(Of String)
+                            Dim cVals = New List(Of String)
+                            Dim cParams = New List(Of IDataParameter)
 
                             For Each cp In childProps
                                 If cp.Name = idColumn AndAlso IdWillAutoIncrement Then Continue For
@@ -628,44 +632,43 @@ Friend Class SqlServerOrmAsync
                                 Dim value As Object
                                 If cp.Name = fkColumn Then
                                     value = parentId
-                                    If cp.CanWrite Then
-                                        cp.SetValue(child, parentId)
-                                    End If
+                                    If cp.CanWrite Then cp.SetValue(child, parentId)
                                 Else
                                     value = cp.GetValue(child)
                                 End If
 
-                                insertCols.Add($"[{cp.Name}]")
-                                insertVals.Add($"{parameterPrefix}{cp.Name}")
-                                insertParams.Add(Await _provider.CreateParameterAsync($"{parameterPrefix}{cp.Name}", value))
+                                Dim dbValue = GetEnumDbValue(cp, value)
+                                cCols.Add($"[{cp.Name}]")
+                                cVals.Add($"{parameterPrefix}{cp.Name}")
+                                cParams.Add(Await _provider.CreateParameterAsync($"{parameterPrefix}{cp.Name}", dbValue))
                             Next
 
-                            Dim insertChildSql = $"INSERT INTO [{childTable}] ({String.Join(", ", insertCols)}) VALUES ({String.Join(", ", insertVals)});"
+                            Dim childInsertSql = $"INSERT INTO [{childTable}] ({String.Join(", ", cCols)}) VALUES ({String.Join(", ", cVals)})"
                             If IdWillAutoIncrement Then
-                                insertChildSql &= " SELECT SCOPE_IDENTITY();"
+                                childInsertSql &= "; SELECT CAST(SCOPE_IDENTITY() AS BIGINT);"
                             End If
 
-                            Using cmd = Await _provider.CreateCommandAsync(insertChildSql, connection)
-                                cmd.Transaction = transaction
-                                For Each p In insertParams
-                                    cmd.Parameters.Add(p)
+                            Using childCmd = Await _provider.CreateCommandAsync(childInsertSql, connection)
+                                childCmd.Transaction = transaction
+                                For Each p In cParams
+                                    childCmd.Parameters.Add(p)
                                 Next
 
                                 If IdWillAutoIncrement Then
-                                    Dim newChildId = Convert.ToInt64(Await CType(cmd, DbCommand).ExecuteScalarAsync())
+                                    Dim newChildId = Convert.ToInt64(childCmd.ExecuteScalar())
                                     Dim idProp = childProps.FirstOrDefault(Function(p) p.Name = idColumn)
                                     If idProp IsNot Nothing AndAlso idProp.CanWrite Then
                                         idProp.SetValue(child, Convert.ChangeType(newChildId, idProp.PropertyType))
                                     End If
                                 Else
-                                    Await CType(cmd, DbCommand).ExecuteNonQueryAsync()
+                                    childCmd.ExecuteNonQuery()
                                 End If
                             End Using
                         Next
                     Next
                 Next
 
-                transaction.Commit()
+                transaction.Commit() ' sync
             End Using
         End Using
 
@@ -680,44 +683,46 @@ Friend Class SqlServerOrmAsync
         Dim parameterPrefix = _provider.GetParameterPrefix()
         Dim props = typeT.GetProperties().Where(Function(p) p.CanRead AndAlso p.CanWrite).ToList()
 
-        Using connection = Await _provider.CreateConnectionAsync()
-            Await CType(connection, DbConnection).OpenAsync()
-            Using transaction = CType(connection, DbConnection).BeginTransaction()
+        Using connection = CType(Await _provider.CreateConnectionAsync(), SqlConnection)
+            Await connection.OpenAsync()
+
+            Using transaction = connection.BeginTransaction()
                 For Each obj In objs
-                    ' Insert parent
-                    Dim columns = New List(Of String)
-                    Dim values = New List(Of String)
+                    ' === Parent Insert ===
+                    Dim insertCols = New List(Of String)
+                    Dim insertVals = New List(Of String)
                     Dim parameters = New List(Of IDataParameter)
 
                     For Each prop In props
-                        If IsGenericList(prop.PropertyType) OrElse (prop.Name = idColumn AndAlso IdWillAutoIncrement) Then Continue For
+                        If IsGenericList(prop.PropertyType) Then Continue For
+                        If prop.Name = idColumn AndAlso IdWillAutoIncrement Then Continue For
 
-                        columns.Add($"[{prop.Name}]")
-                        values.Add($"{parameterPrefix}{prop.Name}")
-                        parameters.Add(Await _provider.CreateParameterAsync($"{parameterPrefix}{prop.Name}", prop.GetValue(obj)))
+                        insertCols.Add($"[{prop.Name}]")
+                        insertVals.Add($"{parameterPrefix}{prop.Name}")
+                        Dim rawValue = prop.GetValue(obj)
+                        Dim dbValue = GetEnumDbValue(prop, rawValue)
+                        parameters.Add(Await _provider.CreateParameterAsync($"{parameterPrefix}{prop.Name}", dbValue))
                     Next
 
-                    Dim insertSql = $"INSERT INTO [{tableName}] ({String.Join(", ", columns)}) VALUES ({String.Join(", ", values)});"
-                    If IdWillAutoIncrement Then
-                        insertSql &= " SELECT SCOPE_IDENTITY();"
-                    End If
+                    Dim insertSql = $"INSERT INTO [{tableName}] ({String.Join(", ", insertCols)}) VALUES ({String.Join(", ", insertVals)})"
+                    If IdWillAutoIncrement Then insertSql &= "; SELECT CAST(SCOPE_IDENTITY() AS BIGINT);"
 
-                    Using command = Await _provider.CreateCommandAsync(insertSql, connection)
-                        command.Transaction = transaction
+                    Using cmd = Await _provider.CreateCommandAsync(insertSql, connection)
+                        cmd.Transaction = transaction
                         For Each param In parameters
-                            command.Parameters.Add(param)
+                            cmd.Parameters.Add(param)
                         Next
 
                         If IdWillAutoIncrement Then
-                            Dim newId = Convert.ToInt64(Await CType(command, DbCommand).ExecuteScalarAsync())
+                            Dim newId = Convert.ToInt64(cmd.ExecuteScalar()) ' sync
                             Dim idProp = props.First(Function(p) p.Name = idColumn)
                             idProp.SetValue(obj, Convert.ChangeType(newId, idProp.PropertyType))
                         Else
-                            Await CType(command, DbCommand).ExecuteNonQueryAsync()
+                            cmd.ExecuteNonQuery()
                         End If
                     End Using
 
-                    ' Insert child collections
+                    ' === Child Insert ===
                     For Each prop In props.Where(Function(p) IsGenericList(p.PropertyType))
                         Dim childList = CType(prop.GetValue(obj), IEnumerable)
                         If childList Is Nothing Then Continue For
@@ -726,13 +731,13 @@ Friend Class SqlServerOrmAsync
                         Dim childTable = childType.Name
                         Dim childProps = childType.GetProperties().Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso Not IsGenericList(p.PropertyType)).ToList()
 
-                        Dim fkColumn = $"{tableName}_{idColumn}"
                         Dim parentId = props.First(Function(p) p.Name = idColumn).GetValue(obj)
+                        Dim fkColumn = $"{tableName}_{idColumn}"
 
                         For Each child In childList
-                            Dim insertCols = New List(Of String)
-                            Dim insertVals = New List(Of String)
-                            Dim insertParams = New List(Of IDataParameter)
+                            Dim cCols = New List(Of String)
+                            Dim cVals = New List(Of String)
+                            Dim cParams = New List(Of IDataParameter)
 
                             For Each cp In childProps
                                 If cp.Name = idColumn AndAlso IdWillAutoIncrement Then Continue For
@@ -740,44 +745,43 @@ Friend Class SqlServerOrmAsync
                                 Dim value As Object
                                 If cp.Name = fkColumn Then
                                     value = parentId
-                                    If cp.CanWrite Then
-                                        cp.SetValue(child, parentId)
-                                    End If
+                                    If cp.CanWrite Then cp.SetValue(child, parentId)
                                 Else
                                     value = cp.GetValue(child)
                                 End If
 
-                                insertCols.Add($"[{cp.Name}]")
-                                insertVals.Add($"{parameterPrefix}{cp.Name}")
-                                insertParams.Add(Await _provider.CreateParameterAsync($"{parameterPrefix}{cp.Name}", value))
+                                Dim dbValue = GetEnumDbValue(cp, value)
+                                cCols.Add($"[{cp.Name}]")
+                                cVals.Add($"{parameterPrefix}{cp.Name}")
+                                cParams.Add(Await _provider.CreateParameterAsync($"{parameterPrefix}{cp.Name}", dbValue))
                             Next
 
-                            Dim insertChildSql = $"INSERT INTO [{childTable}] ({String.Join(", ", insertCols)}) VALUES ({String.Join(", ", insertVals)});"
+                            Dim childInsertSql = $"INSERT INTO [{childTable}] ({String.Join(", ", cCols)}) VALUES ({String.Join(", ", cVals)})"
                             If IdWillAutoIncrement Then
-                                insertChildSql &= " SELECT SCOPE_IDENTITY();"
+                                childInsertSql &= "; SELECT CAST(SCOPE_IDENTITY() AS BIGINT);"
                             End If
 
-                            Using cmd = Await _provider.CreateCommandAsync(insertChildSql, connection)
-                                cmd.Transaction = transaction
-                                For Each p In insertParams
-                                    cmd.Parameters.Add(p)
+                            Using childCmd = Await _provider.CreateCommandAsync(childInsertSql, connection)
+                                childCmd.Transaction = transaction
+                                For Each p In cParams
+                                    childCmd.Parameters.Add(p)
                                 Next
 
                                 If IdWillAutoIncrement Then
-                                    Dim newChildId = Convert.ToInt64(Await CType(cmd, DbCommand).ExecuteScalarAsync())
+                                    Dim newChildId = Convert.ToInt64(childCmd.ExecuteScalar())
                                     Dim idProp = childProps.FirstOrDefault(Function(p) p.Name = idColumn)
                                     If idProp IsNot Nothing AndAlso idProp.CanWrite Then
                                         idProp.SetValue(child, Convert.ChangeType(newChildId, idProp.PropertyType))
                                     End If
                                 Else
-                                    Await CType(cmd, DbCommand).ExecuteNonQueryAsync()
+                                    childCmd.ExecuteNonQuery()
                                 End If
                             End Using
                         Next
                     Next
                 Next
 
-                transaction.Commit()
+                transaction.Commit() ' sync
             End Using
         End Using
 
