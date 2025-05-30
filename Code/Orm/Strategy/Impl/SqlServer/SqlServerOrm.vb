@@ -1,4 +1,5 @@
 ﻿Imports iNovation.Code.OrmUtils
+Imports System.Data.Common
 Imports System.Threading
 Friend Class SqlServerOrm
     Implements IOrm
@@ -137,54 +138,126 @@ Friend Class SqlServerOrm
 
         Dim properties = typeT.GetProperties().Where(Function(p) p.CanRead AndAlso p.CanWrite).ToList()
         Dim idProp = properties.FirstOrDefault(Function(p) p.Name = idColumn)
-        If idProp Is Nothing Then Throw New InvalidOperationException($"The specified id column '{idColumn}' was not found on type '{typeT.Name}'.")
+        If idProp Is Nothing Then Throw New InvalidOperationException($"Id column '{idColumn}' not found.")
 
-        Dim idValue = idProp.GetValue(obj)
-
-        ' Check for RowVersion property (if present and writable)
-        Dim rowVersionProp = properties.FirstOrDefault(Function(p) p.Name = "RowVersion")
-        Dim hasRowVersion = rowVersionProp IsNot Nothing
+        ' Detect RowVersion
+        Dim rowVersionProp = properties.FirstOrDefault(Function(p) String.Equals(p.Name, "RowVersion", StringComparison.OrdinalIgnoreCase) AndAlso p.PropertyType Is GetType(Byte()))
+        Dim rowVersionValue As Byte() = Nothing
 
         Using connection = _provider.CreateConnection()
             connection.Open()
             Using transaction = connection.BeginTransaction()
 
-                ' Update parent row
+                ' Load current RowVersion if present
+                If rowVersionProp IsNot Nothing Then
+                    Dim rowVerSql = $"SELECT [RowVersion] FROM [{tableName}] WHERE [{idColumn}] = {parameterPrefix}id"
+                    Using cmd = _provider.CreateCommand(rowVerSql, connection)
+                        cmd.Transaction = transaction
+                        cmd.Parameters.Add(_provider.CreateParameter($"{parameterPrefix}id", idProp.GetValue(obj)))
+                        Dim result = cmd.ExecuteScalar()
+                        If result Is DBNull.Value OrElse result Is Nothing Then Throw New DBConcurrencyException("Row not found or missing RowVersion.")
+                        rowVersionValue = CType(result, Byte())
+                    End Using
+                End If
+
+                ' Update parent
                 Dim setClauses = New List(Of String)
                 Dim parameters = New List(Of IDataParameter)
 
                 For Each prop In properties
-                    If IsGenericList(prop.PropertyType) OrElse prop.Name = idColumn OrElse prop.Name = "RowVersion" Then Continue For
+                    If IsGenericList(prop.PropertyType) Then Continue For
+                    If prop.Name = idColumn Then Continue For
+                    If rowVersionProp IsNot Nothing AndAlso prop.Name = rowVersionProp.Name Then Continue For
 
+                    Dim rawValue = prop.GetValue(obj)
+                    Dim dbValue = GetEnumDbValue(prop, rawValue)
                     Dim paramName = $"{parameterPrefix}{prop.Name}"
                     setClauses.Add($"[{prop.Name}] = {paramName}")
-                    parameters.Add(_provider.CreateParameter(paramName, prop.GetValue(obj)))
+                    parameters.Add(_provider.CreateParameter(paramName, dbValue))
                 Next
 
-                parameters.Add(_provider.CreateParameter($"{parameterPrefix}id", idValue))
+                Dim sql = $"UPDATE [{tableName}] SET {String.Join(", ", setClauses)} WHERE [{idColumn}] = {parameterPrefix}id"
+                parameters.Add(_provider.CreateParameter($"{parameterPrefix}id", idProp.GetValue(obj)))
 
-                ' Add RowVersion condition if available
-                Dim whereClause = $"[{idColumn}] = {parameterPrefix}id"
-                If hasRowVersion Then
-                    whereClause &= $" AND [RowVersion] = {parameterPrefix}RowVersion"
-                    parameters.Add(_provider.CreateParameter($"{parameterPrefix}RowVersion", rowVersionProp.GetValue(obj)))
+                If rowVersionProp IsNot Nothing Then
+                    sql &= $" AND [RowVersion] = {parameterPrefix}rowversion"
+                    Dim rowParam = _provider.CreateParameter($"{parameterPrefix}rowversion", rowVersionValue)
+                    rowParam.DbType = DbType.Binary
+                    parameters.Add(rowParam)
                 End If
 
-                Dim sql = $"UPDATE [{tableName}] SET {String.Join(", ", setClauses)} WHERE {whereClause}"
-
-                Using command = _provider.CreateCommand(sql, connection)
-                    command.Transaction = transaction
+                Using cmd = _provider.CreateCommand(sql, connection)
+                    cmd.Transaction = transaction
                     For Each param In parameters
-                        command.Parameters.Add(param)
+                        cmd.Parameters.Add(param)
                     Next
-                    Dim affected = command.ExecuteNonQuery()
+
+                    Dim affected = cmd.ExecuteNonQuery()
                     If affected <> 1 Then
-                        Throw New DBConcurrencyException("The record was updated by another user or no longer exists.")
+                        Throw New DBConcurrencyException("Update failed due to concurrent update or missing record.")
                     End If
                 End Using
 
-                ' Child object handling (same as before — can enhance later if needed)
-                ' ...
+                ' Delete and re-insert children
+                For Each prop In properties.Where(Function(p) IsGenericList(p.PropertyType))
+                    Dim childList = CType(prop.GetValue(obj), IEnumerable)
+                    If childList Is Nothing Then Continue For
+
+                    Dim childType = prop.PropertyType.GetGenericArguments()(0)
+                    Dim childTable = childType.Name
+                    Dim childProps = childType.GetProperties().Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso Not IsGenericList(p.PropertyType)).ToList()
+
+                    Dim fkColumn = $"{tableName}_{idColumn}"
+                    Dim parentId = idProp.GetValue(obj)
+
+                    ' Always delete existing children
+                    Dim deleteSql = $"DELETE FROM [{childTable}] WHERE [{fkColumn}] = {parameterPrefix}fk"
+                    Using delCmd = _provider.CreateCommand(deleteSql, connection)
+                        delCmd.Transaction = transaction
+                        delCmd.Parameters.Add(_provider.CreateParameter($"{parameterPrefix}fk", parentId))
+                        delCmd.ExecuteNonQuery()
+                    End Using
+
+                    ' Insert new children
+                    For Each child In childList
+                        ' Set FK
+                        Dim fkProp = childProps.FirstOrDefault(Function(p) p.Name = fkColumn)
+                        If fkProp IsNot Nothing Then
+                            fkProp.SetValue(child, parentId)
+                        End If
+
+                        Dim cCols = New List(Of String)
+                        Dim cVals = New List(Of String)
+                        Dim cParams = New List(Of IDataParameter)
+
+                        For Each cp In childProps
+                            If cp.Name = idColumn Then Continue For
+
+                            Dim cpVal = cp.GetValue(child)
+                            Dim dbVal = GetEnumDbValue(cp, cpVal)
+                            Dim paramName = $"{parameterPrefix}{cp.Name}"
+                            cCols.Add($"[{cp.Name}]")
+                            cVals.Add(paramName)
+                            cParams.Add(_provider.CreateParameter(paramName, dbVal))
+                        Next
+
+                        Dim insertSql = $"INSERT INTO [{childTable}] ({String.Join(", ", cCols)}) VALUES ({String.Join(", ", cVals)})"
+                        insertSql &= "; SELECT CAST(SCOPE_IDENTITY() AS BIGINT);"
+
+                        Using cmd = _provider.CreateCommand(insertSql, connection)
+                            cmd.Transaction = transaction
+                            For Each p In cParams
+                                cmd.Parameters.Add(p)
+                            Next
+
+                            Dim newChildId = Convert.ToInt64(cmd.ExecuteScalar())
+                            Dim childIdProp = childProps.FirstOrDefault(Function(p) p.Name = idColumn)
+                            If childIdProp IsNot Nothing Then
+                                childIdProp.SetValue(child, Convert.ChangeType(newChildId, childIdProp.PropertyType))
+                            End If
+                        End Using
+                    Next
+                Next
 
                 transaction.Commit()
             End Using
@@ -195,59 +268,132 @@ Friend Class SqlServerOrm
 
     Public Function UpdateInTable(Of T)(obj As T, tableName As String, Optional idColumn As String = Id) As T Implements IOrm.UpdateInTable
         If String.IsNullOrEmpty(tableName) Then Throw New ArgumentException("Table Name cannot be null.")
+
         Dim typeT = GetType(T)
         Dim parameterPrefix = _provider.GetParameterPrefix()
 
         Dim properties = typeT.GetProperties().Where(Function(p) p.CanRead AndAlso p.CanWrite).ToList()
         Dim idProp = properties.FirstOrDefault(Function(p) p.Name = idColumn)
-        If idProp Is Nothing Then Throw New InvalidOperationException($"The specified id column '{idColumn}' was not found on type '{typeT.Name}'.")
+        If idProp Is Nothing Then Throw New InvalidOperationException($"Id column '{idColumn}' not found.")
 
-        Dim idValue = idProp.GetValue(obj)
-
-        ' Check for RowVersion property (if present and writable)
-        Dim rowVersionProp = properties.FirstOrDefault(Function(p) p.Name = "RowVersion")
-        Dim hasRowVersion = rowVersionProp IsNot Nothing
+        ' Detect RowVersion
+        Dim rowVersionProp = properties.FirstOrDefault(Function(p) String.Equals(p.Name, "RowVersion", StringComparison.OrdinalIgnoreCase) AndAlso p.PropertyType Is GetType(Byte()))
+        Dim rowVersionValue As Byte() = Nothing
 
         Using connection = _provider.CreateConnection()
             connection.Open()
             Using transaction = connection.BeginTransaction()
 
-                ' Update parent row
+                ' Load current RowVersion if present
+                If rowVersionProp IsNot Nothing Then
+                    Dim rowVerSql = $"SELECT [RowVersion] FROM [{tableName}] WHERE [{idColumn}] = {parameterPrefix}id"
+                    Using cmd = _provider.CreateCommand(rowVerSql, connection)
+                        cmd.Transaction = transaction
+                        cmd.Parameters.Add(_provider.CreateParameter($"{parameterPrefix}id", idProp.GetValue(obj)))
+                        Dim result = cmd.ExecuteScalar()
+                        If result Is DBNull.Value OrElse result Is Nothing Then Throw New DBConcurrencyException("Row not found or missing RowVersion.")
+                        rowVersionValue = CType(result, Byte())
+                    End Using
+                End If
+
+                ' Update parent
                 Dim setClauses = New List(Of String)
                 Dim parameters = New List(Of IDataParameter)
 
                 For Each prop In properties
-                    If IsGenericList(prop.PropertyType) OrElse prop.Name = idColumn OrElse prop.Name = "RowVersion" Then Continue For
+                    If IsGenericList(prop.PropertyType) Then Continue For
+                    If prop.Name = idColumn Then Continue For
+                    If rowVersionProp IsNot Nothing AndAlso prop.Name = rowVersionProp.Name Then Continue For
 
+                    Dim rawValue = prop.GetValue(obj)
+                    Dim dbValue = GetEnumDbValue(prop, rawValue)
                     Dim paramName = $"{parameterPrefix}{prop.Name}"
                     setClauses.Add($"[{prop.Name}] = {paramName}")
-                    parameters.Add(_provider.CreateParameter(paramName, prop.GetValue(obj)))
+                    parameters.Add(_provider.CreateParameter(paramName, dbValue))
                 Next
 
-                parameters.Add(_provider.CreateParameter($"{parameterPrefix}id", idValue))
+                Dim sql = $"UPDATE [{tableName}] SET {String.Join(", ", setClauses)} WHERE [{idColumn}] = {parameterPrefix}id"
+                parameters.Add(_provider.CreateParameter($"{parameterPrefix}id", idProp.GetValue(obj)))
 
-                ' Add RowVersion condition if available
-                Dim whereClause = $"[{idColumn}] = {parameterPrefix}id"
-                If hasRowVersion Then
-                    whereClause &= $" AND [RowVersion] = {parameterPrefix}RowVersion"
-                    parameters.Add(_provider.CreateParameter($"{parameterPrefix}RowVersion", rowVersionProp.GetValue(obj)))
+                If rowVersionProp IsNot Nothing Then
+                    sql &= $" AND [RowVersion] = {parameterPrefix}rowversion"
+                    Dim rowParam = _provider.CreateParameter($"{parameterPrefix}rowversion", rowVersionValue)
+                    rowParam.DbType = DbType.Binary
+                    parameters.Add(rowParam)
                 End If
 
-                Dim sql = $"UPDATE [{tableName}] SET {String.Join(", ", setClauses)} WHERE {whereClause}"
-
-                Using command = _provider.CreateCommand(sql, connection)
-                    command.Transaction = transaction
+                Using cmd = _provider.CreateCommand(sql, connection)
+                    cmd.Transaction = transaction
                     For Each param In parameters
-                        command.Parameters.Add(param)
+                        cmd.Parameters.Add(param)
                     Next
-                    Dim affected = command.ExecuteNonQuery()
+
+                    Dim affected = cmd.ExecuteNonQuery()
                     If affected <> 1 Then
-                        Throw New DBConcurrencyException("The record was updated by another user or no longer exists.")
+                        Throw New DBConcurrencyException("Update failed due to concurrent update or missing record.")
                     End If
                 End Using
 
-                ' Child object handling (same as before — can enhance later if needed)
-                ' ...
+                ' Delete and re-insert children
+                For Each prop In properties.Where(Function(p) IsGenericList(p.PropertyType))
+                    Dim childList = CType(prop.GetValue(obj), IEnumerable)
+                    If childList Is Nothing Then Continue For
+
+                    Dim childType = prop.PropertyType.GetGenericArguments()(0)
+                    Dim childTable = childType.Name
+                    Dim childProps = childType.GetProperties().Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso Not IsGenericList(p.PropertyType)).ToList()
+
+                    Dim fkColumn = $"{tableName}_{idColumn}"
+                    Dim parentId = idProp.GetValue(obj)
+
+                    ' Always delete existing children
+                    Dim deleteSql = $"DELETE FROM [{childTable}] WHERE [{fkColumn}] = {parameterPrefix}fk"
+                    Using delCmd = _provider.CreateCommand(deleteSql, connection)
+                        delCmd.Transaction = transaction
+                        delCmd.Parameters.Add(_provider.CreateParameter($"{parameterPrefix}fk", parentId))
+                        delCmd.ExecuteNonQuery()
+                    End Using
+
+                    ' Insert new children
+                    For Each child In childList
+                        ' Set FK
+                        Dim fkProp = childProps.FirstOrDefault(Function(p) p.Name = fkColumn)
+                        If fkProp IsNot Nothing Then
+                            fkProp.SetValue(child, parentId)
+                        End If
+
+                        Dim cCols = New List(Of String)
+                        Dim cVals = New List(Of String)
+                        Dim cParams = New List(Of IDataParameter)
+
+                        For Each cp In childProps
+                            If cp.Name = idColumn Then Continue For
+
+                            Dim cpVal = cp.GetValue(child)
+                            Dim dbVal = GetEnumDbValue(cp, cpVal)
+                            Dim paramName = $"{parameterPrefix}{cp.Name}"
+                            cCols.Add($"[{cp.Name}]")
+                            cVals.Add(paramName)
+                            cParams.Add(_provider.CreateParameter(paramName, dbVal))
+                        Next
+
+                        Dim insertSql = $"INSERT INTO [{childTable}] ({String.Join(", ", cCols)}) VALUES ({String.Join(", ", cVals)})"
+                        insertSql &= "; SELECT CAST(SCOPE_IDENTITY() AS BIGINT);"
+
+                        Using cmd = _provider.CreateCommand(insertSql, connection)
+                            cmd.Transaction = transaction
+                            For Each p In cParams
+                                cmd.Parameters.Add(p)
+                            Next
+
+                            Dim newChildId = Convert.ToInt64(cmd.ExecuteScalar())
+                            Dim childIdProp = childProps.FirstOrDefault(Function(p) p.Name = idColumn)
+                            If childIdProp IsNot Nothing Then
+                                childIdProp.SetValue(child, Convert.ChangeType(newChildId, childIdProp.PropertyType))
+                            End If
+                        End Using
+                    Next
+                Next
 
                 transaction.Commit()
             End Using
