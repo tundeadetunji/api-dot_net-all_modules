@@ -1155,24 +1155,23 @@ Friend Class SqlServerOrmAsync
         Dim results As New List(Of T)
 
         Using connection = Await _provider.CreateConnectionAsync()
-            connection.Open() ' No OpenAsync; IDbConnection doesn't support async open
+            Await DirectCast(connection, DbConnection).OpenAsync()
 
             ' Fetch all parent rows
             Dim sql = $"SELECT * FROM [{tableName}]"
             Using command = Await _provider.CreateCommandAsync(sql, connection)
-                Using reader = Await command.ExecuteReaderAsync()
+                Using reader = Await DirectCast(command, DbCommand).ExecuteReaderAsync()
                     While Await reader.ReadAsync()
                         Dim obj = Activator.CreateInstance(Of T)()
-                        Dim props = typeT.GetProperties().Where(Function(p) p.CanRead AndAlso p.CanWrite).ToList()
+                        Dim props = typeT.GetProperties().Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso Not IsGenericList(p.PropertyType)).ToList()
 
                         For Each prop In props
-                            If IsGenericList(prop.PropertyType) Then Continue For ' skip child collections
                             If Not ColumnExists(reader, prop.Name) Then Continue For
+                            If Await reader.IsDBNullAsync(reader.GetOrdinal(prop.Name)) Then Continue For
 
                             Dim val = reader(prop.Name)
-                            If val IsNot DBNull.Value Then
-                                prop.SetValue(obj, Convert.ChangeType(val, prop.PropertyType))
-                            End If
+                            Dim safeValue = GetSafeEnumValue(prop.PropertyType, val)
+                            prop.SetValue(obj, safeValue)
                         Next
 
                         results.Add(obj)
@@ -1187,8 +1186,6 @@ Friend Class SqlServerOrmAsync
                 For Each prop In props
                     Dim childType = prop.PropertyType.GetGenericArguments()(0)
                     Dim childTable = childType.Name
-                    Dim childProps = childType.GetProperties().Where(Function(p) p.CanRead AndAlso p.CanWrite).ToList()
-
                     Dim fkColumn = $"{tableName}_{idColumn}"
                     Dim parentId = typeT.GetProperty(idColumn).GetValue(obj)
 
@@ -1198,17 +1195,18 @@ Friend Class SqlServerOrmAsync
                     Using cmd = Await _provider.CreateCommandAsync(childSql, connection)
                         cmd.Parameters.Add(Await _provider.CreateParameterAsync($"{parameterPrefix}id", parentId))
 
-                        Using childReader = Await cmd.ExecuteReaderAsync()
-                            While Await childReader.ReadAsync()
+                        Using reader = Await DirectCast(cmd, DbCommand).ExecuteReaderAsync()
+                            While Await reader.ReadAsync()
                                 Dim childObj = Activator.CreateInstance(childType)
+                                Dim childProps = childType.GetProperties().Where(Function(p) p.CanRead AndAlso p.CanWrite).ToList()
 
                                 For Each cp In childProps
-                                    If Not ColumnExists(childReader, cp.Name) Then Continue For
+                                    If Not ColumnExists(reader, cp.Name) Then Continue For
+                                    If Await reader.IsDBNullAsync(reader.GetOrdinal(cp.Name)) Then Continue For
 
-                                    Dim val = childReader(cp.Name)
-                                    If val IsNot DBNull.Value Then
-                                        cp.SetValue(childObj, Convert.ChangeType(val, cp.PropertyType))
-                                    End If
+                                    Dim val = reader(cp.Name)
+                                    Dim safeValue = GetSafeEnumValue(cp.PropertyType, val)
+                                    cp.SetValue(childObj, safeValue)
                                 Next
 
                                 CType(childList, IList).Add(childObj)
@@ -1241,24 +1239,23 @@ Friend Class SqlServerOrmAsync
         Dim results As New List(Of T)
 
         Using connection = Await _provider.CreateConnectionAsync()
-            connection.Open() ' No OpenAsync; IDbConnection doesn't support async open
+            Await DirectCast(connection, DbConnection).OpenAsync()
 
             ' Fetch all parent rows
             Dim sql = $"SELECT * FROM [{tableName}]"
             Using command = Await _provider.CreateCommandAsync(sql, connection)
-                Using reader = Await command.ExecuteReaderAsync()
+                Using reader = Await DirectCast(command, DbCommand).ExecuteReaderAsync()
                     While Await reader.ReadAsync()
                         Dim obj = Activator.CreateInstance(Of T)()
-                        Dim props = typeT.GetProperties().Where(Function(p) p.CanRead AndAlso p.CanWrite).ToList()
+                        Dim props = typeT.GetProperties().Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso Not IsGenericList(p.PropertyType)).ToList()
 
                         For Each prop In props
-                            If IsGenericList(prop.PropertyType) Then Continue For ' skip child collections
                             If Not ColumnExists(reader, prop.Name) Then Continue For
+                            If Await reader.IsDBNullAsync(reader.GetOrdinal(prop.Name)) Then Continue For
 
                             Dim val = reader(prop.Name)
-                            If val IsNot DBNull.Value Then
-                                prop.SetValue(obj, Convert.ChangeType(val, prop.PropertyType))
-                            End If
+                            Dim safeValue = GetSafeEnumValue(prop.PropertyType, val)
+                            prop.SetValue(obj, safeValue)
                         Next
 
                         results.Add(obj)
@@ -1273,8 +1270,6 @@ Friend Class SqlServerOrmAsync
                 For Each prop In props
                     Dim childType = prop.PropertyType.GetGenericArguments()(0)
                     Dim childTable = childType.Name
-                    Dim childProps = childType.GetProperties().Where(Function(p) p.CanRead AndAlso p.CanWrite).ToList()
-
                     Dim fkColumn = $"{tableName}_{idColumn}"
                     Dim parentId = typeT.GetProperty(idColumn).GetValue(obj)
 
@@ -1284,17 +1279,18 @@ Friend Class SqlServerOrmAsync
                     Using cmd = Await _provider.CreateCommandAsync(childSql, connection)
                         cmd.Parameters.Add(Await _provider.CreateParameterAsync($"{parameterPrefix}id", parentId))
 
-                        Using childReader = Await cmd.ExecuteReaderAsync()
-                            While Await childReader.ReadAsync()
+                        Using reader = Await DirectCast(cmd, DbCommand).ExecuteReaderAsync()
+                            While Await reader.ReadAsync()
                                 Dim childObj = Activator.CreateInstance(childType)
+                                Dim childProps = childType.GetProperties().Where(Function(p) p.CanRead AndAlso p.CanWrite).ToList()
 
                                 For Each cp In childProps
-                                    If Not ColumnExists(childReader, cp.Name) Then Continue For
+                                    If Not ColumnExists(reader, cp.Name) Then Continue For
+                                    If Await reader.IsDBNullAsync(reader.GetOrdinal(cp.Name)) Then Continue For
 
-                                    Dim val = childReader(cp.Name)
-                                    If val IsNot DBNull.Value Then
-                                        cp.SetValue(childObj, Convert.ChangeType(val, cp.PropertyType))
-                                    End If
+                                    Dim val = reader(cp.Name)
+                                    Dim safeValue = GetSafeEnumValue(cp.PropertyType, val)
+                                    cp.SetValue(childObj, safeValue)
                                 Next
 
                                 CType(childList, IList).Add(childObj)
