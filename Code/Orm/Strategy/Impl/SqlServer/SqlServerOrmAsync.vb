@@ -1324,14 +1324,14 @@ Friend Class SqlServerOrmAsync
         Dim tableName = typeT.Name
         Dim parameterPrefix = _provider.GetParameterPrefix()
         Dim offset = (pageNumber - 1) * maxPerPage
-
         Dim totalSql = $"SELECT COUNT(1) FROM [{tableName}]"
         Dim totalRecords As Long
         Dim records = New List(Of T)
 
-        Using connection = Await _provider.CreateConnectionAsync()
-            connection.Open() ' No OpenAsync needed unless supported
+        Using connection = CType(Await _provider.CreateConnectionAsync(), SqlConnection)
+            Await connection.OpenAsync()
 
+            ' Get total count
             Using countCmd = Await _provider.CreateCommandAsync(totalSql, connection)
                 totalRecords = Convert.ToInt64(Await countCmd.ExecuteScalarAsync())
             End Using
@@ -1340,7 +1340,7 @@ Friend Class SqlServerOrmAsync
                 Return New Page(Of T)(New List(Of T), pageNumber, maxPerPage, 0, 0)
             End If
 
-            ' SQL paging query (unordered)
+            ' Fetch paged rows
             Dim sql = $"
         SELECT * FROM (
             SELECT *, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS RowNum
@@ -1355,7 +1355,9 @@ Friend Class SqlServerOrmAsync
                         Dim obj = Activator.CreateInstance(Of T)()
                         For Each prop In typeT.GetProperties().Where(Function(p) p.CanWrite AndAlso Not IsGenericList(p.PropertyType))
                             If ColumnExists(reader, prop.Name) AndAlso Not Await reader.IsDBNullAsync(reader.GetOrdinal(prop.Name)) Then
-                                prop.SetValue(obj, Convert.ChangeType(reader(prop.Name), prop.PropertyType))
+                                Dim rawVal = reader(prop.Name)
+                                Dim safeVal = GetSafeEnumValue(prop.PropertyType, rawVal)
+                                prop.SetValue(obj, safeVal)
                             End If
                         Next
                         records.Add(obj)
@@ -1363,24 +1365,26 @@ Friend Class SqlServerOrmAsync
                 End Using
             End Using
 
-            ' Load child collections for each parent
+            ' Load child collections
             For Each obj In records
                 For Each prop In typeT.GetProperties().Where(Function(p) IsGenericList(p.PropertyType) AndAlso p.CanWrite)
                     Dim childType = prop.PropertyType.GetGenericArguments()(0)
                     Dim childTable = childType.Name
                     Dim fkColumn = $"{tableName}_{idColumn}"
                     Dim parentId = typeT.GetProperty(idColumn).GetValue(obj)
-
                     Dim childSql = $"SELECT * FROM [{childTable}] WHERE [{fkColumn}] = {parameterPrefix}ParentId"
+
                     Using childCmd = Await _provider.CreateCommandAsync(childSql, connection)
                         childCmd.Parameters.Add(Await _provider.CreateParameterAsync($"{parameterPrefix}ParentId", parentId))
-                        Using childReader = Await childCmd.ExecuteReaderAsync()
+                        Using reader = Await childCmd.ExecuteReaderAsync()
                             Dim childList = CType(Activator.CreateInstance(prop.PropertyType), IList)
-                            While Await childReader.ReadAsync()
+                            While Await reader.ReadAsync()
                                 Dim childObj = Activator.CreateInstance(childType)
                                 For Each cp In childType.GetProperties().Where(Function(p) p.CanWrite AndAlso Not IsGenericList(p.PropertyType))
-                                    If ColumnExists(childReader, cp.Name) AndAlso Not Await childReader.IsDBNullAsync(childReader.GetOrdinal(cp.Name)) Then
-                                        cp.SetValue(childObj, Convert.ChangeType(childReader(cp.Name), cp.PropertyType))
+                                    If ColumnExists(reader, cp.Name) AndAlso Not Await reader.IsDBNullAsync(reader.GetOrdinal(cp.Name)) Then
+                                        Dim rawVal = reader(cp.Name)
+                                        Dim safeVal = GetSafeEnumValue(cp.PropertyType, rawVal)
+                                        cp.SetValue(childObj, safeVal)
                                     End If
                                 Next
                                 childList.Add(childObj)
@@ -1392,33 +1396,35 @@ Friend Class SqlServerOrmAsync
             Next
         End Using
 
-        ' 🔁 Sort the in-memory results AFTER paging
-        Dim sortedRecords = If(ascending,
-        records.OrderBy(Function(r) typeT.GetProperty(idColumn).GetValue(r)).ToList(),
-        records.OrderByDescending(Function(r) typeT.GetProperty(idColumn).GetValue(r)).ToList()
-    )
+        ' Sort records in-memory after paging
+        Dim idProp = typeT.GetProperty(idColumn)
+        If idProp IsNot Nothing Then
+            records = If(ascending,
+                     records.OrderBy(Function(x) idProp.GetValue(x)).ToList(),
+                     records.OrderByDescending(Function(x) idProp.GetValue(x)).ToList())
+        End If
 
         Dim pageCount = CInt(Math.Ceiling(totalRecords / CDbl(maxPerPage)))
-
-        Return New Page(Of T)(sortedRecords, pageNumber, maxPerPage, totalRecords, pageCount)
+        Return New Page(Of T)(records, pageNumber, maxPerPage, totalRecords, pageCount)
     End Function
 
     Public Async Function FindAllPagedInTableAsync(Of T)(tableName As String, pageNumber As Integer, maxPerPage As Integer, Optional idColumn As String = "Id", Optional ascending As Boolean = True) As Task(Of Page(Of T)) Implements IOrmAsync.FindAllPagedInTableAsync
         If String.IsNullOrEmpty(tableName) Then Throw New ArgumentException("Table Name cannot be null.")
+
         If pageNumber < 1 Then Throw New ArgumentOutOfRangeException(NameOf(pageNumber))
         If maxPerPage < 1 Then Throw New ArgumentOutOfRangeException(NameOf(maxPerPage))
 
         Dim typeT = GetType(T)
         Dim parameterPrefix = _provider.GetParameterPrefix()
         Dim offset = (pageNumber - 1) * maxPerPage
-
         Dim totalSql = $"SELECT COUNT(1) FROM [{tableName}]"
         Dim totalRecords As Long
         Dim records = New List(Of T)
 
-        Using connection = Await _provider.CreateConnectionAsync()
-            connection.Open() ' No OpenAsync needed unless supported
+        Using connection = CType(Await _provider.CreateConnectionAsync(), SqlConnection)
+            Await connection.OpenAsync()
 
+            ' Get total count
             Using countCmd = Await _provider.CreateCommandAsync(totalSql, connection)
                 totalRecords = Convert.ToInt64(Await countCmd.ExecuteScalarAsync())
             End Using
@@ -1427,7 +1433,7 @@ Friend Class SqlServerOrmAsync
                 Return New Page(Of T)(New List(Of T), pageNumber, maxPerPage, 0, 0)
             End If
 
-            ' SQL paging query (unordered)
+            ' Fetch paged rows
             Dim sql = $"
         SELECT * FROM (
             SELECT *, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS RowNum
@@ -1442,7 +1448,9 @@ Friend Class SqlServerOrmAsync
                         Dim obj = Activator.CreateInstance(Of T)()
                         For Each prop In typeT.GetProperties().Where(Function(p) p.CanWrite AndAlso Not IsGenericList(p.PropertyType))
                             If ColumnExists(reader, prop.Name) AndAlso Not Await reader.IsDBNullAsync(reader.GetOrdinal(prop.Name)) Then
-                                prop.SetValue(obj, Convert.ChangeType(reader(prop.Name), prop.PropertyType))
+                                Dim rawVal = reader(prop.Name)
+                                Dim safeVal = GetSafeEnumValue(prop.PropertyType, rawVal)
+                                prop.SetValue(obj, safeVal)
                             End If
                         Next
                         records.Add(obj)
@@ -1450,24 +1458,26 @@ Friend Class SqlServerOrmAsync
                 End Using
             End Using
 
-            ' Load child collections for each parent
+            ' Load child collections
             For Each obj In records
                 For Each prop In typeT.GetProperties().Where(Function(p) IsGenericList(p.PropertyType) AndAlso p.CanWrite)
                     Dim childType = prop.PropertyType.GetGenericArguments()(0)
                     Dim childTable = childType.Name
                     Dim fkColumn = $"{tableName}_{idColumn}"
                     Dim parentId = typeT.GetProperty(idColumn).GetValue(obj)
-
                     Dim childSql = $"SELECT * FROM [{childTable}] WHERE [{fkColumn}] = {parameterPrefix}ParentId"
+
                     Using childCmd = Await _provider.CreateCommandAsync(childSql, connection)
                         childCmd.Parameters.Add(Await _provider.CreateParameterAsync($"{parameterPrefix}ParentId", parentId))
-                        Using childReader = Await childCmd.ExecuteReaderAsync()
+                        Using reader = Await childCmd.ExecuteReaderAsync()
                             Dim childList = CType(Activator.CreateInstance(prop.PropertyType), IList)
-                            While Await childReader.ReadAsync()
+                            While Await reader.ReadAsync()
                                 Dim childObj = Activator.CreateInstance(childType)
                                 For Each cp In childType.GetProperties().Where(Function(p) p.CanWrite AndAlso Not IsGenericList(p.PropertyType))
-                                    If ColumnExists(childReader, cp.Name) AndAlso Not Await childReader.IsDBNullAsync(childReader.GetOrdinal(cp.Name)) Then
-                                        cp.SetValue(childObj, Convert.ChangeType(childReader(cp.Name), cp.PropertyType))
+                                    If ColumnExists(reader, cp.Name) AndAlso Not Await reader.IsDBNullAsync(reader.GetOrdinal(cp.Name)) Then
+                                        Dim rawVal = reader(cp.Name)
+                                        Dim safeVal = GetSafeEnumValue(cp.PropertyType, rawVal)
+                                        cp.SetValue(childObj, safeVal)
                                     End If
                                 Next
                                 childList.Add(childObj)
@@ -1479,15 +1489,16 @@ Friend Class SqlServerOrmAsync
             Next
         End Using
 
-        ' 🔁 Sort the in-memory results AFTER paging
-        Dim sortedRecords = If(ascending,
-        records.OrderBy(Function(r) typeT.GetProperty(idColumn).GetValue(r)).ToList(),
-        records.OrderByDescending(Function(r) typeT.GetProperty(idColumn).GetValue(r)).ToList()
-    )
+        ' Sort records in-memory after paging
+        Dim idProp = typeT.GetProperty(idColumn)
+        If idProp IsNot Nothing Then
+            records = If(ascending,
+                     records.OrderBy(Function(x) idProp.GetValue(x)).ToList(),
+                     records.OrderByDescending(Function(x) idProp.GetValue(x)).ToList())
+        End If
 
         Dim pageCount = CInt(Math.Ceiling(totalRecords / CDbl(maxPerPage)))
-
-        Return New Page(Of T)(sortedRecords, pageNumber, maxPerPage, totalRecords, pageCount)
+        Return New Page(Of T)(records, pageNumber, maxPerPage, totalRecords, pageCount)
     End Function
 
     Public Async Function FindByIdAsync(Of T)(id As Object, Optional idColumn As String = "Id") As Task(Of T) Implements IOrmAsync.FindByIdAsync

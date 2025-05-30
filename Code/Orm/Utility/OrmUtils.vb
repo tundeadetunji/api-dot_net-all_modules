@@ -195,6 +195,14 @@ Friend Class OrmUtils
     Friend Shared Function IsGenericList(type As Type) As Boolean
         Return type.IsGenericType AndAlso type.GetGenericTypeDefinition() = GetType(List(Of ))
     End Function
+    Friend Shared Function ColumnExists(reader As IDataReader, columnName As String) As Boolean
+        For i As Integer = 0 To reader.FieldCount - 1
+            If reader.GetName(i).Equals(columnName, StringComparison.OrdinalIgnoreCase) Then
+                Return True
+            End If
+        Next
+        Return False
+    End Function
 
     Friend Shared Function GetSafeEnumValue(targetType As Type, rawValue As Object) As Object
         If rawValue Is Nothing OrElse rawValue Is DBNull.Value Then
@@ -303,14 +311,6 @@ Friend Class OrmUtils
         Return newObj
     End Function
 
-    Friend Shared Function ColumnExists(reader As IDataReader, columnName As String) As Boolean
-        For i As Integer = 0 To reader.FieldCount - 1
-            If reader.GetName(i).Equals(columnName, StringComparison.OrdinalIgnoreCase) Then
-                Return True
-            End If
-        Next
-        Return False
-    End Function
 
 #End Region
 
