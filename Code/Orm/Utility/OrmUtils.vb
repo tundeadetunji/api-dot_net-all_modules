@@ -200,9 +200,6 @@ Friend Class OrmUtils
         Return False
     End Function
 
-    Friend Shared Function IsGenericList(type As Type) As Boolean
-        Return type.IsGenericType AndAlso type.GetGenericTypeDefinition() = GetType(List(Of ))
-    End Function
     Friend Shared Function GetSafeEnumValue(targetType As Type, rawValue As Object) As Object
         If rawValue Is Nothing OrElse rawValue Is DBNull.Value Then
             Return Nothing
@@ -233,6 +230,9 @@ Friend Class OrmUtils
         Return Convert.ChangeType(rawValue, targetType)
     End Function
 
+    Friend Shared Function IsGenericList(type As Type) As Boolean
+        Return type.IsGenericType AndAlso type.GetGenericTypeDefinition() = GetType(List(Of ))
+    End Function
     Friend Shared Function GetEnumDbValue(prop As PropertyInfo, value As Object) As Object
         If value Is Nothing Then Return DBNull.Value
 
