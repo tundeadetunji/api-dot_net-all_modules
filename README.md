@@ -22,14 +22,13 @@ Following are usage examples.
 
 
 ---
-
 ## SequelOrm
 Lightweight ORM.
 - ﻿SqlServer is currently the only supported database provider; this implementation was tested on it.
 - Support for PostgreSql and MySql, as well as Logging and Transaction Isolation Levels, are actively WIP.
 - Parent-to-child foreign key convention is {ParentTypeName}_{idColumn} (e.g. Person {Id, Name, List(Of Phone)} => Phone {Id, Person_Id, PhoneNumber}).
 - Supports 1 : many (e.g. 1 Person can have many Phones); the rest are actively WIP and may not work as expected if implemented in this version.
-- Direct support for Enum types is actively WIP; workaround is to explicitly use Integer instead of the enum property (or an appropriate string type, if not using the numeric/ordinal value), for instance, if your class contains an enum of AccountType, use Public Property Account As Integer, not Public Property Account As AccountType
+- Direct support for Enum types is now available.
 - Picks up non read-only properties only, and ignores RowVersion property if it doesnt exist.
 - Finally, you may need to install appropriate Sql Clients or Providers from nuget.org, e.g. System.Data.SqlClient.
 
@@ -46,7 +45,7 @@ IOrm orm = SequelOrm.GetInstance(provider, connectionString);
 
 // create a Person object
 List<Phone> amyPhoneNumbers = new List<Phone> { new Phone { PhoneNumber = "01 001 AMY" } };
-Person amy = new Person { Name = "Amy", Phones = amyPhoneNumbers };
+Person amy = new Person { Name = "Amy", Phones = amyPhoneNumbers, Account = AccountType.Checking };
 
 // create a Person record
 Person created = orm.Create<Person>(amy);
@@ -78,9 +77,19 @@ public int Id { get; set; }
 public string Name { get; set; }
 public List<Phone> Phones { get; set; } = new List<Phone>();
 
+[EnumStorage(EnumStorageType.String)]
+public AccountType Account {get; set;} = AccountType.Checking;
+
 public override string ToString()
 {
     return Name + " (Id: " + Id + ")";
+}
+
+public enum AccountType
+{
+	Savings = 0,
+	Current = 1,
+	Checking = 2
 }
 
 public class Phone {
@@ -107,7 +116,7 @@ Dim orm As IOrm = SequelOrm.GetInstance(provider, connectionString)
 
 ' create a Person object
 Dim amyPhoneNumbers As New List(Of Phone) From {New Phone With {.PhoneNumber = "01 001 AMY"}}
-Dim amy As New Person With {.Name = "Amy", .Phones = amyPhoneNumbers}
+Dim amy As New Person With {.Name = "Amy", .Phones = amyPhoneNumbers, .Account=AccountType.Checking}
 
 
 ' create a Person record
@@ -138,12 +147,20 @@ Public Class Person
     <SqlType("NVARCHAR(100)")>
     Public Property Name As String
     Public Property Phones As List(Of Phone) = New List(Of Phone)
+    <EnumStorage(EnumStorageType.String)>
+    Public Property Account As AccountType = AccountType.Checking
 
     Public Overrides Function ToString() As String
         Return Name & " (Id: " & Id & ")"
     End Function
 
 End Class
+
+Public Enum AccountType
+    Savings = 0
+    Current = 1
+    Checking = 2
+End Enum
 
 Public Class Phone
     Public Property Id As Integer
@@ -156,7 +173,7 @@ Public Class Phone
 End Class
 ```
 
-
+---
 ## Bootstrap
 Contains methods based on Bootstrap, currently 4 but upgrades are WIP.
 
@@ -466,4 +483,5 @@ Imports iNovation.Code.Styler
 
 Style(Me, True)
 ```
+
 
