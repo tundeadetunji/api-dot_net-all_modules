@@ -29,7 +29,7 @@ Public Interface IOrm
     ''' <param name="mode"></param>
     ''' <param name="entities"></param>
     ''' <param name="idColumn"></param>
-    Sub PrepareDatabase(mode As DbPrepMode, entities As List(Of Type), Optional idColumn As String = "Id")
+    Sub PrepareDatabase(mode As DbPrepMode, entities As List(Of Type), Optional idColumn As String = "Id", Optional isolation As IsolationLevel = IsolationLevel.ReadCommitted)
 
 #End Region
 

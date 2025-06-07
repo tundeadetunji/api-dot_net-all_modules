@@ -9,15 +9,16 @@ Friend Class SqlServerOrm
     Public Const Id As String = "Id"
 
     Private Shared _instance As Lazy(Of SqlServerOrm)
-
-    Private Sub New(connectionString As String)
+    Private Shared _logger As IDbLogger = NullDbLogger.Instance
+    Private Sub New(connectionString As String, logger As IDbLogger)
+        _logger = logger
         _provider = New SqlServerProvider(connectionString)
     End Sub
 
-    Public Shared ReadOnly Property Instance(connectionString As String) As SqlServerOrm
+    Public Shared ReadOnly Property Instance(connectionString As String, logger As IDbLogger) As SqlServerOrm
         Get
             If _instance Is Nothing Then
-                _instance = New Lazy(Of SqlServerOrm)(Function() New SqlServerOrm(connectionString), LazyThreadSafetyMode.ExecutionAndPublication)
+                _instance = New Lazy(Of SqlServerOrm)(Function() New SqlServerOrm(connectionString, logger), LazyThreadSafetyMode.ExecutionAndPublication)
             End If
             Return _instance.Value
         End Get
@@ -26,21 +27,27 @@ Friend Class SqlServerOrm
 
 #Region "PrepareDatabase"
 
-    Public Sub PrepareDatabase(mode As DbPrepMode, entities As List(Of Type), Optional idColumn As String = Id) Implements IOrm.PrepareDatabase
+    Public Sub PrepareDatabase(mode As DbPrepMode, entities As List(Of Type), Optional idColumn As String = Id, Optional isolation As IsolationLevel = IsolationLevel.ReadCommitted) Implements IOrm.PrepareDatabase
         Using connection = _provider.CreateConnection()
             connection.Open()
-            Using transaction = connection.BeginTransaction()
+            Using transaction = connection.BeginTransaction(isolation)
+                Try
+                    Dim executedTables As New HashSet(Of String)
+                    For Each entityType In entities
+                        CreateOrUpdateTableRecursive(entityType, idColumn, mode, connection, transaction, executedTables, _logger)
+                    Next
 
-                Dim executedTables As New HashSet(Of String)
-
-                For Each entityType In entities
-                    CreateOrUpdateTableRecursive(entityType, idColumn, mode, connection, transaction, executedTables)
-                Next
-
-                transaction.Commit()
+                    transaction.Commit()
+                    _logger?.LogInfo("PrepareDatabase succeeded.")
+                Catch ex As Exception
+                    _logger?.LogError("PrepareDatabase failed.", ex)
+                    transaction.Rollback()
+                    Throw
+                End Try
             End Using
         End Using
     End Sub
+
 #End Region
 
 #Region "FindById"
