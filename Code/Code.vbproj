@@ -103,7 +103,9 @@
     <Compile Include="EncryptionExtensions.vb" />
     <Compile Include="EnumStorageAttribute.vb" />
     <Compile Include="FeedbackExtensions.vb" />
+    <Compile Include="ForeignKeyAttribute.vb" />
     <Compile Include="GeneralExtensions.vb" />
+    <Compile Include="JoinTableAttribute.vb" />
     <Compile Include="LoggingExtensions.vb" />
     <Compile Include="Orm\DbProvider\IDbProvider.vb" />
     <Compile Include="Orm\DbProvider\IDbProviderAsync.vb" />
