@@ -1,8 +1,112 @@
 ﻿Imports iNovation.Code.OrmUtils
 Imports System.Data.Common
+Imports System.Reflection
 Imports System.Threading
 Friend Class SqlServerOrm
     Implements IOrm
+
+#Region "support"
+    Private Function CreateInternal(Of T)(item As T, typeT As Type, idColumn As String, connection As IDbConnection, transaction As IDbTransaction, IdWillAutoIncrement As Boolean) As T
+        _logger.LogInfo($"[Create] Inserting {typeT.Name}...")
+
+        ' === 1a. Handle One-to-One or embedded class-type children ===
+        For Each prop In typeT.GetProperties()
+            If OrmUtils.IsSimpleType(prop.PropertyType) OrElse OrmUtils.IsGenericList(prop.PropertyType) Then Continue For
+            If prop.PropertyType.IsEnum Then Continue For
+
+            Dim child = prop.GetValue(item)
+            If child Is Nothing Then Continue For
+
+            ' Skip Many-to-One detection here
+            Dim childIdProp = OrmUtils.FindIdProperty(child.GetType(), idColumn)
+            If childIdProp Is Nothing Then Continue For
+
+            Dim childIdVal = childIdProp.GetValue(child)
+            If OrmUtils.IsDefaultValue(childIdVal) Then
+                ' [FIXED] Set FK before insert
+                Dim fkName = $"{typeT.Name}_Id"
+                Dim fkProp = child.GetType().GetProperty(fkName)
+                If fkProp IsNot Nothing Then
+                    Dim parentId = OrmUtils.FindIdProperty(typeT, idColumn).GetValue(item)
+                    fkProp.SetValue(child, parentId)
+                End If
+
+                _logger.LogInfo($"[Create] Inserting nested One-to-One: {child.GetType().Name}")
+                CreateInternal(child, child.GetType(), idColumn, connection, transaction, IdWillAutoIncrement)
+            End If
+        Next
+
+        ' === 1b. Handle Many-to-One (parent object ref inside this item) ===
+        For Each prop In typeT.GetProperties()
+            If OrmUtils.IsSimpleType(prop.PropertyType) OrElse OrmUtils.IsGenericList(prop.PropertyType) Then Continue For
+            If prop.PropertyType.IsEnum Then Continue For
+
+            Dim parentObj = prop.GetValue(item)
+            If parentObj Is Nothing Then Continue For
+
+            Dim parentIdProp = OrmUtils.FindIdProperty(parentObj.GetType(), idColumn)
+            If parentIdProp Is Nothing Then Continue For
+
+            Dim parentIdVal = parentIdProp.GetValue(parentObj)
+            If OrmUtils.IsDefaultValue(parentIdVal) Then
+                _logger.LogInfo($"[Create] Inserting parent in Many-to-One: {parentObj.GetType().Name}")
+                CreateInternal(parentObj, parentObj.GetType(), idColumn, connection, transaction, IdWillAutoIncrement)
+            End If
+
+            ' Set FK on this entity
+            Dim fkName = $"{prop.PropertyType.Name}_Id"
+            Dim fkProp = typeT.GetProperty(fkName)
+            If fkProp IsNot Nothing Then
+                fkProp.SetValue(item, parentIdProp.GetValue(parentObj))
+            End If
+        Next
+
+        ' === 2. Insert this entity ===
+        Dim insertSql = BuildInsertSql(typeT, item, idColumn, IdWillAutoIncrement)
+        _logger.LogInfo($"[Create] SQL: {insertSql}")
+
+        Dim insertedId = ExecuteInsertAndGetId(insertSql, typeT, connection, transaction, IdWillAutoIncrement)
+        OrmUtils.FindIdProperty(typeT, idColumn).SetValue(item, insertedId)
+
+        ' === RowVersion handling (optional) ===
+        Dim versionProp = typeT.GetProperties().
+        FirstOrDefault(Function(p) p.Name.Equals("RowVersion", StringComparison.OrdinalIgnoreCase))
+
+        If versionProp IsNot Nothing AndAlso versionProp.PropertyType Is GetType(Byte()) Then
+            ' TODO: Replace with actual RowVersion logic
+            Dim dummyVersion As Byte() = New Byte() {1, 0, 0, 0}
+            versionProp.SetValue(item, dummyVersion)
+            _logger.LogInfo($"[Create] RowVersion set (stubbed): {BitConverter.ToString(dummyVersion)}")
+        End If
+
+        ' === 3. Insert One-to-Many child collections ===
+        For Each prop In typeT.GetProperties()
+            If Not OrmUtils.IsGenericList(prop.PropertyType) Then Continue For
+
+            Dim childList = TryCast(prop.GetValue(item), IEnumerable)
+            If childList Is Nothing Then Continue For
+
+            For Each childObj In childList
+                If childObj Is Nothing Then Continue For
+
+                ' Set FK from parent to child
+                Dim fkName = $"{typeT.Name}_Id"
+                Dim fkProp = childObj.GetType().GetProperty(fkName)
+                If fkProp IsNot Nothing Then
+                    Dim parentId = OrmUtils.FindIdProperty(typeT, idColumn).GetValue(item)
+                    fkProp.SetValue(childObj, parentId)
+                End If
+
+                _logger.LogInfo($"[Create] Inserting child from collection: {childObj.GetType().Name}")
+                CreateInternal(childObj, childObj.GetType(), idColumn, connection, transaction, IdWillAutoIncrement)
+            Next
+        Next
+
+        _logger.LogInfo($"[Create] Done inserting {typeT.Name} with ID {insertedId}")
+        Return item
+    End Function
+
+#End Region
 
 #Region "init"
     Private ReadOnly _provider As IDbProvider
@@ -32,7 +136,7 @@ Friend Class SqlServerOrm
             connection.Open()
             Using transaction = connection.BeginTransaction(isolation)
                 Try
-                    Dim executedTables As New HashSet(Of String)
+                    Dim executedTables As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
                     For Each entityType In entities
                         CreateOrUpdateTableRecursive(entityType, idColumn, mode, connection, transaction, executedTables, _logger)
                     Next
@@ -412,223 +516,42 @@ Friend Class SqlServerOrm
 #End Region
 
 #Region "Create"
-    Public Function Create(Of T)(obj As T, Optional idColumn As String = Id, Optional IdWillAutoIncrement As Boolean = True) As T Implements IOrm.Create
+    Public Function Create(Of T)(obj As T, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True, Optional isolationLevel As IsolationLevel = IsolationLevel.ReadCommitted) As T Implements IOrm.Create
+
         Dim typeT = GetType(T)
-        Dim tableName = typeT.Name
-        Dim parameterPrefix = _provider.GetParameterPrefix()
-
-        Dim properties = typeT.GetProperties().
-        Where(Function(p) p.CanRead AndAlso p.CanWrite).ToList()
-
-        Dim idProp = properties.FirstOrDefault(Function(p) p.Name = idColumn)
-        If idProp Is Nothing Then
-            Throw New InvalidOperationException($"The specified id column '{idColumn}' was not found on type '{typeT.Name}'.")
-        End If
-
         Using connection = _provider.CreateConnection()
             connection.Open()
-            Using transaction = connection.BeginTransaction()
-
-                ' Insert parent
-                Dim insertCols = New List(Of String)
-                Dim insertVals = New List(Of String)
-                Dim parameters = New List(Of IDataParameter)
-
-                For Each prop In properties
-                    If IsGenericList(prop.PropertyType) Then Continue For
-                    If prop.Name = idColumn AndAlso IdWillAutoIncrement Then Continue For
-
-                    Dim paramName = $"{parameterPrefix}{prop.Name}"
-                    insertCols.Add($"[{prop.Name}]")
-                    insertVals.Add(paramName)
-                    Dim rawValue = prop.GetValue(obj)
-                    Dim dbValue = GetEnumDbValue(prop, rawValue)
-                    parameters.Add(_provider.CreateParameter(paramName, dbValue))
-                Next
-
-                Dim sql = $"INSERT INTO [{tableName}] ({String.Join(", ", insertCols)}) VALUES ({String.Join(", ", insertVals)})"
-                If IdWillAutoIncrement Then
-                    sql += "; SELECT CAST(SCOPE_IDENTITY() AS BIGINT);"
-                End If
-
-                Using cmd = _provider.CreateCommand(sql, connection)
-                    cmd.Transaction = transaction
-                    For Each param In parameters
-                        cmd.Parameters.Add(param)
-                    Next
-
-                    If IdWillAutoIncrement Then
-                        Dim newId = Convert.ToInt64(cmd.ExecuteScalar())
-                        idProp.SetValue(obj, Convert.ChangeType(newId, idProp.PropertyType))
-                    Else
-                        cmd.ExecuteNonQuery()
-                    End If
-                End Using
-
-                ' Insert children
-                For Each prop In properties.Where(Function(p) IsGenericList(p.PropertyType))
-                    Dim childList = CType(prop.GetValue(obj), IEnumerable)
-                    If childList Is Nothing Then Continue For
-
-                    Dim childType = prop.PropertyType.GetGenericArguments()(0)
-                    Dim childTable = childType.Name
-                    Dim childProps = childType.GetProperties().
-                    Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso Not IsGenericList(p.PropertyType)).ToList()
-
-                    Dim fkColumn = $"{tableName}_{idColumn}"
-
-                    For Each child In childList
-                        ' Set FK
-                        Dim fkProp = childProps.FirstOrDefault(Function(p) p.Name = fkColumn)
-                        If fkProp IsNot Nothing Then
-                            fkProp.SetValue(child, idProp.GetValue(obj))
-                        End If
-
-                        Dim cCols = New List(Of String)
-                        Dim cVals = New List(Of String)
-                        Dim cParams = New List(Of IDataParameter)
-
-                        For Each cp In childProps
-                            If cp.Name = idColumn AndAlso IdWillAutoIncrement Then Continue For
-
-                            Dim cpName = cp.Name
-                            Dim rawValue = cp.GetValue(child)
-                            Dim dbValue = GetEnumDbValue(cp, rawValue)
-
-                            cCols.Add($"[{cpName}]")
-                            cVals.Add($"{parameterPrefix}{cpName}")
-                            cParams.Add(_provider.CreateParameter($"{parameterPrefix}{cpName}", dbValue))
-                        Next
-
-                        Dim childSql = $"INSERT INTO [{childTable}] ({String.Join(", ", cCols)}) VALUES ({String.Join(", ", cVals)}); SELECT CAST(SCOPE_IDENTITY() AS BIGINT);"
-
-                        Using cmd = _provider.CreateCommand(childSql, connection)
-                            cmd.Transaction = transaction
-                            For Each p In cParams
-                                cmd.Parameters.Add(p)
-                            Next
-
-                            Dim newChildId = Convert.ToInt64(cmd.ExecuteScalar())
-                            Dim childIdProp = childProps.FirstOrDefault(Function(p) p.Name = idColumn)
-                            If childIdProp IsNot Nothing Then
-                                childIdProp.SetValue(child, Convert.ChangeType(newChildId, childIdProp.PropertyType))
-                            End If
-                        End Using
-                    Next
-                Next
-
-                transaction.Commit()
+            Using transaction = connection.BeginTransaction(isolationLevel)
+                Try
+                    CreateInternal(obj, typeT, idColumn, connection, transaction, IdWillAutoIncrement)
+                    transaction.Commit()
+                    _logger?.LogInfo($"Create succeeded for type {typeT.Name}")
+                Catch ex As Exception
+                    transaction.Rollback()
+                    _logger?.LogError($"Create failed for type {typeT.Name}", ex)
+                    Throw
+                End Try
             End Using
         End Using
 
         Return obj
     End Function
-    Public Function CreateInTable(Of T)(obj As T, tableName As String, Optional idColumn As String = Id, Optional IdWillAutoIncrement As Boolean = True) As T Implements IOrm.CreateInTable
+    Public Function CreateInTable(Of T)(obj As T, tableName As String, Optional idColumn As String = Id, Optional IdWillAutoIncrement As Boolean = True, Optional isolationLevel As IsolationLevel = IsolationLevel.ReadCommitted) As T Implements IOrm.CreateInTable
         If String.IsNullOrEmpty(tableName) Then Throw New ArgumentException("Table Name cannot be null.")
+
         Dim typeT = GetType(T)
-        Dim parameterPrefix = _provider.GetParameterPrefix()
-
-        Dim properties = typeT.GetProperties().
-        Where(Function(p) p.CanRead AndAlso p.CanWrite).ToList()
-
-        Dim idProp = properties.FirstOrDefault(Function(p) p.Name = idColumn)
-        If idProp Is Nothing Then
-            Throw New InvalidOperationException($"The specified id column '{idColumn}' was not found on type '{typeT.Name}'.")
-        End If
-
         Using connection = _provider.CreateConnection()
             connection.Open()
-            Using transaction = connection.BeginTransaction()
-
-                ' Insert parent
-                Dim insertCols = New List(Of String)
-                Dim insertVals = New List(Of String)
-                Dim parameters = New List(Of IDataParameter)
-
-                For Each prop In properties
-                    If IsGenericList(prop.PropertyType) Then Continue For
-                    If prop.Name = idColumn AndAlso IdWillAutoIncrement Then Continue For
-
-                    Dim paramName = $"{parameterPrefix}{prop.Name}"
-                    insertCols.Add($"[{prop.Name}]")
-                    insertVals.Add(paramName)
-                    Dim rawValue = prop.GetValue(obj)
-                    Dim dbValue = GetEnumDbValue(prop, rawValue)
-                    parameters.Add(_provider.CreateParameter(paramName, dbValue))
-                Next
-
-                Dim sql = $"INSERT INTO [{tableName}] ({String.Join(", ", insertCols)}) VALUES ({String.Join(", ", insertVals)})"
-                If IdWillAutoIncrement Then
-                    sql += "; SELECT CAST(SCOPE_IDENTITY() AS BIGINT);"
-                End If
-
-                Using cmd = _provider.CreateCommand(sql, connection)
-                    cmd.Transaction = transaction
-                    For Each param In parameters
-                        cmd.Parameters.Add(param)
-                    Next
-
-                    If IdWillAutoIncrement Then
-                        Dim newId = Convert.ToInt64(cmd.ExecuteScalar())
-                        idProp.SetValue(obj, Convert.ChangeType(newId, idProp.PropertyType))
-                    Else
-                        cmd.ExecuteNonQuery()
-                    End If
-                End Using
-
-                ' Insert children
-                For Each prop In properties.Where(Function(p) IsGenericList(p.PropertyType))
-                    Dim childList = CType(prop.GetValue(obj), IEnumerable)
-                    If childList Is Nothing Then Continue For
-
-                    Dim childType = prop.PropertyType.GetGenericArguments()(0)
-                    Dim childTable = childType.Name
-                    Dim childProps = childType.GetProperties().
-                    Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso Not IsGenericList(p.PropertyType)).ToList()
-
-                    Dim fkColumn = $"{tableName}_{idColumn}"
-
-                    For Each child In childList
-                        ' Set FK
-                        Dim fkProp = childProps.FirstOrDefault(Function(p) p.Name = fkColumn)
-                        If fkProp IsNot Nothing Then
-                            fkProp.SetValue(child, idProp.GetValue(obj))
-                        End If
-
-                        Dim cCols = New List(Of String)
-                        Dim cVals = New List(Of String)
-                        Dim cParams = New List(Of IDataParameter)
-
-                        For Each cp In childProps
-                            If cp.Name = idColumn AndAlso IdWillAutoIncrement Then Continue For
-
-                            Dim cpName = cp.Name
-                            Dim rawValue = cp.GetValue(child)
-                            Dim dbValue = GetEnumDbValue(cp, rawValue)
-
-                            cCols.Add($"[{cpName}]")
-                            cVals.Add($"{parameterPrefix}{cpName}")
-                            cParams.Add(_provider.CreateParameter($"{parameterPrefix}{cpName}", dbValue))
-                        Next
-
-                        Dim childSql = $"INSERT INTO [{childTable}] ({String.Join(", ", cCols)}) VALUES ({String.Join(", ", cVals)}); SELECT CAST(SCOPE_IDENTITY() AS BIGINT);"
-
-                        Using cmd = _provider.CreateCommand(childSql, connection)
-                            cmd.Transaction = transaction
-                            For Each p In cParams
-                                cmd.Parameters.Add(p)
-                            Next
-
-                            Dim newChildId = Convert.ToInt64(cmd.ExecuteScalar())
-                            Dim childIdProp = childProps.FirstOrDefault(Function(p) p.Name = idColumn)
-                            If childIdProp IsNot Nothing Then
-                                childIdProp.SetValue(child, Convert.ChangeType(newChildId, childIdProp.PropertyType))
-                            End If
-                        End Using
-                    Next
-                Next
-
-                transaction.Commit()
+            Using transaction = connection.BeginTransaction(isolationLevel)
+                Try
+                    CreateInternal(obj, typeT, idColumn, connection, transaction, IdWillAutoIncrement)
+                    transaction.Commit()
+                    _logger?.LogInfo($"Create succeeded for type {typeT.Name}")
+                Catch ex As Exception
+                    transaction.Rollback()
+                    _logger?.LogError($"Create failed for type {typeT.Name}", ex)
+                    Throw
+                End Try
             End Using
         End Using
 

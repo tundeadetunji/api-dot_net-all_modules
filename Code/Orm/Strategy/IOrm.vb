@@ -45,20 +45,22 @@ Public Interface IOrm
     ''' <param name="idColumn"></param>
     ''' <param name="IdWillAutoIncrement"></param>
     ''' <returns></returns>
-    Function Create(Of T)(obj As T, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True) As T
+    Function Create(Of T)(obj As T, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True, Optional isolationLevel As IsolationLevel = IsolationLevel.ReadCommitted) As T
 
     ''' <summary>
     ''' Use this if the name of the class is not the same as the name of the table.
     ''' Will insert new record regardlesss. To create only if it doesn't exist, use CreateOrUpdate().
     ''' Uses Transaction.
     ''' </summary>
-    ''' <typeparam name="T"></typeparam>
+    ''' <deprecated>
+    ''' This method is deprecated. Use <see cref="Create(Of T)(T, String, Boolean, IsolationLevel)"/> instead.
+    ''' </deprecated>    ''' <typeparam name="T"></typeparam>
     ''' <param name="obj"></param>
     ''' <param name="tableName"></param>
     ''' <param name="idColumn"></param>
     ''' <param name="IdWillAutoIncrement"></param>
     ''' <returns></returns>
-    Function CreateInTable(Of T)(obj As T, tableName As String, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True) As T
+    Function CreateInTable(Of T)(obj As T, tableName As String, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True, Optional isolationLevel As IsolationLevel = IsolationLevel.ReadCommitted) As T
 
     ''' <summary>
     ''' Use this if the name of the class is the same as the name of the table.
@@ -77,7 +79,9 @@ Public Interface IOrm
     ''' Will insert new record regardlesss. To create only if it doesn't exist, use CreateOrUpdate().
     ''' Uses Transaction.
     ''' </summary>
-    ''' <typeparam name="T"></typeparam>
+    ''' <deprecated>
+    ''' This method is deprecated. Use <see cref="Create(Of T)(List(Of T), String, Boolean)"/> instead.
+    ''' </deprecated>    ''' <typeparam name="T"></typeparam>
     ''' <param name="objs"></param>
     ''' <param name="tableName"></param>
     ''' <param name="idColumn"></param>
@@ -100,7 +104,9 @@ Public Interface IOrm
     ''' <summary>
     ''' Use this if the name of the class is not the same as the name of the table.
     ''' </summary>
-    ''' <param name="id"></param>
+    ''' <deprecated>
+    ''' This method is deprecated. Use <see cref="ExistsById(Of T)(Object, String)"/> instead.
+    ''' </deprecated>    ''' <param name="id"></param>
     ''' <param name="tableName"></param>
     ''' <param name="idColumn"></param>
     ''' <returns></returns>
@@ -120,7 +126,9 @@ Public Interface IOrm
     ''' <summary>
     ''' Use this if the name of the class is not the same as the name of the table.
     ''' </summary>
-    ''' <typeparam name="T"></typeparam>
+    ''' <deprecated>
+    ''' This method is deprecated. Use <see cref="ExistsBy(Of T)(List(Of Condition))"/> instead.
+    ''' </deprecated>    ''' <typeparam name="T"></typeparam>
     ''' <param name="conditions"></param>
     ''' <param name="tableName"></param>
     ''' <returns></returns>
@@ -142,6 +150,9 @@ Public Interface IOrm
     ''' Use this if the name of the class is not the same as the name of the table.
     ''' Uses Transaction.
     ''' </summary>
+    ''' <deprecated>
+    ''' This method is deprecated. Use <see cref="DeleteAll(Of T)(Boolean)"/> instead.
+    ''' </deprecated>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="tableName"></param>
     ''' <param name="cascade">When set to true, deletes all child tables when parent table is deleted (may throw exception if database or table structure does not support it, especially when set to false)</param>
@@ -161,6 +172,9 @@ Public Interface IOrm
     ''' Use this if the name of the class is not the same as the name of the table.
     ''' Uses Transaction.
     ''' </summary>
+    ''' <deprecated>
+    ''' This method is deprecated. Use <see cref="DeleteWhereId(Of T)(Object, String, Boolean)"/> instead.
+    ''' </deprecated>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="id"></param>
     ''' <param name="tableName"></param>
@@ -184,6 +198,9 @@ Public Interface IOrm
     ''' Use this if the name of the class is not the same as the name of the table.
     ''' Uses Transaction.
     ''' </summary>
+    ''' <deprecated>
+    ''' This method is deprecated. Use <see cref="DeleteBy(Of T)(List(Of Condition), Boolean)"/> instead.
+    ''' </deprecated>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="conditions"></param>
     ''' <param name="tableName"></param>
@@ -204,6 +221,9 @@ Public Interface IOrm
     ''' <summary>
     ''' Use this if the name of the class is not the same as the name of the table.
     ''' </summary>
+    ''' <deprecated>
+    ''' This method is deprecated. Use <see cref="CountBy(Of T)(List(Of Condition))"/> instead.
+    ''' </deprecated>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="conditions"></param>
     ''' <param name="tableName"></param>
@@ -224,6 +244,9 @@ Public Interface IOrm
     ''' <summary>
     ''' Use this if the name of the class is not the same as the name of the table.
     ''' </summary>
+    ''' <deprecated>
+    ''' This method is deprecated. Use <see cref="Count(Of T)()"/> instead.
+    ''' </deprecated>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="tableName"></param>
     ''' <returns></returns>
@@ -245,6 +268,9 @@ Public Interface IOrm
     ''' <summary>
     ''' Use this if the name of the class is not the same as the name of the table.
     ''' </summary>
+    ''' <deprecated>
+    ''' This method is deprecated. Use <see cref="FindById(Of T)(Object, String)"/> instead.
+    ''' </deprecated>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="id"></param>
     ''' <param name="tableName"></param>
@@ -267,6 +293,9 @@ Public Interface IOrm
     ''' <summary>
     ''' Use this if the name of the class is not the same as the name of the table.
     ''' </summary>
+    ''' <deprecated>
+    ''' This method is deprecated. Use <see cref="FindAll(Of T)(String, Boolean)"/> instead.
+    ''' </deprecated>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="tableName"></param>
     ''' <returns></returns>
@@ -290,6 +319,9 @@ Public Interface IOrm
     ''' <summary>
     ''' Use this if the name of the class is not the same as the name of the table.
     ''' </summary>
+    ''' <deprecated>
+    ''' This method is deprecated. Use <see cref="FindAllPaged(Of T)(Integer, Integer, String, Boolean)"/> instead.
+    ''' </deprecated>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="pageNumber"></param>
     ''' <param name="maxPerPage"></param>
@@ -313,6 +345,9 @@ Public Interface IOrm
     ''' <summary>
     ''' Use this if the name of the class is not the same as the name of the table.
     ''' </summary>
+    ''' <deprecated>
+    ''' This method is deprecated. Use <see cref="FindBy(Of T)(List(Of Condition))"/> instead.
+    ''' </deprecated>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="conditions"></param>
     ''' <param name="tableName"></param>
@@ -336,6 +371,9 @@ Public Interface IOrm
     ''' <summary>
     ''' Use this if the name of the class is not the same as the name of the table.
     ''' </summary>
+    ''' <deprecated>
+    ''' This method is deprecated. Use <see cref="FindByPaged(Of T)(List(Of Condition), Integer, Integer)"/> instead.
+    ''' </deprecated>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="conditions"></param>
     ''' <param name="tableName"></param>
@@ -361,6 +399,9 @@ Public Interface IOrm
     ''' Use this if the name of the class is not the same as the name of the table.
     ''' Uses Transaction.
     ''' </summary>
+    ''' <deprecated>
+    ''' This method is deprecated. Use <see cref="Update(Of T)(T, String)"/> instead.
+    ''' </deprecated>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="obj"></param>
     ''' <param name="tableName"></param>
@@ -387,6 +428,9 @@ Public Interface IOrm
     ''' Creates record if it doesn't exist, Updates otherwise.
     ''' Uses Transaction.
     ''' </summary>
+    ''' <deprecated>
+    ''' This method is deprecated. Use <see cref="CreateOrUpdate(Of T)(T, String, Boolean)"/> instead.
+    ''' </deprecated>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="obj"></param>
     ''' <param name="tableName"></param>

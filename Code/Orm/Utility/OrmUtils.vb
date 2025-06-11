@@ -11,13 +11,100 @@ Friend Class OrmUtils
 
 #Region "sync"
 
-    Friend Shared Function GetEnumStorageType(prop As PropertyInfo) As EnumStorageType
-        Dim attr = prop.GetCustomAttribute(Of EnumStorageAttribute)()
-        If attr IsNot Nothing Then
-            Return attr.StorageType
+    Friend Shared Function FormatSqlValue(val As Object) As String
+        If val Is Nothing Then Return "NULL"
+
+        Dim t = val.GetType()
+        If t Is GetType(String) OrElse t Is GetType(Char) Then
+            Return $"'{val.ToString().Replace("'", "''")}'"
+        ElseIf t Is GetType(DateTime) Then
+            Return $"'{DirectCast(val, DateTime).ToString("yyyy-MM-dd HH:mm:ss.fff")}'"
+        ElseIf t.IsEnum Then
+            Return $"'{val.ToString()}'"
+        ElseIf TypeOf val Is Boolean Then
+            Return If(CBool(val), "1", "0")
         End If
-        Return EnumStorageType.Ordinal ' default
+
+        Return val.ToString()
     End Function
+
+    Friend Shared Function BuildInsertSql(type As Type, obj As Object, idColumn As String, IdWillAutoIncrement As Boolean) As String
+        Dim tableName = GetTableName(type)
+        Dim columnNames As New List(Of String)()
+        Dim paramValues As New List(Of String)()
+
+        For Each prop In type.GetProperties()
+            If prop.Name.Equals(idColumn, StringComparison.OrdinalIgnoreCase) AndAlso IdWillAutoIncrement Then Continue For
+            If prop.Name.Equals("RowVersion", StringComparison.OrdinalIgnoreCase) Then Continue For
+            If IsGenericList(prop.PropertyType) Then Continue For
+
+            ' 🛑 Ignore properties handled as FKs by nav properties
+            If Not IsSimpleType(prop.PropertyType) AndAlso IsForeignKeyHandledByNavigationProperty(prop, type) Then
+                Continue For
+            End If
+
+            If Not IsSimpleType(prop.PropertyType) Then
+                ' Try adding the FK if present
+                Dim fkName = $"{prop.PropertyType.Name}_Id"
+                Dim fkProp = prop.PropertyType.GetProperty(fkName)
+                If fkProp IsNot Nothing Then
+                    Dim fkVal = fkProp.GetValue(prop.GetValue(obj))
+                    columnNames.Add($"[{fkName}]")
+                    paramValues.Add(FormatSqlValue(fkVal))
+                End If
+                Continue For
+            End If
+
+            columnNames.Add($"[{prop.Name}]")
+            paramValues.Add(FormatSqlValue(prop.GetValue(obj)))
+        Next
+
+        Dim cols = String.Join(", ", columnNames)
+        Dim vals = String.Join(", ", paramValues)
+        Return $"INSERT INTO [{tableName}] ({cols}) VALUES ({vals});"
+    End Function
+
+    Friend Shared Function ExecuteInsertAndGetId(insertSql As String, type As Type, connection As IDbConnection, transaction As IDbTransaction, IdWillAutoIncrement As Boolean) As Object
+        Using cmd = connection.CreateCommand()
+            cmd.Transaction = transaction
+            cmd.CommandText = insertSql & If(IdWillAutoIncrement, "; SELECT SCOPE_IDENTITY();", "")
+            Dim result = cmd.ExecuteScalar()
+
+            If IdWillAutoIncrement Then
+                Return Convert.ChangeType(result, FindIdProperty(type, "Id").PropertyType)
+            Else
+                Return FindIdProperty(type, "Id").GetValue(result)
+            End If
+        End Using
+    End Function
+
+
+    'Friend Shared Function BuildInsertSql(type As Type, obj As Object, idColumn As String) As String
+    '    Dim tableName = type.Name
+    '    Dim props = type.GetProperties().Where(Function(p)
+    '                                               ' Skip collections and rowversion
+    '                                               If p.Name = idColumn OrElse p.Name = "RowVersion" Then Return False
+    '                                               If GetType(System.Collections.IEnumerable).IsAssignableFrom(p.PropertyType) AndAlso p.PropertyType IsNot GetType(String) Then Return False
+    '                                               If Not IsSimpleType(p.PropertyType) Then Return False
+    '                                               Return True
+    '                                           End Function).ToList()
+
+    '    Dim columnNames = props.Select(Function(p) $"[{p.Name}]").ToList()
+    '    Dim values = props.Select(Function(p) FormatValue(p.GetValue(obj))).ToList()
+
+    '    Dim colList = String.Join(", ", columnNames)
+    '    Dim valList = String.Join(", ", values)
+
+    '    Return $"INSERT INTO [{tableName}] ({colList}) VALUES ({valList}); SELECT CAST(SCOPE_IDENTITY() AS INT);"
+    'End Function
+    'Friend Shared Function ExecuteInsertAndGetId(insertSql As String, type As Type, connection As IDbConnection, transaction As IDbTransaction) As Integer
+    '    Using cmd = connection.CreateCommand()
+    '        cmd.Transaction = transaction
+    '        cmd.CommandText = insertSql
+    '        Dim result = cmd.ExecuteScalar()
+    '        Return Convert.ToInt32(result)
+    '    End Using
+    'End Function
 
 
     Friend Shared Function MapToSqlType(prop As PropertyInfo) As String
@@ -61,34 +148,27 @@ Friend Class OrmUtils
         Dim tableName = entityType.Name
         If executedTables.Contains(tableName) Then Return
 
-        ' First ensure dependencies are created
+        ' Always recurse into children first (to ensure child tables are dropped before parents)
         For Each prop In entityType.GetProperties()
             If IsGenericList(prop.PropertyType) Then
                 Dim itemType = prop.PropertyType.GetGenericArguments()(0)
-
                 If ShouldRecurseIntoType(itemType) Then
-                    ' Many-to-Many detection
-                    Dim inverseProp = itemType.GetProperties().FirstOrDefault(Function(p) IsGenericList(p.PropertyType) AndAlso p.PropertyType.GetGenericArguments()(0) Is entityType)
-                    If inverseProp IsNot Nothing Then
-                        ' Detected M2M, create join table
-                        Dim joinTable = $"{entityType.Name}_{itemType.Name}"
-                        Dim thisKey = $"{entityType.Name}_Id"
-                        Dim otherKey = $"{itemType.Name}_Id"
-                        Dim sql_query = $"CREATE TABLE IF NOT EXISTS [{joinTable}]([{thisKey}] INT NOT NULL, [{otherKey}] INT NOT NULL);"
-                        logger?.LogInfo($"Creating join table: {joinTable}")
-                        ExecuteNonQuery(sql_query, connection, transaction)
-                        Continue For
-                    End If
-
-                    ' Otherwise, recurse for One-to-Many
                     CreateOrUpdateTableRecursive(itemType, idColumn, mode, connection, transaction, executedTables, logger)
                 End If
             End If
         Next
 
-        If executedTables.Contains(tableName) Then Return
+        ' --- DROP logic for DbPrepMode.Create ---
+        If mode = DbPrepMode.Create Then
+            Dim dropSql = BuildDropTableSql(entityType)
+            If Not String.IsNullOrWhiteSpace(dropSql) Then
+                logger?.LogInfo($"Dropping table: {tableName}")
+                ExecuteNonQuery(dropSql, connection, transaction)
+            End If
+        End If
 
-        Dim sql As String
+        ' Now CREATE or ALTER depending on mode
+        Dim sql As String = Nothing
         Select Case mode
             Case DbPrepMode.Create
                 sql = BuildCreateTableSql(entityType, idColumn)
@@ -103,12 +183,13 @@ Friend Class OrmUtils
             ExecuteNonQuery(sql, connection, transaction)
         End If
 
-        ' Add fallback FK if needed
+        ' --- Fallback FK (One-to-Many) ---
         For Each prop In entityType.GetProperties()
             If IsGenericList(prop.PropertyType) Then
                 Dim itemType = prop.PropertyType.GetGenericArguments()(0)
-                If Not itemType.GetProperties().Any(Function(p) p.Name = $"{entityType.Name}_Id") Then
-                    Dim alter = $"ALTER TABLE [{itemType.Name}] ADD [{entityType.Name}_Id] INT;"
+                Dim fkColumn = $"{entityType.Name}_Id"
+                If Not itemType.GetProperties().Any(Function(p) p.Name = fkColumn) Then
+                    Dim alter = $"ALTER TABLE [{itemType.Name}] ADD [{fkColumn}] INT;"
                     logger?.LogInfo($"Adding fallback foreign key: {alter}")
                     ExecuteNonQuery(alter, connection, transaction)
                 End If
@@ -226,10 +307,14 @@ Friend Class OrmUtils
         ' Not an enum, do regular conversion
         Return Convert.ChangeType(rawValue, targetType)
     End Function
-
-    Friend Shared Function IsGenericList(type As Type) As Boolean
-        Return type.IsGenericType AndAlso type.GetGenericTypeDefinition() = GetType(List(Of ))
+    Friend Shared Function GetEnumStorageType(prop As PropertyInfo) As EnumStorageType
+        Dim attr = prop.GetCustomAttribute(Of EnumStorageAttribute)()
+        If attr IsNot Nothing Then
+            Return attr.StorageType
+        End If
+        Return EnumStorageType.Ordinal ' default
     End Function
+
     Friend Shared Function GetEnumDbValue(prop As PropertyInfo, value As Object) As Object
         If value Is Nothing Then Return DBNull.Value
 
@@ -244,6 +329,61 @@ Friend Class OrmUtils
         End If
 
         Return value
+    End Function
+    Friend Shared Function IsGenericList(type As Type) As Boolean
+        Return type.IsGenericType AndAlso type.GetGenericTypeDefinition() = GetType(List(Of ))
+    End Function
+    Friend Shared Function IsSimpleType(type As Type) As Boolean
+        type = If(Nullable.GetUnderlyingType(type), type)
+        Return type.IsPrimitive OrElse
+           type.IsEnum OrElse
+           type = GetType(String) OrElse
+           type = GetType(Decimal) OrElse
+           type = GetType(DateTime) OrElse
+           type = GetType(Guid)
+    End Function
+    Friend Shared Function IsForeignKeyHandledByNavigationProperty(prop As PropertyInfo, declaringType As Type) As Boolean
+        If prop Is Nothing OrElse declaringType Is Nothing Then Return False
+        If Not prop.Name.EndsWith("_Id", StringComparison.OrdinalIgnoreCase) Then Return False
+
+        Dim fkPrefix = prop.Name.Substring(0, prop.Name.Length - 3) ' Remove "_Id"
+
+        ' 🔒 [PATCH] If the FK name matches the parent table type (e.g., Traveller), skip it
+        If fkPrefix.Equals(declaringType.Name, StringComparison.OrdinalIgnoreCase) Then
+            Return True ' Considered handled by owning entity
+        End If
+
+        ' 🔍 Check if there's a navigation property with this name
+        Dim navProp = declaringType.GetProperties().
+        FirstOrDefault(Function(p) p.PropertyType.Name.Equals(fkPrefix, StringComparison.OrdinalIgnoreCase))
+
+        Return navProp IsNot Nothing
+    End Function
+
+
+
+    'Friend Shared Function IsSimpleType(t As Type) As Boolean
+    '    If t.IsPrimitive OrElse t = GetType(String) OrElse t = GetType(DateTime) OrElse t = GetType(Decimal) OrElse t = GetType(Guid) Then
+    '        Return True
+    '    End If
+    '    Dim nullableType = Nullable.GetUnderlyingType(t)
+    '    Return nullableType IsNot Nothing AndAlso IsSimpleType(nullableType)
+    'End Function
+    'Friend Shared Function IsSimpleType(t As Type) As Boolean
+    '    Return t.IsPrimitive OrElse t = GetType(String) OrElse t = GetType(DateTime) OrElse t = GetType(Decimal) OrElse t.IsEnum
+    'End Function
+
+    Friend Shared Function IsDefaultValue(value As Object) As Boolean
+        If value Is Nothing Then Return True
+        Dim type = value.GetType()
+        If type.IsValueType Then Return Activator.CreateInstance(type).Equals(value)
+        Return False
+    End Function
+
+    Friend Shared Function FindIdProperty(type As Type, idColumn As String) As PropertyInfo
+        Dim prop = type.GetProperty(idColumn)
+        If prop Is Nothing Then Throw New InvalidOperationException($"The specified id column '{idColumn}' was not found on type '{type.Name}'.")
+        Return prop
     End Function
 
     Friend Shared Function GetIdValue(obj As Object, idColumn As String) As Object
@@ -450,6 +590,11 @@ Friend Class OrmUtils
 #End Region
 
 #Region "support sync"
+    Friend Shared Function GetTableName(entityType As Type) As String
+        ' In future, this can check for custom <Table("CustomName")> attribute
+        Return entityType.Name
+    End Function
+
     Private Shared ReadOnly WellKnownScalarTypes As HashSet(Of Type) = New HashSet(Of Type) From {
     GetType(Boolean),
     GetType(Byte),
@@ -512,6 +657,8 @@ Friend Class OrmUtils
                 Continue For
             End If
 
+            If OrmUtils.IsForeignKeyHandledByNavigationProperty(prop, entityType) Then Continue For
+
             Dim columnName = prop.Name
             Dim sqlType = MapToSqlType(prop)
 
@@ -566,6 +713,10 @@ Friend Class OrmUtils
         Next
 
         Return String.Join(Environment.NewLine, alterStatements)
+    End Function
+    Friend Shared Function BuildDropTableSql(entityType As Type) As String
+        Dim tableName = GetTableName(entityType)
+        Return $"IF OBJECT_ID('{tableName}', 'U') IS NOT NULL DROP TABLE [{tableName}];"
     End Function
 
 #End Region

@@ -100,16 +100,16 @@ Public Class SequelOrm
         Return strategy.Create(Of T)(objs, idColumn, IdWillAutoIncrement)
     End Function
 
-    Public Function Create(Of T)(obj As T, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True) As T Implements IOrm.Create
-        Return strategy.Create(Of T)(obj, idColumn, IdWillAutoIncrement)
+    Public Function Create(Of T)(obj As T, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True, Optional isolationLevel As IsolationLevel = IsolationLevel.ReadCommitted) As T Implements IOrm.Create
+        Return strategy.Create(Of T)(obj, idColumn, IdWillAutoIncrement, isolationLevel)
     End Function
 
     Public Function CreateInTable(Of T)(objs As List(Of T), tableName As String, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True) As List(Of T) Implements IOrm.CreateInTable
         Return strategy.CreateInTable(Of T)(objs, tableName, idColumn, IdWillAutoIncrement)
     End Function
 
-    Public Function CreateInTable(Of T)(obj As T, tableName As String, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True) As T Implements IOrm.CreateInTable
-        Return strategy.CreateInTable(Of T)(obj, tableName, idColumn, IdWillAutoIncrement)
+    Public Function CreateInTable(Of T)(obj As T, tableName As String, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True, Optional isolationLevel As IsolationLevel = IsolationLevel.ReadCommitted) As T Implements IOrm.CreateInTable
+        Return strategy.CreateInTable(Of T)(obj, tableName, idColumn, IdWillAutoIncrement, isolationLevel)
     End Function
 
     Public Function CreateOrUpdate(Of T)(obj As T, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True) As T Implements IOrm.CreateOrUpdate
