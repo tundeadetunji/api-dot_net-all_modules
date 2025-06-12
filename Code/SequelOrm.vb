@@ -96,8 +96,8 @@ Public Class SequelOrm
         Return strategy.CountInTable(Of T)(tableName)
     End Function
 
-    Public Function Create(Of T)(objs As List(Of T), Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True) As List(Of T) Implements IOrm.Create
-        Return strategy.Create(Of T)(objs, idColumn, IdWillAutoIncrement)
+    Public Function Create(Of T)(objs As List(Of T), Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True, Optional isolationLevel As IsolationLevel = IsolationLevel.ReadCommitted) As List(Of T) Implements IOrm.Create
+        Return strategy.Create(Of T)(objs, idColumn, IdWillAutoIncrement, isolationLevel)
     End Function
 
     Public Function Create(Of T)(obj As T, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True, Optional isolationLevel As IsolationLevel = IsolationLevel.ReadCommitted) As T Implements IOrm.Create

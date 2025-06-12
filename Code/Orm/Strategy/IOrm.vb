@@ -72,7 +72,7 @@ Public Interface IOrm
     ''' <param name="idColumn"></param>
     ''' <param name="IdWillAutoIncrement"></param>
     ''' <returns></returns>
-    Function Create(Of T)(objs As List(Of T), Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True) As List(Of T)
+    Function Create(Of T)(objs As List(Of T), Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True, Optional isolationLevel As IsolationLevel = IsolationLevel.ReadCommitted) As List(Of T)
 
     ''' <summary>
     ''' Use this if the name of the class is not the same as the name of the table.
@@ -102,11 +102,9 @@ Public Interface IOrm
     Function ExistsById(Of T)(id As Object, Optional idColumn As String = "Id") As Boolean
 
     ''' <summary>
-    ''' Use this if the name of the class is not the same as the name of the table.
+    ''' Use this if you're targeting a table with name different from name of T.
     ''' </summary>
-    ''' <deprecated>
-    ''' This method is deprecated. Use <see cref="ExistsById(Of T)(Object, String)"/> instead.
-    ''' </deprecated>    ''' <param name="id"></param>
+    ''' <param name="id"></param>
     ''' <param name="tableName"></param>
     ''' <param name="idColumn"></param>
     ''' <returns></returns>
@@ -124,11 +122,9 @@ Public Interface IOrm
     Function ExistsBy(Of T)(conditions As List(Of Condition)) As Boolean
 
     ''' <summary>
-    ''' Use this if the name of the class is not the same as the name of the table.
+    ''' Use this if you're targeting a table with name different from name of T.
     ''' </summary>
-    ''' <deprecated>
-    ''' This method is deprecated. Use <see cref="ExistsBy(Of T)(List(Of Condition))"/> instead.
-    ''' </deprecated>    ''' <typeparam name="T"></typeparam>
+    ''' <typeparam name="T"></typeparam>
     ''' <param name="conditions"></param>
     ''' <param name="tableName"></param>
     ''' <returns></returns>
@@ -147,12 +143,9 @@ Public Interface IOrm
     Sub DeleteAll(Of T)(Optional cascade As Boolean = True)
 
     ''' <summary>
-    ''' Use this if the name of the class is not the same as the name of the table.
+    ''' Use this if you're targeting a table with name different from name of T.
     ''' Uses Transaction.
     ''' </summary>
-    ''' <deprecated>
-    ''' This method is deprecated. Use <see cref="DeleteAll(Of T)(Boolean)"/> instead.
-    ''' </deprecated>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="tableName"></param>
     ''' <param name="cascade">When set to true, deletes all child tables when parent table is deleted (may throw exception if database or table structure does not support it, especially when set to false)</param>
@@ -169,12 +162,9 @@ Public Interface IOrm
     Sub DeleteWhereId(Of T)(id As Object, Optional idColumn As String = "Id", Optional cascade As Boolean = True)
 
     ''' <summary>
-    ''' Use this if the name of the class is not the same as the name of the table.
+    ''' Use this if you're targeting a table with name different from name of T.
     ''' Uses Transaction.
     ''' </summary>
-    ''' <deprecated>
-    ''' This method is deprecated. Use <see cref="DeleteWhereId(Of T)(Object, String, Boolean)"/> instead.
-    ''' </deprecated>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="id"></param>
     ''' <param name="tableName"></param>
@@ -195,12 +185,9 @@ Public Interface IOrm
     Sub DeleteBy(Of T)(conditions As List(Of Condition), Optional cascade As Boolean = True)
 
     ''' <summary>
-    ''' Use this if the name of the class is not the same as the name of the table.
+    ''' Use this if you're targeting a table with name different from name of T.
     ''' Uses Transaction.
     ''' </summary>
-    ''' <deprecated>
-    ''' This method is deprecated. Use <see cref="DeleteBy(Of T)(List(Of Condition), Boolean)"/> instead.
-    ''' </deprecated>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="conditions"></param>
     ''' <param name="tableName"></param>
@@ -219,11 +206,8 @@ Public Interface IOrm
     Function CountBy(Of T)(conditions As List(Of Condition)) As Long
 
     ''' <summary>
-    ''' Use this if the name of the class is not the same as the name of the table.
+    ''' Use this if you're targeting a table with name different from name of T.
     ''' </summary>
-    ''' <deprecated>
-    ''' This method is deprecated. Use <see cref="CountBy(Of T)(List(Of Condition))"/> instead.
-    ''' </deprecated>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="conditions"></param>
     ''' <param name="tableName"></param>
@@ -242,11 +226,8 @@ Public Interface IOrm
     Function Count(Of T)() As Long
 
     ''' <summary>
-    ''' Use this if the name of the class is not the same as the name of the table.
+    ''' Use this if you're targeting a table with name different from name of T.
     ''' </summary>
-    ''' <deprecated>
-    ''' This method is deprecated. Use <see cref="Count(Of T)()"/> instead.
-    ''' </deprecated>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="tableName"></param>
     ''' <returns></returns>
@@ -266,7 +247,7 @@ Public Interface IOrm
     Function FindById(Of T)(id As Object, Optional idColumn As String = "Id") As T
 
     ''' <summary>
-    ''' Use this if the name of the class is not the same as the name of the table.
+    ''' Use this if you're targeting a table with name different from name of T.
     ''' </summary>
     ''' <deprecated>
     ''' This method is deprecated. Use <see cref="FindById(Of T)(Object, String)"/> instead.
@@ -291,7 +272,7 @@ Public Interface IOrm
     Function FindAll(Of T)(Optional idColumn As String = "Id", Optional ascending As Boolean = True) As List(Of T)
 
     ''' <summary>
-    ''' Use this if the name of the class is not the same as the name of the table.
+    ''' Use this if you're targeting a table with name different from name of T.
     ''' </summary>
     ''' <deprecated>
     ''' This method is deprecated. Use <see cref="FindAll(Of T)(String, Boolean)"/> instead.
@@ -317,7 +298,7 @@ Public Interface IOrm
     Function FindAllPaged(Of T)(pageNumber As Integer, maxPerPage As Integer, Optional idColumn As String = "Id", Optional ascending As Boolean = True) As Page(Of T)
 
     ''' <summary>
-    ''' Use this if the name of the class is not the same as the name of the table.
+    ''' Use this if you're targeting a table with name different from name of T.
     ''' </summary>
     ''' <deprecated>
     ''' This method is deprecated. Use <see cref="FindAllPaged(Of T)(Integer, Integer, String, Boolean)"/> instead.
@@ -343,7 +324,7 @@ Public Interface IOrm
     Function FindBy(Of T)(conditions As List(Of Condition)) As List(Of T)
 
     ''' <summary>
-    ''' Use this if the name of the class is not the same as the name of the table.
+    ''' Use this if you're targeting a table with name different from name of T.
     ''' </summary>
     ''' <deprecated>
     ''' This method is deprecated. Use <see cref="FindBy(Of T)(List(Of Condition))"/> instead.
@@ -369,7 +350,7 @@ Public Interface IOrm
     Function FindByPaged(Of T)(conditions As List(Of Condition), pageNumber As Integer, maxPerPage As Integer) As Page(Of T)
 
     ''' <summary>
-    ''' Use this if the name of the class is not the same as the name of the table.
+    ''' Use this if you're targeting a table with name different from name of T.
     ''' </summary>
     ''' <deprecated>
     ''' This method is deprecated. Use <see cref="FindByPaged(Of T)(List(Of Condition), Integer, Integer)"/> instead.
@@ -396,8 +377,7 @@ Public Interface IOrm
     Function Update(Of T)(obj As T, Optional idColumn As String = "Id") As T
 
     ''' <summary>
-    ''' Use this if the name of the class is not the same as the name of the table.
-    ''' Uses Transaction.
+    ''' Use this if you're targeting a table with name different from name of T.
     ''' </summary>
     ''' <deprecated>
     ''' This method is deprecated. Use <see cref="Update(Of T)(T, String)"/> instead.
@@ -424,7 +404,7 @@ Public Interface IOrm
     ''' <returns></returns>
     Function CreateOrUpdate(Of T)(obj As T, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True) As T
     ''' <summary>
-    ''' Use this if the name of the class is not the same as the name of the table.
+    ''' Use this if you're targeting a table with name different from name of T.
     ''' Creates record if it doesn't exist, Updates otherwise.
     ''' Uses Transaction.
     ''' </summary>
