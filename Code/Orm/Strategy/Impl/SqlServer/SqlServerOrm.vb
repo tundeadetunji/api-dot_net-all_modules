@@ -114,15 +114,17 @@ Friend Class SqlServerOrm
 
     Private Shared _instance As Lazy(Of SqlServerOrm)
     Private Shared _logger As IDbLogger = NullDbLogger.Instance
-    Private Sub New(connectionString As String, logger As IDbLogger)
+    Private ReadOnly _metadataCache As IOrmMetadataCache
+    Private Sub New(connectionString As String, logger As IDbLogger, Optional metadataCache As IOrmMetadataCache = Nothing)
         _logger = logger
         _provider = New SqlServerProvider(connectionString)
+        _metadataCache = If(metadataCache, New DefaultOrmMetadataCache())
     End Sub
 
-    Public Shared ReadOnly Property Instance(connectionString As String, logger As IDbLogger) As SqlServerOrm
+    Public Shared ReadOnly Property Instance(connectionString As String, logger As IDbLogger, Optional metadataCache As IOrmMetadataCache = Nothing) As SqlServerOrm
         Get
             If _instance Is Nothing Then
-                _instance = New Lazy(Of SqlServerOrm)(Function() New SqlServerOrm(connectionString, logger), LazyThreadSafetyMode.ExecutionAndPublication)
+                _instance = New Lazy(Of SqlServerOrm)(Function() New SqlServerOrm(connectionString, logger, metadataCache), LazyThreadSafetyMode.ExecutionAndPublication)
             End If
             Return _instance.Value
         End Get
@@ -242,7 +244,7 @@ Friend Class SqlServerOrm
 #End Region
 
 #Region "Update"
-    Public Function Update(Of T)(obj As T, Optional idColumn As String = Id) As T Implements IOrm.Update
+    Public Function Update(Of T)(obj As T, Optional idColumn As String = Id, Optional batchSize As Integer? = Nothing, Optional progressCallback As Action(Of Integer, Integer) = Nothing) As T Implements IOrm.Update
         Dim typeT = GetType(T)
         Dim tableName = typeT.Name
         Dim parameterPrefix = _provider.GetParameterPrefix()
@@ -557,34 +559,57 @@ Friend Class SqlServerOrm
 
         Return obj
     End Function
-    Public Function Create(Of T)(
-    objs As List(Of T),
-    Optional idColumn As String = "Id",
-    Optional IdWillAutoIncrement As Boolean = True,
-    Optional isolationLevel As IsolationLevel = IsolationLevel.ReadCommitted
-) As List(Of T) Implements IOrm.Create
+    Public Function Create(Of T)(objs As List(Of T), Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True, Optional isolationLevel As IsolationLevel = IsolationLevel.ReadCommitted, Optional batchSize As Integer? = Nothing, Optional progressCallback As Action(Of Integer, Integer) = Nothing) As List(Of T) Implements IOrm.Create
 
-        If objs Is Nothing OrElse objs.Count = 0 Then Return objs
+        If objs Is Nothing OrElse objs.Count = 0 Then
+            Return New List(Of T)()
+        End If
 
         Dim typeT = GetType(T)
+        Dim tableName = OrmUtils.GetTableName(typeT)
+        _logger.LogInfo($"[CreateBulk] Inserting list of {typeT.Name} into table {tableName}...")
+
+        Dim total = objs.Count
+        Dim insertedItems As New List(Of T)(total)
+        Dim current = 0
+
         Using connection = _provider.CreateConnection()
             connection.Open()
+
             Using transaction = connection.BeginTransaction(isolationLevel)
                 Try
-                    For Each obj In objs
-                        CreateInternal(obj, typeT, idColumn, connection, transaction, IdWillAutoIncrement)
-                    Next
+                    If batchSize.HasValue AndAlso batchSize.Value > 0 Then
+                        ' Insert in batches
+                        For i = 0 To total - 1 Step batchSize.Value
+                            Dim batch = objs.Skip(i).Take(batchSize.Value).ToList()
+
+                            For Each item In batch
+                                Dim inserted = CreateInternal(item, typeT, idColumn, connection, transaction, IdWillAutoIncrement)
+                                insertedItems.Add(inserted)
+                                current += 1
+                                progressCallback?.Invoke(current, total)
+                            Next
+                        Next
+                    Else
+                        ' Insert all in one go
+                        For Each item In objs
+                            Dim inserted = CreateInternal(item, typeT, idColumn, connection, transaction, IdWillAutoIncrement)
+                            insertedItems.Add(inserted)
+                            current += 1
+                            progressCallback?.Invoke(current, total)
+                        Next
+                    End If
+
                     transaction.Commit()
-                    _logger?.LogInfo($"Bulk Create succeeded for type {typeT.Name} [{objs.Count} records]")
+                    _logger.LogInfo($"[CreateBulk] Successfully inserted {insertedItems.Count} {typeT.Name} rows.")
+                    Return insertedItems
                 Catch ex As Exception
+                    _logger.LogError($"[CreateBulk] Failed to insert list of {typeT.Name}: {ex.Message}", ex)
                     transaction.Rollback()
-                    _logger?.LogError($"Bulk Create failed for type {typeT.Name}", ex)
                     Throw
                 End Try
             End Using
         End Using
-
-        Return objs
     End Function
     Public Function CreateInTable(Of T)(objs As List(Of T), tableName As String, Optional idColumn As String = Id, Optional IdWillAutoIncrement As Boolean = True) As List(Of T) Implements IOrm.CreateInTable
         If String.IsNullOrEmpty(tableName) Then Throw New ArgumentException("Table Name cannot be null.")
@@ -703,7 +728,7 @@ Friend Class SqlServerOrm
 #End Region
 
 #Region "CreateOrUpdate"
-    Public Function CreateOrUpdate(Of T)(obj As T, Optional idColumn As String = Id, Optional IdWillAutoIncrement As Boolean = True) As T Implements IOrm.CreateOrUpdate
+    Public Function CreateOrUpdate(Of T)(obj As T, Optional idColumn As String = Id, Optional IdWillAutoIncrement As Boolean = True, Optional batchSize As Integer? = Nothing, Optional progressCallback As Action(Of Integer, Integer) = Nothing) As T Implements IOrm.CreateOrUpdate
         Dim typeT = GetType(T)
         Dim tableName = typeT.Name
         Dim idValue = GetIdValue(obj, idColumn)
@@ -888,7 +913,7 @@ Friend Class SqlServerOrm
         End Using
     End Sub
 
-    Public Sub DeleteAll(Of T)(Optional cascade As Boolean = True) Implements IOrm.DeleteAll
+    Public Sub DeleteAll(Of T)(Optional cascade As Boolean = True, Optional batchSize As Integer? = Nothing, Optional progressCallback As Action(Of Integer, Integer) = Nothing) Implements IOrm.DeleteAll
         Dim typeT = GetType(T)
         Dim tableName = typeT.Name
 
@@ -2016,7 +2041,7 @@ Friend Class SqlServerOrm
 
 #Region "DeleteBy"
 
-    Public Sub DeleteBy(Of T)(conditions As List(Of Condition), Optional cascade As Boolean = True) Implements IOrm.DeleteBy
+    Public Sub DeleteBy(Of T)(conditions As List(Of Condition), Optional cascade As Boolean = True, Optional batchSize As Integer? = Nothing, Optional progressCallback As Action(Of Integer, Integer) = Nothing) Implements IOrm.DeleteBy
 
         If conditions Is Nothing OrElse conditions.Count = 0 Then
             Throw New ArgumentException("Conditions cannot be null or empty.")

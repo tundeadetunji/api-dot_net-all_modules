@@ -54,7 +54,8 @@ Public Interface IOrm
     ''' </summary>
     ''' <deprecated>
     ''' This method is deprecated. Use <see cref="Create(Of T)(T, String, Boolean, IsolationLevel)"/> instead.
-    ''' </deprecated>    ''' <typeparam name="T"></typeparam>
+    ''' </deprecated>  
+    ''' <typeparam name="T"></typeparam>
     ''' <param name="obj"></param>
     ''' <param name="tableName"></param>
     ''' <param name="idColumn"></param>
@@ -72,7 +73,7 @@ Public Interface IOrm
     ''' <param name="idColumn"></param>
     ''' <param name="IdWillAutoIncrement"></param>
     ''' <returns></returns>
-    Function Create(Of T)(objs As List(Of T), Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True, Optional isolationLevel As IsolationLevel = IsolationLevel.ReadCommitted) As List(Of T)
+    Function Create(Of T)(objs As List(Of T), Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True, Optional isolationLevel As IsolationLevel = IsolationLevel.ReadCommitted, Optional batchSize As Integer? = Nothing, Optional progressCallback As Action(Of Integer, Integer) = Nothing) As List(Of T)
 
     ''' <summary>
     ''' Use this if the name of the class is not the same as the name of the table.
@@ -80,8 +81,9 @@ Public Interface IOrm
     ''' Uses Transaction.
     ''' </summary>
     ''' <deprecated>
-    ''' This method is deprecated. Use <see cref="Create(Of T)(List(Of T), String, Boolean)"/> instead.
-    ''' </deprecated>    ''' <typeparam name="T"></typeparam>
+    ''' This method is deprecated. Use <see cref="Create(Of T)(List(Of T), String, Boolean, IsolationLevel, Integer?, Action(Of Integer, Integer))"/> instead.
+    ''' </deprecated>    
+    ''' <typeparam name="T"></typeparam>
     ''' <param name="objs"></param>
     ''' <param name="tableName"></param>
     ''' <param name="idColumn"></param>
@@ -140,12 +142,15 @@ Public Interface IOrm
     ''' </summary>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="cascade">When set to true, deletes all child tables when parent table is deleted (may throw exception if database or table structure does not support it, especially when set to false)</param>
-    Sub DeleteAll(Of T)(Optional cascade As Boolean = True)
+    Sub DeleteAll(Of T)(Optional cascade As Boolean = True, Optional batchSize As Integer? = Nothing, Optional progressCallback As Action(Of Integer, Integer) = Nothing)
 
     ''' <summary>
     ''' Use this if you're targeting a table with name different from name of T.
     ''' Uses Transaction.
     ''' </summary>
+    ''' <deprecated>
+    ''' This method is deprecated. Use <see cref="Create(Of T)(T, String, Boolean, IsolationLevel)"/> instead.
+    ''' </deprecated>  
     ''' <typeparam name="T"></typeparam>
     ''' <param name="tableName"></param>
     ''' <param name="cascade">When set to true, deletes all child tables when parent table is deleted (may throw exception if database or table structure does not support it, especially when set to false)</param>
@@ -182,12 +187,15 @@ Public Interface IOrm
     ''' <typeparam name="T"></typeparam>
     ''' <param name="conditions"></param>
     ''' <param name="cascade">When set to true, deletes all child tables when parent table is deleted (may throw exception if database or table structure does not support it, especially when set to false)</param>
-    Sub DeleteBy(Of T)(conditions As List(Of Condition), Optional cascade As Boolean = True)
+    Sub DeleteBy(Of T)(conditions As List(Of Condition), Optional cascade As Boolean = True, Optional batchSize As Integer? = Nothing, Optional progressCallback As Action(Of Integer, Integer) = Nothing)
 
     ''' <summary>
     ''' Use this if you're targeting a table with name different from name of T.
     ''' Uses Transaction.
     ''' </summary>
+    ''' <deprecated>
+    ''' This method is deprecated. Use <see cref="DeleteBy(Of T)(List(Of Condition), Boolean, Integer?, Action(Of Integer, Integer))"/> instead.
+    ''' </deprecated>  
     ''' <typeparam name="T"></typeparam>
     ''' <param name="conditions"></param>
     ''' <param name="tableName"></param>
@@ -374,13 +382,13 @@ Public Interface IOrm
     ''' <param name="obj"></param>
     ''' <param name="idColumn"></param>
     ''' <returns></returns>
-    Function Update(Of T)(obj As T, Optional idColumn As String = "Id") As T
+    Function Update(Of T)(obj As T, Optional idColumn As String = "Id", Optional batchSize As Integer? = Nothing, Optional progressCallback As Action(Of Integer, Integer) = Nothing) As T
 
     ''' <summary>
     ''' Use this if you're targeting a table with name different from name of T.
     ''' </summary>
     ''' <deprecated>
-    ''' This method is deprecated. Use <see cref="Update(Of T)(T, String)"/> instead.
+    ''' This method is deprecated. Use <see cref="Update(Of T)(T, String, Integer?, Action(Of Integer, Integer))"/> instead.
     ''' </deprecated>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="obj"></param>
@@ -402,14 +410,14 @@ Public Interface IOrm
     ''' <param name="idColumn"></param>
     ''' <param name="IdWillAutoIncrement"></param>
     ''' <returns></returns>
-    Function CreateOrUpdate(Of T)(obj As T, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True) As T
+    Function CreateOrUpdate(Of T)(obj As T, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True, Optional batchSize As Integer? = Nothing, Optional progressCallback As Action(Of Integer, Integer) = Nothing) As T
     ''' <summary>
     ''' Use this if you're targeting a table with name different from name of T.
     ''' Creates record if it doesn't exist, Updates otherwise.
     ''' Uses Transaction.
     ''' </summary>
     ''' <deprecated>
-    ''' This method is deprecated. Use <see cref="CreateOrUpdate(Of T)(T, String, Boolean)"/> instead.
+    ''' This method is deprecated. Use <see cref="CreateOrUpdate(Of T)(T, String, Boolean, Integer?, Action(Of Integer, Integer))"/> instead.
     ''' </deprecated>
     ''' <typeparam name="T"></typeparam>
     ''' <param name="obj"></param>

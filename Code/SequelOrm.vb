@@ -2,27 +2,24 @@
 Public Class SequelOrm
     Implements IOrm
 
-#Region ""
-
-#End Region
-
 #Region "init"
     Private Const Id As String = "Id"
 
     Private Shared _instance As Lazy(Of SequelOrm)
     Private ReadOnly strategy As IOrm
-    Private Sub New(provider As SupportedDbProvider, connectionString As String, logger As IDbLogger)
+
+    Private Sub New(provider As SupportedDbProvider, connectionString As String, logger As IDbLogger, Optional metadataCache As IOrmMetadataCache = Nothing)
         Select Case provider
             Case SupportedDbProvider.SqlServer
-                strategy = SqlServerOrm.Instance(connectionString, logger)
+                strategy = SqlServerOrm.Instance(connectionString, logger, metadataCache)
             Case Else
                 Throw New NotSupportedException($"Provider '{provider}' is not supported.")
         End Select
     End Sub
 
-    Public Shared Function GetInstance(provider As SupportedDbProvider, connectionString As String) As SequelOrm
+    Public Shared Function GetInstance(provider As SupportedDbProvider, connectionString As String, Optional metadataCache As IOrmMetadataCache = Nothing) As SequelOrm
         If _instance Is Nothing Then
-            _instance = New Lazy(Of SequelOrm)(Function() New SequelOrm(provider, connectionString, NullDbLogger.Instance), LazyThreadSafetyMode.ExecutionAndPublication)
+            _instance = New Lazy(Of SequelOrm)(Function() New SequelOrm(provider, connectionString, NullDbLogger.Instance, metadataCache), LazyThreadSafetyMode.ExecutionAndPublication)
         End If
         Return _instance.Value
     End Function
@@ -34,10 +31,10 @@ Public Class SequelOrm
     ''' <param name="connectionString"></param>
     ''' <param name="logger">Your custom logger implementation. Must implement IDbLogger. Must be set before any database use.</param>
     ''' <returns></returns>
-    Public Shared Function GetInstance(provider As SupportedDbProvider, connectionString As String, logger As IDbLogger) As SequelOrm
+    Public Shared Function GetInstance(provider As SupportedDbProvider, connectionString As String, logger As IDbLogger, Optional metadataCache As IOrmMetadataCache = Nothing) As SequelOrm
         Dim _logger As IDbLogger = If(logger Is Nothing, NullDbLogger.Instance, logger)
         If _instance Is Nothing Then
-            _instance = New Lazy(Of SequelOrm)(Function() New SequelOrm(provider, connectionString, _logger), LazyThreadSafetyMode.ExecutionAndPublication)
+            _instance = New Lazy(Of SequelOrm)(Function() New SequelOrm(provider, connectionString, _logger, metadataCache), LazyThreadSafetyMode.ExecutionAndPublication)
         End If
         Return _instance.Value
     End Function
@@ -49,15 +46,15 @@ Public Class SequelOrm
     ''' <param name="connectionString"></param>
     ''' <param name="mode"></param>
     ''' <returns></returns>
-    Public Shared Function GetInstance(provider As SupportedDbProvider, connectionString As String, Optional mode As LoggerMode = LoggerMode.None) As SequelOrm
+    Public Shared Function GetInstance(provider As SupportedDbProvider, connectionString As String, Optional mode As LoggerMode = LoggerMode.None, Optional metadataCache As IOrmMetadataCache = Nothing) As SequelOrm
         Dim _logger As IDbLogger = If(mode = LoggerMode.Console, ConsoleDbLogger.Instance, NullDbLogger.Instance)
-        Return GetInstance(provider, connectionString, _logger)
+        Return GetInstance(provider, connectionString, _logger, metadataCache)
     End Function
 #End Region
 
 #Region "exported"
-    Public Sub DeleteAll(Of T)(Optional cascade As Boolean = True) Implements IOrm.DeleteAll
-        strategy.DeleteAll(Of T)(cascade)
+    Public Sub DeleteAll(Of T)(Optional cascade As Boolean = True, Optional batchSize As Integer? = Nothing, Optional progressCallback As Action(Of Integer, Integer) = Nothing) Implements IOrm.DeleteAll
+        strategy.DeleteAll(Of T)(cascade, batchSize, progressCallback)
     End Sub
 
     Public Sub DeleteAllInTable(Of T)(tableName As String, Optional cascade As Boolean = True) Implements IOrm.DeleteAllInTable
@@ -72,8 +69,8 @@ Public Class SequelOrm
         strategy.DeleteWhereIdInTable(Of T)(id, tableName, idColumn, cascade)
     End Sub
 
-    Public Sub DeleteBy(Of T)(conditions As List(Of Condition), Optional cascade As Boolean = True) Implements IOrm.DeleteBy
-        strategy.DeleteBy(Of T)(conditions, cascade)
+    Public Sub DeleteBy(Of T)(conditions As List(Of Condition), Optional cascade As Boolean = True, Optional batchSize As Integer? = Nothing, Optional progressCallback As Action(Of Integer, Integer) = Nothing) Implements IOrm.DeleteBy
+        strategy.DeleteBy(Of T)(conditions, cascade, batchSize, progressCallback)
     End Sub
 
     Public Sub DeleteByInTable(Of T)(conditions As List(Of Condition), tableName As String, Optional cascade As Boolean = True) Implements IOrm.DeleteByInTable
@@ -96,8 +93,8 @@ Public Class SequelOrm
         Return strategy.CountInTable(Of T)(tableName)
     End Function
 
-    Public Function Create(Of T)(objs As List(Of T), Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True, Optional isolationLevel As IsolationLevel = IsolationLevel.ReadCommitted) As List(Of T) Implements IOrm.Create
-        Return strategy.Create(Of T)(objs, idColumn, IdWillAutoIncrement, isolationLevel)
+    Public Function Create(Of T)(objs As List(Of T), Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True, Optional isolationLevel As IsolationLevel = IsolationLevel.ReadCommitted, Optional batchSize As Integer? = Nothing, Optional progressCallback As Action(Of Integer, Integer) = Nothing) As List(Of T) Implements IOrm.Create
+        Return strategy.Create(Of T)(objs, idColumn, IdWillAutoIncrement, isolationLevel, batchSize, progressCallback)
     End Function
 
     Public Function Create(Of T)(obj As T, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True, Optional isolationLevel As IsolationLevel = IsolationLevel.ReadCommitted) As T Implements IOrm.Create
@@ -112,8 +109,8 @@ Public Class SequelOrm
         Return strategy.CreateInTable(Of T)(obj, tableName, idColumn, IdWillAutoIncrement, isolationLevel)
     End Function
 
-    Public Function CreateOrUpdate(Of T)(obj As T, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True) As T Implements IOrm.CreateOrUpdate
-        Return strategy.CreateOrUpdate(Of T)(obj, idColumn, IdWillAutoIncrement)
+    Public Function CreateOrUpdate(Of T)(obj As T, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True, Optional batchSize As Integer? = Nothing, Optional progressCallback As Action(Of Integer, Integer) = Nothing) As T Implements IOrm.CreateOrUpdate
+        Return strategy.CreateOrUpdate(Of T)(obj, idColumn, IdWillAutoIncrement, batchSize, progressCallback)
     End Function
 
     Public Function CreateOrUpdateInTable(Of T)(obj As T, tableName As String, Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True) As T Implements IOrm.CreateOrUpdateInTable
@@ -176,8 +173,8 @@ Public Class SequelOrm
         Return strategy.FindByPagedInTable(Of T)(conditions, tableName, pageNumber, maxPerPage)
     End Function
 
-    Public Function Update(Of T)(obj As T, Optional idColumn As String = "Id") As T Implements IOrm.Update
-        Return strategy.Update(Of T)(obj, idColumn)
+    Public Function Update(Of T)(obj As T, Optional idColumn As String = "Id", Optional batchSize As Integer? = Nothing, Optional progressCallback As Action(Of Integer, Integer) = Nothing) As T Implements IOrm.Update
+        Return strategy.Update(Of T)(obj, idColumn, batchSize, progressCallback)
     End Function
 
     Public Function UpdateInTable(Of T)(obj As T, tableName As String, Optional idColumn As String = "Id") As T Implements IOrm.UpdateInTable
