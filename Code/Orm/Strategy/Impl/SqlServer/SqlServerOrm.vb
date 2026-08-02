@@ -1,9 +1,31 @@
 ﻿Imports iNovation.Code.OrmUtils
 Imports System.Data.Common
+Imports System.Data.SqlClient
 Imports System.Reflection
 Imports System.Threading
 Friend Class SqlServerOrm
     Implements IOrm
+
+#Region "init"
+    Private ReadOnly _provider As IDbProvider
+    Public Const Id As String = "Id"
+
+    Private Shared _instance As Lazy(Of SqlServerOrm)
+    Private Shared _logger As IDbLogger = NullDbLogger.Instance
+    Private Sub New(connectionString As String, logger As IDbLogger)
+        _logger = logger
+        _provider = New SqlServerProvider(connectionString)
+    End Sub
+
+    Public Shared ReadOnly Property Instance(connectionString As String, logger As IDbLogger) As SqlServerOrm
+        Get
+            If _instance Is Nothing Then
+                _instance = New Lazy(Of SqlServerOrm)(Function() New SqlServerOrm(connectionString, logger), LazyThreadSafetyMode.ExecutionAndPublication)
+            End If
+            Return _instance.Value
+        End Get
+    End Property
+#End Region
 
 #Region "support"
     Private Function CreateInternal(Of T)(item As T, typeT As Type, idColumn As String, connection As IDbConnection, transaction As IDbTransaction, IdWillAutoIncrement As Boolean) As T
@@ -106,29 +128,7 @@ Friend Class SqlServerOrm
         Return item
     End Function
 
-#End Region
 
-#Region "init"
-    Private ReadOnly _provider As IDbProvider
-    Public Const Id As String = "Id"
-
-    Private Shared _instance As Lazy(Of SqlServerOrm)
-    Private Shared _logger As IDbLogger = NullDbLogger.Instance
-    Private ReadOnly _metadataCache As IOrmMetadataCache
-    Private Sub New(connectionString As String, logger As IDbLogger, Optional metadataCache As IOrmMetadataCache = Nothing)
-        _logger = logger
-        _provider = New SqlServerProvider(connectionString)
-        _metadataCache = If(metadataCache, New DefaultOrmMetadataCache())
-    End Sub
-
-    Public Shared ReadOnly Property Instance(connectionString As String, logger As IDbLogger, Optional metadataCache As IOrmMetadataCache = Nothing) As SqlServerOrm
-        Get
-            If _instance Is Nothing Then
-                _instance = New Lazy(Of SqlServerOrm)(Function() New SqlServerOrm(connectionString, logger, metadataCache), LazyThreadSafetyMode.ExecutionAndPublication)
-            End If
-            Return _instance.Value
-        End Get
-    End Property
 #End Region
 
 #Region "PrepareDatabase"
@@ -559,6 +559,7 @@ Friend Class SqlServerOrm
 
         Return obj
     End Function
+
     Public Function Create(Of T)(objs As List(Of T), Optional idColumn As String = "Id", Optional IdWillAutoIncrement As Boolean = True, Optional isolationLevel As IsolationLevel = IsolationLevel.ReadCommitted, Optional batchSize As Integer? = Nothing, Optional progressCallback As Action(Of Integer, Integer) = Nothing) As List(Of T) Implements IOrm.Create
 
         If objs Is Nothing OrElse objs.Count = 0 Then

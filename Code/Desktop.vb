@@ -1,21 +1,19 @@
 ﻿'from iNovation
-Imports iNovation.Code.General
-Imports iNovation.Code.Values
-
-
-'from Assemblies
-Imports System.Windows.Forms
+Imports System.Collections.ObjectModel
 Imports System.Data.OleDb
 Imports System.Data.SqlClient
-
 Imports System.Drawing
-Imports System.Net
-Imports System.Collections.ObjectModel
+Imports System.Globalization
 Imports System.IO
-Imports System.Security.AccessControl
-Imports Microsoft.Win32
+Imports System.Net
 Imports System.Runtime.InteropServices
+Imports System.Security.AccessControl
+'from Assemblies
+Imports System.Windows.Forms
 Imports System.Windows.Forms.VisualStyles
+Imports iNovation.Code.General
+Imports iNovation.Code.Values
+Imports Microsoft.Win32
 
 ''' <summary>
 ''' This class contains methods for desktop development, the part the end-user interacts with directly.
@@ -208,7 +206,7 @@ Public Class Desktop
     Public Shared Function ListsToKeyValueArray(listK As ListBox, listV As ListBox) As List(Of String)
         Dim s As String = ""
         If IsEmpty({listK, listV}, ControlsToCheck.Any) = True Then
-            Return Nothing
+            Return New List(Of String)
             Exit Function
         End If
         Dim l As New List(Of String)
@@ -271,6 +269,21 @@ Public Class Desktop
         Catch
         End Try
     End Sub
+
+
+    ''' <summary>
+    ''' Changes text to title case.
+    ''' </summary>
+    Public Shared Function ToTitleCase(input As String) As String
+        If String.IsNullOrWhiteSpace(input) Then
+            Return input
+        End If
+
+        Dim culture As CultureInfo = CultureInfo.CurrentCulture
+        Dim textInfo As TextInfo = culture.TextInfo
+
+        Return textInfo.ToTitleCase(input.ToLower())
+    End Function
 
 
     ''' <summary>
@@ -1672,6 +1685,25 @@ Public Class Desktop
         MyShortcut.Save()
     End Sub
 
+    ''' <summary>
+    ''' Opposite of CreateShortcut()
+    ''' </summary>
+    ''' <param name="where_the_shortcut_was_created">e.g. Environment.GetFolderPath(Environment.SpecialFolder.StartMenu)</param>
+    ''' <param name="filename_for_the_shortcut">e.g. Path.GetFileNameWithoutExtension(f.FullPath)</param>
+    Public Shared Sub RemoveShortcut(where_the_shortcut_was_created As String, filename_for_the_shortcut As String)
+
+        Dim shortcutPath As String =
+        IO.Path.Combine(where_the_shortcut_was_created,
+                        filename_for_the_shortcut & ".lnk")
+
+        If IO.File.Exists(shortcutPath) Then
+            Kill(shortcutPath)
+            'IO.File.Delete(shortcutPath)
+        End If
+
+    End Sub
+
+
     Public Shared Function AppIsOn(file_path As String) As Boolean
         Dim p() As Process = Process.GetProcessesByName(Path.GetFileNameWithoutExtension(file_path.Trim))
         AppIsOn = p.Count > 0
@@ -2153,6 +2185,8 @@ Public Class Desktop
     End Sub
 
     Public Shared Sub Sleep()
+        '"rundll32.exe powrprof.dll,SetSuspendState 0,1,0"
+
         Try
             Application.SetSuspendState(PowerState.Suspend, True, False)
         Catch ex As Exception
@@ -3459,7 +3493,8 @@ Public Class Desktop
         If folders.Count > 0 Then
             Return folders
         Else
-            Return Nothing
+            Return New ReadOnlyCollection(Of String)(New List(Of String))
+
         End If
     End Function
 
@@ -3538,7 +3573,7 @@ Public Class Desktop
             Case FileDialogExpectedFormat.audio
             Case FileDialogExpectedFormat.video
             Case FileDialogExpectedFormat.picture
-                f_.Filter = "Images|*.GIF;*.JPG;*.JPEG;*.TIF;*.BMP;*.PNG;*.ICO"
+                f_.Filter = "Images|*.GIF;*.JPG;*.JPEG;*.TIF;*.BMP;*.PNG;*.ICO;*.JFIF;*.TIFF;*.WEBP"
                 f_.Title = title_text
             Case FileDialogExpectedFormat.icon
                 f_.Filter = "Icons|*.ico;*.exe"
@@ -3799,7 +3834,7 @@ Public Class Desktop
         End Try
     End Sub
     Public Shared Sub TextDragDrop(sender As Object, e As DragEventArgs)
-        Dim str_ As String = e.Data.GetData(DataFormats.Text).ToString()
+        Dim str_ As String = e.Data.GetData(DataFormats.UnicodeText).ToString()
         Dim t As TextBox = CType(sender, TextBox)
 
         ' Get the current caret position

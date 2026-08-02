@@ -307,12 +307,28 @@ Friend Class OrmUtils
         ' Not an enum, do regular conversion
         Return Convert.ChangeType(rawValue, targetType)
     End Function
-    Friend Shared Function GetEnumStorageType(prop As PropertyInfo) As EnumStorageType
-        Dim attr = prop.GetCustomAttribute(Of EnumStorageAttribute)()
+    Public Shared Function GetEnumStorageType(p As PropertyInfo) As EnumStorageType
+        Dim enumType = Nullable.GetUnderlyingType(p.PropertyType)
+
+        If enumType Is Nothing Then
+            If Not p.PropertyType.IsEnum Then
+                Throw New InvalidOperationException($"Property '{p.Name}' is not an enum or nullable enum.")
+            End If
+            enumType = p.PropertyType
+        End If
+
+        ' Use attribute if defined
+        Dim attr = p.GetCustomAttribute(Of EnumStorageAttribute)()
         If attr IsNot Nothing Then
             Return attr.StorageType
         End If
-        Return EnumStorageType.Ordinal ' default
+
+        ' Use String if [Flags], otherwise default to Ordinal
+        If enumType.IsDefined(GetType(FlagsAttribute), False) Then
+            Return EnumStorageType.String
+        End If
+
+        Return EnumStorageType.Ordinal
     End Function
 
     Friend Shared Function GetEnumDbValue(prop As PropertyInfo, value As Object) As Object

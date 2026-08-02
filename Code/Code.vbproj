@@ -105,10 +105,6 @@
     <Compile Include="FeedbackExtensions.vb" />
     <Compile Include="GeneralExtensions.vb" />
     <Compile Include="LoggingExtensions.vb" />
-    <Compile Include="Orm\Cache\DefaultOrmMetadataCache.vb" />
-    <Compile Include="Orm\Cache\IOrmMetadataCache.vb" />
-    <Compile Include="Orm\Cache\OrmMetadata.vb" />
-    <Compile Include="Orm\Cache\OrmMetadataBuilder.vb" />
     <Compile Include="Orm\DbLogger\IDbLogger.vb" />
     <Compile Include="Orm\DbLogger\Impl\ConsoleDbLogger.vb" />
     <Compile Include="Orm\DbLogger\Impl\NullDbLogger.vb" />

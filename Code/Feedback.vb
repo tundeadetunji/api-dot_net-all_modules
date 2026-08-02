@@ -187,7 +187,7 @@ Public Class Feedback
 
 #Region "Utility"
 
-    Private Function TheTimeOfDay() As TimeOfDay
+    Public Function TheTimeOfDay() As TimeOfDay
         Dim now As DateTime = DateTime.Now
 
         If now >= Morning AndAlso now < Afternoon Then

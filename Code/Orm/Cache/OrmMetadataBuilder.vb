@@ -8,9 +8,13 @@ Public NotInheritable Class OrmMetadataBuilder
             .EntityType = entityType,
             .TableName = entityType.Name, ' or use your GetTableName if implemented
             .Properties = props,
-            .EnumStorageTypes = props.
-                Where(Function(p) p.PropertyType.IsEnum OrElse Nullable.GetUnderlyingType(p.PropertyType)?.IsEnum).
-                ToDictionary(Function(p) p, Function(p) OrmUtils.GetEnumStorageType(p)),
+.EnumStorageTypes = props.
+    Where(Function(p)
+              Dim t = p.PropertyType
+              Dim underlying = Nullable.GetUnderlyingType(t)
+              Return t.IsEnum OrElse (underlying IsNot Nothing AndAlso underlying.IsEnum)
+          End Function).
+    ToDictionary(Function(p) p, Function(p) OrmUtils.GetEnumStorageType(p)),
             .ChildCollections = props.
                 Where(Function(p) IsGenericList(p.PropertyType)).
                 ToList(),

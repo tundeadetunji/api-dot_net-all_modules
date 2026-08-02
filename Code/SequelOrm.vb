@@ -8,18 +8,18 @@ Public Class SequelOrm
     Private Shared _instance As Lazy(Of SequelOrm)
     Private ReadOnly strategy As IOrm
 
-    Private Sub New(provider As SupportedDbProvider, connectionString As String, logger As IDbLogger, Optional metadataCache As IOrmMetadataCache = Nothing)
+    Private Sub New(provider As SupportedDbProvider, connectionString As String, logger As IDbLogger)
         Select Case provider
             Case SupportedDbProvider.SqlServer
-                strategy = SqlServerOrm.Instance(connectionString, logger, metadataCache)
+                strategy = SqlServerOrm.Instance(connectionString, logger)
             Case Else
                 Throw New NotSupportedException($"Provider '{provider}' is not supported.")
         End Select
     End Sub
 
-    Public Shared Function GetInstance(provider As SupportedDbProvider, connectionString As String, Optional metadataCache As IOrmMetadataCache = Nothing) As SequelOrm
+    Public Shared Function GetInstance(provider As SupportedDbProvider, connectionString As String) As SequelOrm
         If _instance Is Nothing Then
-            _instance = New Lazy(Of SequelOrm)(Function() New SequelOrm(provider, connectionString, NullDbLogger.Instance, metadataCache), LazyThreadSafetyMode.ExecutionAndPublication)
+            _instance = New Lazy(Of SequelOrm)(Function() New SequelOrm(provider, connectionString, NullDbLogger.Instance), LazyThreadSafetyMode.ExecutionAndPublication)
         End If
         Return _instance.Value
     End Function
@@ -31,10 +31,10 @@ Public Class SequelOrm
     ''' <param name="connectionString"></param>
     ''' <param name="logger">Your custom logger implementation. Must implement IDbLogger. Must be set before any database use.</param>
     ''' <returns></returns>
-    Public Shared Function GetInstance(provider As SupportedDbProvider, connectionString As String, logger As IDbLogger, Optional metadataCache As IOrmMetadataCache = Nothing) As SequelOrm
+    Public Shared Function GetInstance(provider As SupportedDbProvider, connectionString As String, logger As IDbLogger) As SequelOrm
         Dim _logger As IDbLogger = If(logger Is Nothing, NullDbLogger.Instance, logger)
         If _instance Is Nothing Then
-            _instance = New Lazy(Of SequelOrm)(Function() New SequelOrm(provider, connectionString, _logger, metadataCache), LazyThreadSafetyMode.ExecutionAndPublication)
+            _instance = New Lazy(Of SequelOrm)(Function() New SequelOrm(provider, connectionString, _logger), LazyThreadSafetyMode.ExecutionAndPublication)
         End If
         Return _instance.Value
     End Function
@@ -46,9 +46,9 @@ Public Class SequelOrm
     ''' <param name="connectionString"></param>
     ''' <param name="mode"></param>
     ''' <returns></returns>
-    Public Shared Function GetInstance(provider As SupportedDbProvider, connectionString As String, Optional mode As LoggerMode = LoggerMode.None, Optional metadataCache As IOrmMetadataCache = Nothing) As SequelOrm
+    Public Shared Function GetInstance(provider As SupportedDbProvider, connectionString As String, Optional mode As LoggerMode = LoggerMode.None) As SequelOrm
         Dim _logger As IDbLogger = If(mode = LoggerMode.Console, ConsoleDbLogger.Instance, NullDbLogger.Instance)
-        Return GetInstance(provider, connectionString, _logger, metadataCache)
+        Return GetInstance(provider, connectionString, _logger)
     End Function
 #End Region
 
