@@ -24,10 +24,9 @@ Following are usage examples.
 ---
 ## SequelOrm
 Lightweight ORM.
-- ﻿SqlServer is currently the only supported database provider; this implementation was tested on it.
-- Support for PostgreSql and MySql, as well as Logging and Transaction Isolation Levels, are actively WIP.
+- ﻿SqlServer is currently the only supported database provider; this implementation was tested on version 2016. Support for PostgreSql and MySql are actively WIP.
 - Parent-to-child foreign key convention is {ParentTypeName}_{idColumn} (e.g. Person {Id, Name, List(Of Phone)} => Phone {Id, Person_Id, PhoneNumber}).
-- Supports 1 : many (e.g. 1 Person can have many Phones); the rest are actively WIP and will be available in the next few weeks.
+- Supports 1 : many (e.g. 1 Person can have many Phones); the rest, as well as Logging, Caching and Transaction Isolation Levels, are actively WIP and will be available in the next few weeks.
 - Direct support for Enum types is now available.
 - Picks up non read-only properties only, and ignores RowVersion property if it doesnt exist.
 - Finally, you may need to install appropriate Sql Clients or Providers from nuget.org, e.g. System.Data.SqlClient.
