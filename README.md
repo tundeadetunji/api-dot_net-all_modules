@@ -14,14 +14,19 @@ The Android version is <a href="https://github.com/tundeadetunji/api-android-gen
 <br/>
 <br>
 <br/>
-Following are usage examples.
 
-<br/>
-<br/>
-
-
+## Third-party components and assets
+Code Repertoire is licensed under MIT. Some modules may generate markup for, or expect assets from, third-party frameworks and templates. These assets are not necessarily distributed with Code Repertoire and may be subject to separate licence terms. See <a href="https://github.com/tundeadetunji/api-dot_net-all_modules/blob/master/THIRD-PARTY-NOTICES.md">THIRD-PARTY-NOTICES.md</a> for known third-party requirements. Users are responsible for obtaining external assets and complying with their applicable licence terms.
 
 ---
+<br/>
+<br/>
+
+### Following are usage examples.
+
+<br/>
+<br/>
+
 ## SequelOrm
 Lightweight ORM.
 - ﻿SqlServer is currently the only supported database provider; this implementation was tested on version 2016. Support for PostgreSql and MySql are actively WIP.
@@ -178,7 +183,7 @@ Contains methods based on Bootstrap, currently 4 but upgrades are WIP.
 
 C#:
 ```csharp
-using static iNovation.Code.Bootstrap
+using static iNovation.Code.Bootstrap;
 
 Alert("This is an alert");
 ```
@@ -195,7 +200,7 @@ Contains methods for dynamically creating charts (Bar, Pie, Doughnut, Line) usin
 
 C#:
 ```csharp
-using static iNovation.Code.Charts
+using static iNovation.Code.Charts;
 
 List<string> labels = new List<string> { "Q1", "Q2", "Q3" };
 List<string> values  = new List<string> { "50", "25", "75" };
@@ -217,7 +222,7 @@ Contains methods mainly towards desktop development.
 
 C#:
 ```csharp
-using static iNovation.Code.Desktoop
+using static iNovation.Code.Desktop;
 
 enum TitleOfCourtesy{
     Mr, Mrs, Ms
@@ -246,7 +251,7 @@ Contains extension methods based on methods from Desktop.
 
 C#:
 ```csharp
-using static iNovation.Code.DesktopExtensions
+using static iNovation.Code.DesktopExtensions;
 
 //The items of comboBox1 are turned into a List
 comboBox1.ToList();
@@ -265,7 +270,7 @@ Ligthweight Encryption/Decryption.
 
 C#:
 ```csharp
-using static iNovation.Code.Encryption
+using static iNovation.Code.Encryption;
 
 string key = "MyKey";
 string value = "What to encrypt";
@@ -290,7 +295,7 @@ Contains extension methods based on methods from Encryption.
 
 C#:
 ```csharp
-using static iNovation.Code.EncryptionExtensions
+using static iNovation.Code.EncryptionExtensions;
 
 string key = "MyKey";
 string value = "What to encrypt";
@@ -359,7 +364,7 @@ Contains methods for general purposes.
 
 C#:
 ```csharp
-using static iNovation.Code.General
+using static iNovation.Code.General;
 
 string email = "@provider.com";
 bool valid = IsEmail(email); //false
@@ -378,7 +383,7 @@ Contains extension methods based on methods from General.
 
 C#:
 ```csharp
-using static iNovation.Code.GeneralExtensions
+using static iNovation.Code.GeneralExtensions;
 
 string input = "how Are you doing";
 string output = input.ToTitleCase(); //How Are You Doing
@@ -397,7 +402,7 @@ Contains extension methods useful for logging common data types.
 
 C#:
 ```csharp
-using static iNovation.Code.LoggingExtensions
+using static iNovation.Code.LoggingExtensions;
 
 string input = "just a log";
 input.Log();
@@ -416,7 +421,7 @@ Contains methods for dealing with the machine directly.
 
 C#:
 ```csharp
-using static iNovation.Code.Machine
+using static iNovation.Code.Machine;
 
 //Mutes the PC
 Mute(this);
@@ -435,7 +440,7 @@ Contains methods for database access.
 
 C#:
 ```csharp
-using static iNovation.Code.Sequel
+using static iNovation.Code.Sequel;
 
 string table = "TableName";
 string[] fields = { "ColumnName" };
@@ -472,7 +477,7 @@ Contains methods for desktop development, particularly, styling the Form.
 
 C#:
 ```csharp
-using static iNovation.Code.Styler
+using static iNovation.Code.Styler;
 
 Style(this, true);
 ```
