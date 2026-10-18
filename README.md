@@ -18,14 +18,24 @@ The Android version is <a href="https://github.com/tundeadetunji/api-android-gen
 ## Third-party components and assets
 Code Repertoire is licensed under MIT. Some modules may generate markup for, or expect assets from, third-party frameworks and templates. These assets are not necessarily distributed with Code Repertoire and may be subject to separate licence terms. See <a href="https://github.com/tundeadetunji/api-dot_net-all_modules/blob/master/THIRD-PARTY-NOTICES.md">THIRD-PARTY-NOTICES.md</a> for known third-party requirements. Users are responsible for obtaining external assets and complying with their applicable licence terms.
 
----
+<br/>
+
+## Contributing
+
+Code Repertoire is growing, and contributions are welcome!
+
+Whether you'd like to fix a bug, improve an existing utility, add tests, contribute documentation, suggest a feature, or help explore future C# support, your input is welcome.
+
+You don't need to take on a large task to make a difference. Start by exploring the [open issues](https://github.com/tundeadetunji/api-dot_net-all_modules/issues), or share an idea through the repository's Discussions if enabled.
+
+Before submitting a contribution, please read [CONTRIBUTING.md](https://github.com/tundeadetunji/api-dot_net-all_modules/blob/master/CONTRIBUTING.md) for guidance.
+
+Thanks for helping make everyday .NET programming a little easier!
+
 <br/>
 <br/>
 
 ### Following are usage examples.
-
-<br/>
-<br/>
 
 ## SequelOrm
 Lightweight ORM.
