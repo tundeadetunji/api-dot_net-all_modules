@@ -14,14 +14,19 @@ The Android version is <a href="https://github.com/tundeadetunji/api-android-gen
 <br/>
 <br>
 <br/>
-Following are usage examples.
 
-<br/>
-<br/>
-
-
+## Third-party components and assets
+Code Repertoire is licensed under MIT. Some modules may generate markup for, or expect assets from, third-party frameworks and templates. These assets are not necessarily distributed with Code Repertoire and may be subject to separate licence terms. See THIRD-PARTY-NOTICES.md for known third-party requirements. Users are responsible for obtaining external assets and complying with their applicable licence terms.
 
 ---
+<br/>
+<br/>
+
+### Following are usage examples.
+
+<br/>
+<br/>
+
 ## SequelOrm
 Lightweight ORM.
 - ﻿SqlServer is currently the only supported database provider; this implementation was tested on version 2016. Support for PostgreSql and MySql are actively WIP.
