@@ -25,6 +25,12 @@ Imports Microsoft.Win32
 ''' </remarks>
 Public Class Desktop
 
+    Public Enum HideFileOrFolderShould
+        LeaveAsIs = 0
+        SealTheResource = 1
+        HideTheResource = 2
+        MakeTheResourceVisible = 3
+    End Enum
 #Region "Desktop"
 
     Public Shared Function GetRunningPrograms(Optional sought As SideToReturn = SideToReturn.AsCustomApplicationInfo, Optional only_if_main_window_title_is_not_blank As Boolean = False, Optional machine_name As String = Nothing)

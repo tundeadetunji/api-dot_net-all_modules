@@ -373,13 +373,6 @@ Public Class General
         Lock = 4
     End Enum
 
-    Public Enum HideFileOrFolderShould
-        LeaveAsIs = 0
-        SealTheResource = 1
-        HideTheResource = 2
-        MakeTheResourceVisible = 3
-    End Enum
-
     Public Enum AppWindowState
         Hide = 0
         ShowNormal = 1
@@ -418,15 +411,6 @@ Public Class General
         Jumbotron
     End Enum
 
-    Public Enum DeviceCapture
-        SingleImage = 0
-        MotionPicture = 1
-        Video = 2
-        ScreenSingleImage = 3
-        ScreenMotionPicture = 4
-        ScreenVideo = 5
-        Audio = 6
-    End Enum
 
     ''' <summary>
     ''' Discontinued.

@@ -3,7 +3,7 @@ Imports System.Data.Common
 Imports System.Data.SqlClient
 Imports System.Reflection
 Imports System.Threading
-Friend Class SqlServerOrm
+Public Class SqlServerOrm
     Implements IOrm
 
 #Region "init"

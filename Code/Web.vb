@@ -14,6 +14,22 @@ Imports System.IO
 
 ''' <summary>
 ''' This class contains methods for web components in ASP.NET. It is equivalent to Desktop.
+''' UI elements intended to be styled using the Shoppy admin template require
+''' the Shoppy template assets and are not included with Code Repertoire
+''' and must be obtained separately by the consuming application.
+''' Users are responsible for obtaining and using the required assets
+''' in accordance with the applicable licence terms.
+''' Third-party template: Shoppy - W3Layouts
+''' https://w3layouts.com/template/shoppy-e-commerce-admin-panel-responsive-web-template/
+''' Referenced licence: Creative Commons Attribution 3.0 Unported (CC BY 3.0)
+''' https://creativecommons.org/licenses/by/3.0/
+''' Certain UI configurations or external templates may also reference
+''' Font Awesome and other third-party libraries, frameworks, fonts,
+''' icons, or assets. These resources are not included with Code Repertoire
+''' unless explicitly stated otherwise and may need to be obtained separately.
+''' Users are responsible for complying with the applicable licence terms
+''' for any third-party resources they choose to use.
+''' See THIRD-PARTY-NOTICES.md for further information.
 ''' </summary>
 ''' <remarks>
 ''' Author: Tunde Adetunji (tundeadetunji2017@gmail.com)
