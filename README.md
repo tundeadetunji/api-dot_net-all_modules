@@ -26,9 +26,9 @@ Code Repertoire is growing, and contributions are welcome!
 
 Whether you'd like to fix a bug, improve an existing utility, add tests, contribute documentation, suggest a feature, or help explore future C# support, your input is welcome.
 
-You don't need to take on a large task to make a difference. Start by exploring the [open issues](https://github.com/tundeadetunji/api-dot_net-all_modules/issues), or share an idea through the repository's Discussions if enabled.
+You don't need to take on a large task to make a difference. Start by exploring the [open issues](https://github.com/tundeadetunji/api-dot_net-all_modules/issues), or share an idea through the repository's Discussions.
 
-Before submitting a contribution, please read [CONTRIBUTING.md](https://github.com/tundeadetunji/api-dot_net-all_modules/blob/master/CONTRIBUTING.md) for guidance.
+Before submitting a contribution, please read [CONTRIBUTING.md](https://github.com/tundeadetunji/api-dot_net-all_modules/blob/master/CONTRIBUTING.md).
 
 Thanks for helping make everyday .NET programming a little easier!
 
