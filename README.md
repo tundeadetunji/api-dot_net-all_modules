@@ -16,7 +16,7 @@ The Android version is <a href="https://github.com/tundeadetunji/api-android-gen
 <br/>
 
 ## Third-party components and assets
-Code Repertoire is licensed under MIT. Some modules may generate markup for, or expect assets from, third-party frameworks and templates. These assets are not necessarily distributed with Code Repertoire and may be subject to separate licence terms. See THIRD-PARTY-NOTICES.md for known third-party requirements. Users are responsible for obtaining external assets and complying with their applicable licence terms.
+Code Repertoire is licensed under MIT. Some modules may generate markup for, or expect assets from, third-party frameworks and templates. These assets are not necessarily distributed with Code Repertoire and may be subject to separate licence terms. See <a href="https://github.com/tundeadetunji/api-dot_net-all_modules/blob/master/THIRD-PARTY-NOTICES.md">THIRD-PARTY-NOTICES.md</a> for known third-party requirements. Users are responsible for obtaining external assets and complying with their applicable licence terms.
 
 ---
 <br/>
