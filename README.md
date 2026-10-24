@@ -1,7 +1,7 @@
 # Code Repertoire
 
 <br>
-A programmer's toolkit - Code Repertoire is multi-purpose for everyday use in .Net, bring it in via <a href="https://www.nuget.org/packages/inovationware.code/#versions-body-tab" target="_blank">Nuget</a>.
+A programmer's toolkit - Code Repertoire is multi-purpose for everyday use in .NET, bring it in via <a href="https://www.nuget.org/packages/inovationware.code/#versions-body-tab" target="_blank">Nuget</a>.
 
 <br>
 <br>
